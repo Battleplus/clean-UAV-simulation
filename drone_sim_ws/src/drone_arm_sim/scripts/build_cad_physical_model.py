@@ -15,6 +15,7 @@ CCW_MOTORS = {3, 4, 5, 6}
 USER_UPWARD_MOTORS = {1, 2, 3, 6}
 MAX_THRUST_N = 1.2 * 9.80665
 GRAVITY = 9.80665
+TEMPORARY_FIXED_MASS_KG = 7.735
 THRUST_TABLE_GRAMS = {
     0: 0, 15: 26, 20: 79, 25: 142, 30: 160, 35: 254, 40: 372,
     45: 457, 50: 545, 55: 562, 60: 630, 65: 673, 70: 725,
@@ -124,7 +125,14 @@ def main() -> None:
                 "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry",
             }
         )
-    mass = float(physical["estimated_total_mass_kg"])
+    cad_density_mass = float(physical["estimated_total_mass_kg"])
+    mass = TEMPORARY_FIXED_MASS_KG
+    inertia_scale = mass / cad_density_mass
+    working_inertia = (
+        np.asarray(
+            physical["estimated_ros_flu_inertia_at_com_kg_m2"], dtype=float
+        ) * inertia_scale
+    )
     scenarios = [
         analyse_scenario("user_declared_installed_propellers", declared_rotors, mass),
         analyse_scenario("opposite_pitch_all_up_hypothesis", all_up_rotors, mass),
@@ -153,9 +161,14 @@ def main() -> None:
             "cad_to_px4_frd": "X=-CAD_Z, Y=CAD_X, Z=-CAD_Y",
         },
         "estimated_mass_kg": mass,
+        "cad_density_estimated_mass_kg": cad_density_mass,
+        "temporary_fixed_mass_kg": mass,
+        "mass_override_source": "user fixed the temporary whole-aircraft mass at 7.735 kg on 2026-08-07",
+        "inertia_scaling_from_cad_density_estimate": inertia_scale,
         "estimated_cad_com_m": physical["estimated_cad_com_m"],
-        "estimated_ros_flu_inertia_at_com_kg_m2": physical["estimated_ros_flu_inertia_at_com_kg_m2"],
-        "mass_status": "provisional density-derived; replace motors, servos and propellers with specification masses and calibrate to whole-aircraft weighing",
+        "estimated_ros_flu_inertia_at_com_kg_m2": working_inertia.tolist(),
+        "cad_density_estimated_ros_flu_inertia_at_com_kg_m2": physical["estimated_ros_flu_inertia_at_com_kg_m2"],
+        "mass_status": "temporary user-fixed whole-aircraft mass; CAD COM retained and CAD inertia scaled uniformly by mass ratio until measured inertia is available",
         "maximum_rated_thrust_per_motor_n": MAX_THRUST_N,
         "static_thrust_model": {
             "method": "piecewise-linear interpolation of supplied 14.8 V static test table",

@@ -12,13 +12,34 @@
     "cad_to_ros_flu": "X=-CAD_Z, Y=-CAD_X, Z=CAD_Y",
     "cad_to_px4_frd": "X=-CAD_Z, Y=CAD_X, Z=-CAD_Y"
   },
-  "estimated_mass_kg": 8.567252067844061,
+  "estimated_mass_kg": 7.735,
+  "cad_density_estimated_mass_kg": 8.567252067844061,
+  "temporary_fixed_mass_kg": 7.735,
+  "mass_override_source": "user fixed the temporary whole-aircraft mass at 7.735 kg on 2026-08-07",
+  "inertia_scaling_from_cad_density_estimate": 0.9028565914422201,
   "estimated_cad_com_m": [
     -0.06375321748135368,
     -0.16711715950288908,
     0.003664214629712963
   ],
   "estimated_ros_flu_inertia_at_com_kg_m2": [
+    [
+      0.40206406205873607,
+      0.0005315545702010958,
+      0.005757124098834231
+    ],
+    [
+      0.0005315545702010958,
+      0.40309922493202355,
+      -0.00026014637748222506
+    ],
+    [
+      0.005757124098834231,
+      -0.00026014637748222506,
+      0.4119238060920746
+    ]
+  ],
+  "cad_density_estimated_ros_flu_inertia_at_com_kg_m2": [
     [
       0.445324391348221,
       0.0005887475101134194,
@@ -35,7 +56,7 @@
       0.45624500058649275
     ]
   ],
-  "mass_status": "provisional density-derived; replace motors, servos and propellers with specification masses and calibrate to whole-aircraft weighing",
+  "mass_status": "temporary user-fixed whole-aircraft mass; CAD COM retained and CAD inertia scaled uniformly by mass ratio until measured inertia is available",
   "maximum_rated_thrust_per_motor_n": 11.76798,
   "static_thrust_model": {
     "method": "piecewise-linear interpolation of supplied 14.8 V static test table",
@@ -913,45 +934,45 @@
       "hover_target_wrench": [
         0.0,
         0.0,
-        -84.01604249112296,
+        -75.85443775,
         0.0,
         0.0,
         0.0
       ],
       "unconstrained_hover_thrust_n": [
-        11.822418430335096,
-        12.430923943913301,
-        11.822418430335121,
-        -12.556001084304116,
-        -11.697341289944376,
-        12.430923943913267,
-        -11.697341289944385,
-        -12.556001084304096
+        10.673948406616026,
+        11.223341620479044,
+        10.673948406616049,
+        -11.336268341119633,
+        -10.56102168597552,
+        11.223341620479012,
+        -10.561021685975529,
+        -11.336268341119617
       ],
       "unconstrained_all_nonnegative": false,
-      "unconstrained_within_rated_max": false,
+      "unconstrained_within_rated_max": true,
       "bounded_hover_thrust_n": [
         11.767979999999998,
         11.767979999999998,
         11.767979999999998,
-        8.844091032325089e-20,
-        8.884292010095166e-20,
+        4.745680096260039e-17,
+        4.75575548699318e-17,
         11.767979999999998,
-        8.966141531707288e-20,
-        8.763296165993972e-20
+        4.8002988321069155e-17,
+        4.7016181702628094e-17
       ],
       "bounded_hover_residual": [
-        1.065814175356817e-14,
-        2.664534541933708e-15,
-        43.25056396621417,
+        1.0658489925227312e-14,
+        2.6641863702745657e-15,
+        35.088959225091216,
         0.027855744406229732,
         0.16337510472303896,
         1.7474558763622055
       ],
-      "bounded_hover_residual_norm": 43.28616814645016,
+      "bounded_hover_residual_norm": 35.13283548060541,
       "maximum_upward_vertical_force_n": 40.765478524908794,
       "maximum_supported_mass_kg": 4.156921938165306,
-      "maximum_vertical_thrust_to_weight": 0.4852106492544686,
+      "maximum_vertical_thrust_to_weight": 0.5374171865759929,
       "hover_feasible_at_rated_1p2_kgf": false
     },
     {
@@ -1031,46 +1052,46 @@
       "hover_target_wrench": [
         0.0,
         0.0,
-        -84.01604249112296,
+        -75.85443775,
         0.0,
         0.0,
         0.0
       ],
       "unconstrained_hover_thrust_n": [
-        11.822418430335096,
-        12.430923943913301,
-        11.822418430335121,
-        12.556001084304116,
-        11.697341289944376,
-        12.430923943913267,
-        11.697341289944385,
-        12.556001084304096
+        10.673948406616026,
+        11.223341620479044,
+        10.673948406616049,
+        11.336268341119633,
+        10.56102168597552,
+        11.223341620479012,
+        10.561021685975529,
+        11.336268341119617
       ],
       "unconstrained_all_nonnegative": true,
-      "unconstrained_within_rated_max": false,
+      "unconstrained_within_rated_max": true,
       "bounded_hover_thrust_n": [
-        11.767979999999998,
-        11.767979999999998,
-        11.767979999999998,
-        11.767979999999998,
-        11.767979999999998,
-        11.767979999999998,
-        11.767979999999998,
-        11.767979999999998
+        10.673948406616036,
+        11.223341620479038,
+        10.673948406616066,
+        11.336268341119625,
+        10.561021685975529,
+        11.22334162047901,
+        10.561021685975538,
+        11.336268341119608
       ],
       "bounded_hover_residual": [
-        2.3092638912203256e-14,
-        7.993605777301127e-15,
-        2.4850854413053867,
-        0.05571148881245991,
-        0.32675020944607613,
-        5.384581669432009e-15
+        -1.0658141036401503e-14,
+        -4.440892098500626e-15,
+        -2.842170943040401e-14,
+        -1.3322676295501878e-15,
+        -4.6629367034256575e-15,
+        -7.771561172376096e-16
       ],
-      "bounded_hover_residual_norm": 2.5070937597040013,
+      "bounded_hover_residual_norm": 3.106819832716613e-14,
       "maximum_upward_vertical_force_n": 81.53095704981759,
       "maximum_supported_mass_kg": 8.313843876330612,
-      "maximum_vertical_thrust_to_weight": 0.9704212985089372,
-      "hover_feasible_at_rated_1p2_kgf": false
+      "maximum_vertical_thrust_to_weight": 1.0748343731519858,
+      "hover_feasible_at_rated_1p2_kgf": true
     }
   ]
 }

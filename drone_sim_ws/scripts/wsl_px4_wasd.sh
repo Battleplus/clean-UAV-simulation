@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 set -eo pipefail
+
+if [[ "${ALLOW_LEGACY_PYMAVLINK:-0}" != "1" ]]; then
+  echo "Legacy pymavlink WASD is disabled; use scripts/wsl_start_ros2_dds.sh and scripts/run_ros2_dds_wasd.sh." >&2
+  echo "Set ALLOW_LEGACY_PYMAVLINK=1 only for historical diagnostics." >&2
+  exit 2
+fi
 trap 'status=$?; echo "WASD launcher failed at line ${LINENO}: ${BASH_COMMAND} (exit ${status})" >&2' ERR
 
 workspace_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

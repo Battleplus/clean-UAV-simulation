@@ -18,7 +18,7 @@ sleep 1
 
 source /opt/ros/jazzy/setup.bash
 export AMENT_PREFIX_PATH="${overlay}:${AMENT_PREFIX_PATH:-}"
-export LD_LIBRARY_PATH="${overlay}/lib:/home/asus/.local/lib:/opt/ros/jazzy/lib:${LD_LIBRARY_PATH:-}"
+export LD_LIBRARY_PATH="/home/asus/ros2_px4_build_ws/install/px4_msgs/lib:${overlay}/lib:/home/asus/.local/lib:/opt/ros/jazzy/lib:${LD_LIBRARY_PATH:-}"
 source "${workspace_dir}/install/setup.bash"
 set -u
 

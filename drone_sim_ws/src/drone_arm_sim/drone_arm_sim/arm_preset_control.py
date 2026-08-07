@@ -70,7 +70,11 @@ def load_presets() -> dict[str, list[float]]:
 
 def main(args=None) -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--preset", choices=("retracted", "work_a", "work_b"), required=True)
+    parser.add_argument(
+        "--preset",
+        choices=("retracted", "work_a", "work_b", "flight_work_a", "flight_work_b"),
+        required=True,
+    )
     parser.add_argument("--duration", type=float, default=3.0)
     parser.add_argument("--wait", action="store_true")
     parser.add_argument("--tolerance", type=float, default=0.04)

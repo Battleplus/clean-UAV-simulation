@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from ament_index_python.packages import get_package_share_directory
@@ -13,7 +14,10 @@ def generate_launch_description():
     package_share = Path(get_package_share_directory("drone_arm_sim"))
     ros_gz_share = Path(get_package_share_directory("ros_gz_sim"))
     world = package_share / "worlds" / "flight_world_250hz.sdf"
-    robot = package_share / "urdf" / "my_drone_v2" / "my_drone_cad_dynamic.urdf"
+    robot = Path(os.environ.get(
+        "MY_DRONE_URDF",
+        str(package_share / "urdf" / "my_drone_v2" / "my_drone_cad_dynamic.urdf"),
+    ))
     robot_xml = robot.read_text(encoding="utf-8").replace(
         "$(find drone_arm_sim)", str(package_share)
     )
@@ -75,8 +79,23 @@ def generate_launch_description():
                     "--entity-name", "base_link",
                     "--reaction-moment-ratio-m",
                     LaunchConfiguration("reaction_moment_ratio_m"),
+                    "--wind-enu",
+                    LaunchConfiguration("wind_enu_x"),
+                    LaunchConfiguration("wind_enu_y"),
+                    LaunchConfiguration("wind_enu_z"),
                 ],
             )
+        ],
+    )
+    sensor_delay = Node(
+        package="drone_arm_sim",
+        executable="gazebo_sensor_delay",
+        output="screen",
+        arguments=[
+            "--imu-delay-ms", LaunchConfiguration("imu_delay_ms"),
+            "--mag-delay-ms", LaunchConfiguration("mag_delay_ms"),
+            "--baro-delay-ms", LaunchConfiguration("baro_delay_ms"),
+            "--navsat-delay-ms", LaunchConfiguration("navsat_delay_ms"),
         ],
     )
     controller = TimerAction(
@@ -135,6 +154,13 @@ def generate_launch_description():
             DeclareLaunchArgument("enable_controller", default_value="true"),
             DeclareLaunchArgument("enable_arm_control", default_value="false"),
             DeclareLaunchArgument("reaction_moment_ratio_m", default_value="-1"),
+            DeclareLaunchArgument("wind_enu_x", default_value="nan"),
+            DeclareLaunchArgument("wind_enu_y", default_value="nan"),
+            DeclareLaunchArgument("wind_enu_z", default_value="nan"),
+            DeclareLaunchArgument("imu_delay_ms", default_value="4"),
+            DeclareLaunchArgument("mag_delay_ms", default_value="10"),
+            DeclareLaunchArgument("baro_delay_ms", default_value="20"),
+            DeclareLaunchArgument("navsat_delay_ms", default_value="50"),
             DeclareLaunchArgument(
                 "config_file",
                 default_value=str(package_share / "config" / "my_drone_v2_cad.json"),
@@ -148,6 +174,7 @@ def generate_launch_description():
             bridge,
             robot_description_publisher,
             spawn,
+            sensor_delay,
             motor_model,
             controller,
             joint_state_controller,

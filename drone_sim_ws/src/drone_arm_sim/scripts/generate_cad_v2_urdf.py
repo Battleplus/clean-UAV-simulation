@@ -15,6 +15,17 @@ from scipy.spatial.transform import Rotation
 
 DENSITY_KG_M3 = 1300.0
 MAXIMUM_THRUST_N = 11.76798
+THRUST_TABLE_GF = {
+    0: 0, 15: 26, 20: 79, 25: 142, 30: 160, 35: 254,
+    40: 372, 45: 457, 50: 545, 55: 562, 60: 630, 65: 673,
+    70: 725, 75: 831, 80: 909, 85: 1041, 90: 1283,
+}
+CURRENT_TABLE_A = {
+    0: 0.0, 15: 0.66, 20: 1.30, 25: 2.12, 30: 2.87, 35: 4.75,
+    40: 7.23, 45: 8.91, 50: 10.40, 55: 11.65, 60: 12.96,
+    65: 14.16, 70: 15.92, 75: 18.07, 80: 21.51, 85: 25.25,
+    90: 32.01,
+}
 CAD_TO_FLU = np.array(
     [[0.0, 0.0, -1.0], [-1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]
 )
@@ -253,8 +264,23 @@ def generate(package: Path) -> None:
     }
     total_volume = sum(component_volumes.values())
     estimated_mass = total_volume * DENSITY_KG_M3
-    vertical_force = MAXIMUM_THRUST_N * sum(
+    # The exact CAD evidence contains four upward and four downward thrust
+    # axes.  Commands are non-negative for ordinary fixed-pitch propellers, so
+    # the signed all-motors-at-maximum sum is not a useful lift-capacity
+    # metric.  Keep it as an audit value, and separately compute the optimistic
+    # upper bound obtained by turning every downward-pointing rotor off.  If
+    # even that bound is below weight, a hover solution is mathematically
+    # impossible regardless of moment balancing or controller tuning.
+    full_throttle_signed_vertical_force = MAXIMUM_THRUST_N * sum(
         float(record["_axis_flu"][2]) for record in rotor_records
+    )
+    best_case_upward_force = MAXIMUM_THRUST_N * sum(
+        max(0.0, float(record["_axis_flu"][2])) for record in rotor_records
+    )
+    weight = estimated_mass * 9.80665
+    best_case_thrust_to_weight = best_case_upward_force / weight
+    nonreversible_feasibility = (
+        "INFEASIBLE" if best_case_upward_force <= weight else "UNPROVEN"
     )
     config = {
         "description": "Formal rotor lines extracted from SolidWorks cylindrical faces; bounding-box centre-to-centre axes are not used.",
@@ -270,12 +296,62 @@ def generate(package: Path) -> None:
         "estimated_all_up_mass_kg": estimated_mass,
         "maximum_thrust_n": MAXIMUM_THRUST_N,
         "minimum_thrust_n": 0.0,
-        "command_model": "thrust_n = normalized_command * maximum_thrust_n",
+        "command_model": "piecewise-linear interpolation of supplied 14.8 V static thrust table; capped at rated 1.2 kgf",
+        "static_thrust_model": {
+            "method": "piecewise-linear interpolation of supplied 14.8 V static test table",
+            "rated_cap_n": MAXIMUM_THRUST_N,
+            "points": [
+                {
+                    "throttle_percent": throttle,
+                    "measured_thrust_gf": grams,
+                    "measured_thrust_n": grams / 1000.0 * 9.80665,
+                    "rated_capped_thrust_n": min(
+                        grams / 1000.0 * 9.80665, MAXIMUM_THRUST_N
+                    ),
+                }
+                for throttle, grams in THRUST_TABLE_GF.items()
+            ],
+            "status": "measured table supplied by user; 90 percent point capped from 1.283 kgf to rated 1.2 kgf",
+        },
+        "motor_dynamics": {
+            "rise_time_constant_s": 0.035,
+            "fall_time_constant_s": 0.035,
+            "status": "initial estimate only; replace with measured step response",
+        },
+        "static_current_model": {
+            "method": "piecewise-linear interpolation of supplied 14.8 V static test table",
+            "points": [
+                {"throttle_percent": throttle, "current_a": current}
+                for throttle, current in CURRENT_TABLE_A.items()
+            ],
+        },
         "reaction_moment_ratio_m": None,
-        "maximum_vertical_force_n": vertical_force,
-        "maximum_supported_mass_kg": vertical_force / 9.80665,
-        "estimated_vertical_thrust_to_weight": vertical_force
-        / (estimated_mass * 9.80665),
+        "maximum_vertical_force_n": full_throttle_signed_vertical_force,
+        "maximum_supported_mass_kg": full_throttle_signed_vertical_force / 9.80665,
+        "estimated_vertical_thrust_to_weight": full_throttle_signed_vertical_force
+        / weight,
+        "full_throttle_signed_vertical_force_n": full_throttle_signed_vertical_force,
+        "best_case_upward_force_n_nonreversible": best_case_upward_force,
+        "best_case_supported_mass_kg_nonreversible": best_case_upward_force / 9.80665,
+        "best_case_thrust_to_weight_nonreversible": best_case_thrust_to_weight,
+        "flight_feasibility_nonreversible": nonreversible_feasibility,
+        "flight_feasibility_reason": (
+            "Even the optimistic upward-only thrust bound is below vehicle weight; "
+            "downward-pointing fixed-pitch rotors cannot be used for lift."
+            if nonreversible_feasibility == "INFEASIBLE"
+            else "Vertical capacity alone is sufficient, but full six-axis hover "
+            "allocation still requires a bounded feasibility solve."
+        ),
+        "upward_thrust_motors": [
+            int(record["motor"])
+            for record in rotor_records
+            if float(record["_axis_flu"][2]) > 0.0
+        ],
+        "downward_thrust_motors": [
+            int(record["motor"])
+            for record in rotor_records
+            if float(record["_axis_flu"][2]) < 0.0
+        ],
         "rotors": [
             {key: value for key, value in record.items() if not key.startswith("_")}
             for record in rotor_records
@@ -498,6 +574,13 @@ def generate(package: Path) -> None:
         element(sensor, "gz_frame_id", "base_link")
         element(sensor, "always_on", "1")
         element(sensor, "update_rate", rate)
+        raw_topics = {
+            "air_pressure": "/my_drone/raw/air_pressure",
+            "magnetometer": "/my_drone/raw/magnetometer",
+            "imu": "/my_drone/raw/imu",
+            "navsat": "/my_drone/raw/navsat",
+        }
+        element(sensor, "topic", raw_topics[sensor_type])
         if sensor_type == "air_pressure":
             air_pressure = element(sensor, "air_pressure")
             pressure = element(air_pressure, "pressure")
@@ -587,7 +670,8 @@ def generate(package: Path) -> None:
     print(config_path)
     print(output)
     print(
-        f"mass={estimated_mass:.6f} kg, vertical_force={vertical_force:.6f} N, "
+        f"mass={estimated_mass:.6f} kg, "
+        f"signed_full_throttle_vertical_force={full_throttle_signed_vertical_force:.6f} N, "
         f"T/W={config['estimated_vertical_thrust_to_weight']:.6f}"
     )
 

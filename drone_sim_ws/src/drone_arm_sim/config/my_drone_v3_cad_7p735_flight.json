@@ -1,5 +1,5 @@
 {
-  "description": "Flight scenario derived from the authoritative CAD config by fitting opposite-pitch propellers to motors 4, 5, 7 and 8. CAD positions, shaft lines, tilt, mass and arm dynamics are unchanged.",
+  "description": "Temporary 7.735 kg whole-aircraft flight-test scenario. CAD shaft geometry and COM-relative PX4 allocation are retained; motors 4/5/7/8 require opposite-pitch propellers because pitch sign is unresolved in the flat CAD.",
   "source_manifest": "analysis/cad_direct/assembly_manifest.json",
   "axis_source": "analysis/cad_direct/motor_axis_evidence.json",
   "axis_extraction_method": "SolidWorks IFace2.GetSurface / ISurface.IsCylinder / CylinderParams",
@@ -50,7 +50,7 @@
   ],
   "density_kg_m3": 1300.0,
   "mesh_volume_m3": 0.003218255976636863,
-  "estimated_all_up_mass_kg": 4.183732769627922,
+  "estimated_all_up_mass_kg": 7.735,
   "maximum_thrust_n": 11.76798,
   "minimum_thrust_n": 0.0,
   "command_model": "piecewise-linear interpolation of supplied 14.8 V static thrust table; capped at rated 1.2 kgf",
@@ -244,12 +244,12 @@
   "reaction_moment_ratio_m": 0.001,
   "maximum_vertical_force_n": 81.53095704981759,
   "maximum_supported_mass_kg": 8.313843876330612,
-  "estimated_vertical_thrust_to_weight": 1.9871832963820006,
+  "estimated_vertical_thrust_to_weight": 1.0748343731519858,
   "full_throttle_signed_vertical_force_n": 3.9195247047985046e-15,
   "best_case_upward_force_n_nonreversible": 40.765478524908794,
   "best_case_supported_mass_kg_nonreversible": 4.156921938165306,
   "best_case_thrust_to_weight_nonreversible": 0.9935916481910003,
-  "flight_feasibility_nonreversible": "FEASIBLE",
+  "flight_feasibility_nonreversible": "FEASIBLE_WITH_OPPOSITE_PITCH_HYPOTHESIS",
   "flight_feasibility_reason": "Even the optimistic upward-only thrust bound is below vehicle weight; downward-pointing fixed-pitch rotors cannot be used for lift.",
   "upward_thrust_motors": [
     1,
@@ -269,9 +269,9 @@
       "name": "rotor_1_link",
       "cad_instance": "f机架总成-2 f电机-2",
       "position_m": [
-        0.18160588745030426,
-        0.07660588745030462,
-        0.008313843876330683
+        0.18561357019155345,
+        0.07592257045234005,
+        -0.19616886590649824
       ],
       "axis_body": [
         0.3535533905932742,
@@ -291,16 +291,22 @@
       "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 3.274864922277287e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "wrench_position_m": [
+        0.18160588745030426,
+        0.07660588745030462,
+        0.008313843876330683
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
     },
     {
       "motor": 2,
       "name": "rotor_2_link",
       "cad_instance": "f机架总成-2 f电机-3",
       "position_m": [
-        -0.18160588745030434,
-        -0.07660588745030457,
-        0.008313843876330461
+        -0.17759820470905516,
+        -0.07728920444826914,
+        -0.19616886590649846
       ],
       "axis_body": [
         -0.35355339059327323,
@@ -320,16 +326,22 @@
       "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "wrench_position_m": [
+        -0.18160588745030434,
+        -0.07660588745030457,
+        0.008313843876330461
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
     },
     {
       "motor": 3,
       "name": "rotor_3_link",
       "cad_instance": "f机架总成-1 f电机-3",
       "position_m": [
-        0.07660588745030467,
-        0.1816058874503043,
-        -0.008313843876330572
+        0.08061357019155382,
+        0.18092257045233973,
+        -0.21279655365915948
       ],
       "axis_body": [
         -0.35355339059327384,
@@ -349,16 +361,22 @@
       "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 1.811234284755796e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "wrench_position_m": [
+        0.07660588745030467,
+        0.1816058874503043,
+        -0.008313843876330572
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
     },
     {
       "motor": 4,
       "name": "rotor_4_link",
       "cad_instance": "f机架总成-2 f电机-4",
       "position_m": [
-        -0.1816058874503042,
-        0.07660588745030464,
-        0.008313843876330392
+        -0.17759820470905502,
+        0.07592257045234006,
+        -0.1961688659064985
       ],
       "axis_body": [
         -0.3535533905932735,
@@ -379,16 +397,22 @@
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
       "motor_propeller_axis_angle_deg": 0.0,
-      "vertical_thrust_direction": "up"
+      "vertical_thrust_direction": "up",
+      "wrench_position_m": [
+        -0.1816058874503042,
+        0.07660588745030464,
+        0.008313843876330392
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
     },
     {
       "motor": 5,
       "name": "rotor_5_link",
       "cad_instance": "f机架总成-2 f电机-1",
       "position_m": [
-        0.18160588745030404,
-        -0.07660588745030457,
-        0.008313843876330586
+        0.18561357019155322,
+        -0.07728920444826914,
+        -0.19616886590649832
       ],
       "axis_body": [
         0.3535533905932745,
@@ -409,16 +433,22 @@
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 9.488200048182762e-14,
       "motor_propeller_axis_angle_deg": 0.0,
-      "vertical_thrust_direction": "up"
+      "vertical_thrust_direction": "up",
+      "wrench_position_m": [
+        0.18160588745030404,
+        -0.07660588745030457,
+        0.008313843876330586
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
     },
     {
       "motor": 6,
       "name": "rotor_6_link",
       "cad_instance": "f机架总成-1 f电机-2",
       "position_m": [
-        -0.07660588745030457,
-        -0.18160588745030432,
-        -0.008313843876330572
+        -0.07259820470905541,
+        -0.1822892044482689,
+        -0.21279655365915948
       ],
       "axis_body": [
         0.35355339059327373,
@@ -438,16 +468,22 @@
       "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 7.735613448393047e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "wrench_position_m": [
+        -0.07660588745030457,
+        -0.18160588745030432,
+        -0.008313843876330572
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
     },
     {
       "motor": 7,
       "name": "rotor_7_link",
       "cad_instance": "f机架总成-1 f电机-1",
       "position_m": [
-        0.07660588745030462,
-        -0.1816058874503041,
-        -0.008313843876330503
+        0.08061357019155378,
+        -0.18228920444826868,
+        -0.2127965536591594
       ],
       "axis_body": [
         -0.3535533905932736,
@@ -468,16 +504,22 @@
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 2.091245844657973e-14,
       "motor_propeller_axis_angle_deg": 0.0,
-      "vertical_thrust_direction": "up"
+      "vertical_thrust_direction": "up",
+      "wrench_position_m": [
+        0.07660588745030462,
+        -0.1816058874503041,
+        -0.008313843876330503
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
     },
     {
       "motor": 8,
       "name": "rotor_8_link",
       "cad_instance": "f机架总成-1 f电机-4",
       "position_m": [
-        -0.07660588745030454,
-        0.18160588745030415,
-        -0.008313843876330475
+        -0.07259820470905538,
+        0.1809225704523396,
+        -0.2127965536591594
       ],
       "axis_body": [
         0.3535533905932736,
@@ -498,10 +540,16 @@
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 2.455281089561238e-14,
       "motor_propeller_axis_angle_deg": 0.0,
-      "vertical_thrust_direction": "up"
+      "vertical_thrust_direction": "up",
+      "wrench_position_m": [
+        -0.07660588745030454,
+        0.18160588745030415,
+        -0.008313843876330475
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
     }
   ],
-  "scenario": "opposite_pitch_props_on_4_5_7_8",
+  "scenario": "temporary_7p735kg_opposite_pitch_ideal_14p8v_supply",
   "authoritative_source": "config/my_drone_v2_cad.json",
   "reaction_moment_estimate": {
     "formula": "Q = (Q/T) * T",
@@ -537,7 +585,7 @@
     "status": "initial estimates for runtime testing; drag and ground-effect coefficients require identification"
   },
   "battery_dynamics": {
-    "enabled": true,
+    "enabled": false,
     "reference_voltage_v": 14.8,
     "full_voltage_v": 14.8,
     "empty_voltage_v": 13.2,
@@ -545,8 +593,32 @@
     "capacity_ah": 10.0,
     "pack_internal_resistance_ohm": 0.005,
     "thrust_voltage_exponent": 2.0,
-    "status": "capacity and pack resistance are initial estimates; replace with the actual battery specification and load test"
+    "status": "disabled only for the first 7.735 kg ideal-14.8V feasibility flight; the current provisional 5 mOhm sag estimate removes hover margin"
   },
   "actuator_transport_delay_s": 0.008,
-  "actuator_transport_delay_status": "initial two-physics-step estimate; replace with measured PX4-output-to-ESC response latency"
+  "actuator_transport_delay_status": "initial two-physics-step estimate; replace with measured PX4-output-to-ESC response latency",
+  "temporary_fixed_mass_kg": 7.735,
+  "mass_override_source": "user fixed the temporary whole-aircraft mass at 7.735 kg on 2026-08-07",
+  "formal_urdf": "urdf/my_drone_v3/my_drone_cad_formal_dynamic.urdf",
+  "allocation_reference": "vehicle COM in PX4 FRD",
+  "wrench_reference": "URDF base_link origin in PX4 FRD",
+  "bounded_hover_thrust_n": [
+    10.675140123819938,
+    11.222149903275122,
+    10.675140123819954,
+    11.335425639959883,
+    10.56186438713528,
+    11.222149903275106,
+    10.561864387135282,
+    11.33542563995988
+  ],
+  "bounded_hover_residual": [
+    6.217248937900877e-15,
+    -2.6645352591003757e-15,
+    -2.842170943040401e-14,
+    3.552713678800501e-15,
+    -3.9968028886505635e-15,
+    -2.886579864025407e-15
+  ],
+  "bounded_hover_residual_norm": 2.9840845339480473e-14
 }

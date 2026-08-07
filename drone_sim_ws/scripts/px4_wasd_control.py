@@ -12,6 +12,13 @@ import termios
 import time
 import tty
 
+if __name__ == "__main__" and os.environ.get("ALLOW_LEGACY_PYMAVLINK", "0") != "1":
+    raise SystemExit(
+        "Legacy pymavlink WASD is disabled to prevent competing Offboard "
+        "publishers. Use scripts/run_ros2_dds_wasd.sh. For historical "
+        "diagnostics only, set ALLOW_LEGACY_PYMAVLINK=1 explicitly."
+    )
+
 from nav_msgs.msg import Odometry
 from pymavlink import mavutil
 import rclpy

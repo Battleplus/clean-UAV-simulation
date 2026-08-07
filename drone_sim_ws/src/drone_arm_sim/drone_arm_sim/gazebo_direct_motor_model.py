@@ -12,6 +12,7 @@ multibody response without inventing an RPM or motorConstant.
 from __future__ import annotations
 
 import argparse
+from collections import deque
 import json
 from pathlib import Path
 
@@ -98,7 +99,7 @@ def first_order_motor_step(
 
 
 def direct_wrench_flu(
-    config: dict, normalized_by_motor: np.ndarray
+    config: dict, normalized_by_motor: np.ndarray, thrust_scale: float = 1.0
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return base-origin force and torque in Gazebo body FLU."""
     commands = np.clip(
@@ -112,8 +113,12 @@ def direct_wrench_flu(
     moment_ratio = config.get("reaction_moment_ratio_m")
     for rotor in config["rotors"]:
         motor_index = int(rotor["motor"]) - 1
-        thrust = command_to_thrust_n(config, commands[motor_index])
-        position = FRD_TO_FLU @ np.asarray(rotor["position_m"], dtype=float)
+        thrust = command_to_thrust_n(config, commands[motor_index]) * max(
+            0.0, float(thrust_scale)
+        )
+        position = FRD_TO_FLU @ np.asarray(
+            rotor.get("wrench_position_m", rotor["position_m"]), dtype=float
+        )
         axis = FRD_TO_FLU @ np.asarray(rotor["axis_body"], dtype=float)
         axis /= np.linalg.norm(axis)
         force = thrust * axis
@@ -128,6 +133,116 @@ def direct_wrench_flu(
     return total_force, total_torque
 
 
+def environment_wrench_world(
+    config: dict,
+    rotation_flu_to_world: np.ndarray,
+    linear_velocity_body_flu: np.ndarray,
+    angular_velocity_body_flu: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return estimated air-drag force/torque in world ENU.
+
+    The odometry twist used by this model is expressed in the child link's FLU
+    frame.  Wind is configured in world ENU and transformed into the body before
+    applying an axis-wise quadratic drag model.  Coefficients are Cd*A (m^2),
+    deliberately exposed in JSON because the current CAD has no aerodynamic
+    identification data.
+    """
+    model = config.get("environment_dynamics")
+    if not isinstance(model, dict):
+        return np.zeros(3), np.zeros(3)
+    rotation = np.asarray(rotation_flu_to_world, dtype=float)
+    velocity_body = np.asarray(linear_velocity_body_flu, dtype=float)
+    angular_body = np.asarray(angular_velocity_body_flu, dtype=float)
+    wind_world = np.asarray(
+        model.get("wind_velocity_world_enu_m_s", [0.0, 0.0, 0.0]), dtype=float
+    )
+    relative_body = velocity_body - rotation.T @ wind_world
+    rho = float(model.get("air_density_kg_m3", 1.225))
+    cd_area = np.asarray(
+        model.get("quadratic_drag_area_cd_m2_body_flu", [0.0, 0.0, 0.0]),
+        dtype=float,
+    )
+    damping = np.asarray(
+        model.get("angular_damping_n_m_per_rad_s_body_flu", [0.0, 0.0, 0.0]),
+        dtype=float,
+    )
+    drag_body = -0.5 * rho * cd_area * np.abs(relative_body) * relative_body
+    damping_torque_body = -damping * angular_body
+    return rotation @ drag_body, rotation @ damping_torque_body
+
+
+def ground_effect_thrust_scale(config: dict, height_m: float) -> float:
+    """Bounded empirical thrust multiplier near a flat ground plane."""
+    environment = config.get("environment_dynamics")
+    effect = environment.get("ground_effect") if isinstance(environment, dict) else None
+    if not isinstance(effect, dict) or not bool(effect.get("enabled", False)):
+        return 1.0
+    gain = max(0.0, float(effect.get("maximum_thrust_gain", 0.0)))
+    decay = max(1e-6, float(effect.get("decay_height_m", 0.25)))
+    return 1.0 + gain * np.exp(-max(0.0, float(height_m)) / decay)
+
+
+def command_to_current_a(config: dict, normalized_command: float) -> float:
+    """Interpolate one motor's measured 14.8 V current curve."""
+    model = config.get("static_current_model")
+    points = model.get("points", []) if isinstance(model, dict) else []
+    if not points:
+        return 0.0
+    throttle = np.asarray(
+        [float(point["throttle_percent"]) for point in points], dtype=float
+    )
+    current = np.asarray([float(point["current_a"]) for point in points], dtype=float)
+    order = np.argsort(throttle)
+    return max(
+        0.0,
+        float(np.interp(np.clip(normalized_command, 0.0, 1.0) * 100.0,
+                        throttle[order], current[order])),
+    )
+
+
+def battery_step(
+    config: dict, normalized_commands: np.ndarray, state_of_charge: float, dt_s: float
+) -> tuple[float, float, float, float]:
+    """Advance a simple Thevenin battery and return SOC, voltage, scale, amps."""
+    model = config.get("battery_dynamics")
+    if not isinstance(model, dict) or not bool(model.get("enabled", False)):
+        reference = float(model.get("reference_voltage_v", 14.8)) if isinstance(model, dict) else 14.8
+        return float(np.clip(state_of_charge, 0.0, 1.0)), reference, 1.0, 0.0
+    commands = np.clip(np.asarray(normalized_commands, dtype=float), 0.0, 1.0)
+    total_current = sum(command_to_current_a(config, value) for value in commands)
+    capacity_ah = max(1e-9, float(model.get("capacity_ah", 1.0)))
+    soc = float(np.clip(
+        state_of_charge - total_current * max(0.0, float(dt_s)) / (3600.0 * capacity_ah),
+        0.0, 1.0,
+    ))
+    full = float(model.get("full_voltage_v", 16.8))
+    empty = float(model.get("empty_voltage_v", 13.2))
+    open_circuit = empty + soc * (full - empty)
+    resistance = max(0.0, float(model.get("pack_internal_resistance_ohm", 0.0)))
+    minimum = float(model.get("minimum_loaded_voltage_v", 0.0))
+    loaded = max(minimum, open_circuit - total_current * resistance)
+    reference = max(1e-9, float(model.get("reference_voltage_v", 14.8)))
+    exponent = float(model.get("thrust_voltage_exponent", 2.0))
+    # The static table is already capped at the user's 1.2 kgf rating.  Voltage
+    # sag may reduce that curve, but a battery model must not lift the cap.
+    thrust_scale = min(1.0, max(0.0, (loaded / reference) ** exponent))
+    return soc, loaded, thrust_scale, total_current
+
+
+def delayed_command_step(
+    pending_commands,
+    current_command: np.ndarray,
+    simulation_time_s: float,
+    delay_s: float,
+) -> np.ndarray:
+    """Release timestamped actuator commands after a simulation-time delay."""
+    released = np.asarray(current_command, dtype=float)
+    release_before = float(simulation_time_s) - max(0.0, float(delay_s))
+    while pending_commands and float(pending_commands[0][0]) <= release_before:
+        _, released = pending_commands.popleft()
+    return np.asarray(released, dtype=float).copy()
+
+
 class DirectMotorModel(Node):
     def __init__(
         self,
@@ -136,6 +251,7 @@ class DirectMotorModel(Node):
         command_topic: str,
         velocity_command_scale: float,
         reaction_moment_ratio_m: float | None = None,
+        wind_velocity_world_enu_m_s: list[float] | None = None,
     ):
         super().__init__("my_drone_gazebo_direct_motor_model")
         self.config = json.loads(config_path.read_text(encoding="utf-8"))
@@ -144,13 +260,34 @@ class DirectMotorModel(Node):
             self.get_logger().info(
                 f"reaction moment trial enabled: Q/T={reaction_moment_ratio_m:.6g} m"
             )
+        if (
+            wind_velocity_world_enu_m_s is not None
+            and np.all(np.isfinite(wind_velocity_world_enu_m_s))
+        ):
+            environment = self.config.setdefault("environment_dynamics", {})
+            environment["wind_velocity_world_enu_m_s"] = [
+                float(value) for value in wind_velocity_world_enu_m_s
+            ]
+            self.get_logger().info(
+                "wind override ENU m/s: "
+                f"{environment['wind_velocity_world_enu_m_s']}"
+            )
         self.entity_name = entity_name
         self.velocity_command_scale = velocity_command_scale
         self.rotation_flu_to_world: np.ndarray | None = None
+        self.position_world_z = 0.0
+        self.linear_velocity_body_flu = np.zeros(3)
+        self.angular_velocity_body_flu = np.zeros(3)
         self.target_commands = np.zeros(8)
+        self.received_commands = np.zeros(8)
+        self.pending_commands = deque(maxlen=2500)
         self.filtered_commands = np.zeros(8)
         self.last_simulation_time_s: float | None = None
         self.logged_first_nonzero_command = False
+        self.battery_state_of_charge = 1.0
+        self.battery_loaded_voltage_v = 14.8
+        self.battery_thrust_scale = 1.0
+        self.battery_current_a = 0.0
         self.publisher = self.create_publisher(
             EntityWrench, "/world/flight_world/wrench", 10
         )
@@ -178,8 +315,28 @@ class DirectMotorModel(Node):
             # Large jumps mean a reset/pause rather than a physical motor step.
             dt_s = min(max(simulation_time_s - self.last_simulation_time_s, 0.0), 0.1)
         self.last_simulation_time_s = simulation_time_s
+        delay_s = float(
+            self.config.get("actuator_transport_delay_s", 0.0)
+        )
+        self.target_commands = delayed_command_step(
+            self.pending_commands,
+            self.target_commands,
+            simulation_time_s,
+            delay_s,
+        )
         self.filtered_commands = first_order_motor_step(
             self.filtered_commands, self.target_commands, dt_s, self.config
+        )
+        (
+            self.battery_state_of_charge,
+            self.battery_loaded_voltage_v,
+            self.battery_thrust_scale,
+            self.battery_current_a,
+        ) = battery_step(
+            self.config,
+            self.filtered_commands,
+            self.battery_state_of_charge,
+            dt_s,
         )
         quaternion = np.array(
             [
@@ -188,6 +345,15 @@ class DirectMotorModel(Node):
                 message.pose.pose.orientation.z,
                 message.pose.pose.orientation.w,
             ]
+        )
+        self.position_world_z = float(message.pose.pose.position.z)
+        self.linear_velocity_body_flu = np.array(
+            [message.twist.twist.linear.x, message.twist.twist.linear.y,
+             message.twist.twist.linear.z], dtype=float
+        )
+        self.angular_velocity_body_flu = np.array(
+            [message.twist.twist.angular.x, message.twist.twist.angular.y,
+             message.twist.twist.angular.z], dtype=float
         )
         if np.all(np.isfinite(quaternion)) and np.linalg.norm(quaternion) > 1e-9:
             self.rotation_flu_to_world = quaternion_matrix_xyzw(quaternion)
@@ -201,14 +367,18 @@ class DirectMotorModel(Node):
     def on_command(self, message) -> None:
         values = np.asarray(message.normalized, dtype=float)
         if values.size >= 8 and np.all(np.isfinite(values[:8])):
-            self.target_commands = np.clip(values[:8], 0.0, 1.0)
+            self.received_commands = np.clip(values[:8], 0.0, 1.0)
+            command_time = self.last_simulation_time_s or 0.0
+            self.pending_commands.append(
+                (command_time, self.received_commands.copy())
+            )
             if (
                 not self.logged_first_nonzero_command
-                and np.max(self.target_commands) > 1e-6
+                and np.max(self.received_commands) > 1e-6
             ):
                 self.get_logger().info(
                     "first nonzero normalized motor command: "
-                    f"{self.target_commands.tolist()}"
+                    f"{self.received_commands.tolist()}"
                 )
                 self.logged_first_nonzero_command = True
             return
@@ -217,33 +387,47 @@ class DirectMotorModel(Node):
         # no RPM interpretation or quadratic motorConstant is introduced.
         values = np.asarray(message.velocity, dtype=float)
         if values.size >= 8 and np.all(np.isfinite(values[:8])):
-            self.target_commands = np.clip(
+            self.received_commands = np.clip(
                 values[:8] / self.velocity_command_scale, 0.0, 1.0
+            )
+            command_time = self.last_simulation_time_s or 0.0
+            self.pending_commands.append(
+                (command_time, self.received_commands.copy())
             )
             if (
                 not self.logged_first_nonzero_command
-                and np.max(self.target_commands) > 1e-6
+                and np.max(self.received_commands) > 1e-6
             ):
                 self.get_logger().info(
                     "first nonzero velocity motor command: "
                     f"raw={values[:8].tolist()}, "
-                    f"normalized={self.target_commands.tolist()}"
+                    f"normalized={self.received_commands.tolist()}"
                 )
                 self.logged_first_nonzero_command = True
 
     def publish_wrench(self) -> None:
         if self.rotation_flu_to_world is None:
             return
+        thrust_scale = (
+            ground_effect_thrust_scale(self.config, self.position_world_z)
+            * self.battery_thrust_scale
+        )
         force_body, torque_body = direct_wrench_flu(
-            self.config, self.filtered_commands
+            self.config, self.filtered_commands, thrust_scale=thrust_scale
         )
         rotation = self.rotation_flu_to_world
         message = EntityWrench()
         message.header.stamp = self.get_clock().now().to_msg()
         message.entity.name = self.entity_name
         message.entity.type = Entity.LINK
-        force_world = rotation @ force_body
-        torque_world = rotation @ torque_body
+        environment_force_world, environment_torque_world = environment_wrench_world(
+            self.config,
+            rotation,
+            self.linear_velocity_body_flu,
+            self.angular_velocity_body_flu,
+        )
+        force_world = rotation @ force_body + environment_force_world
+        torque_world = rotation @ torque_body + environment_torque_world
         message.wrench.force.x = float(force_world[0])
         message.wrench.force.y = float(force_world[1])
         message.wrench.force.z = float(force_world[2])
@@ -268,6 +452,7 @@ def main() -> None:
     )
     parser.add_argument("--velocity-command-scale", type=float, default=1000.0)
     parser.add_argument("--reaction-moment-ratio-m", type=float, default=-1.0)
+    parser.add_argument("--wind-enu", type=float, nargs=3, default=None)
     parsed, ros_arguments = parser.parse_known_args()
     if rclpy is None:
         raise SystemExit("ROS 2 Python packages are not available")
@@ -278,6 +463,7 @@ def main() -> None:
         parsed.command_topic,
         parsed.velocity_command_scale,
         parsed.reaction_moment_ratio_m,
+        parsed.wind_enu,
     )
     try:
         rclpy.spin(node)

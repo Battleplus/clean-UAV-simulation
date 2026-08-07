@@ -1,4 +1,4 @@
-"""Generate PX4 airframe 4015 from the authoritative CAD rotor config."""
+"""Generate a PX4 airframe from the authoritative CAD rotor config."""
 
 from __future__ import annotations
 
@@ -13,13 +13,13 @@ from drone_arm_sim.allocation_analysis import allocation_matrix
 
 HEADER = """#!/bin/sh
 #
-# @name Gazebo my_drone_v2 CAD canted octorotor
+# @name Gazebo my_drone CAD canted octorotor
 #
 # @type Octocopter
 # @class Copter
 #
-# Generated from config/my_drone_v2_cad.json. Output 0..1000 is a
-# dimensionless linear-thrust command, not RPM.
+# Generated from the selected CAD flight configuration. Output 0..1000 is a
+# normalized command mapped through the static-thrust table in Gazebo.
 
 . ${R}etc/init.d/rc.mc_defaults
 
@@ -40,7 +40,7 @@ def generate(config_path: Path, output: Path) -> None:
     mass = float(config["estimated_all_up_mass_kg"])
     desired = np.array([0.0, 0.0, -mass * 9.80665, 0.0, 0.0, 0.0])
     hover = np.linalg.pinv(matrix) @ desired
-    hover_command = float(np.mean(hover) / config["maximum_thrust_n"])
+    hover_command = _thrust_to_command(config, float(np.mean(hover)))
     reaction_moment_ratio = config.get("reaction_moment_ratio_m")
     if reaction_moment_ratio is None:
         reaction_moment_ratio = 0.0
@@ -84,6 +84,26 @@ def generate(config_path: Path, output: Path) -> None:
     output.write_text("\n".join(lines), encoding="utf-8", newline="\n")
     print(output)
     print(f"hover command={hover_command:.6f}")
+
+
+def _thrust_to_command(config: dict, thrust_n: float) -> float:
+    """Invert the configured static thrust curve for a normalized command."""
+    model = config.get("static_thrust_model")
+    points = model.get("points", []) if isinstance(model, dict) else []
+    if not points:
+        maximum = float(config.get("maximum_thrust_n", 0.0))
+        return float(np.clip(thrust_n / maximum, 0.0, 1.0)) if maximum > 0.0 else 0.0
+    throttle = np.asarray([float(point["throttle_percent"]) for point in points])
+    thrust = np.asarray([
+        float(point.get("rated_capped_thrust_n", point["measured_thrust_n"]))
+        for point in points
+    ])
+    order = np.argsort(thrust, kind="stable")
+    thrust = thrust[order]
+    throttle = throttle[order]
+    unique_thrust, unique_indices = np.unique(thrust, return_index=True)
+    throttle = throttle[unique_indices]
+    return float(np.clip(np.interp(thrust_n, unique_thrust, throttle) / 100.0, 0.0, 1.0))
 
 
 def main() -> None:

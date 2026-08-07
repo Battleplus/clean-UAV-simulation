@@ -43,7 +43,23 @@ def main() -> int:
     arm_process = None
     arm_label = None
     arm_results = {}
-    arm_schedule = [(14.0, "work_a"), (22.0, "work_b"), (30.0, "retracted")]
+    profile = os.environ.get("ARM_FLIGHT_PROFILE", "safe")
+    if profile == "full_a":
+        # Diagnostic only: full work_a at a deliberately slow 30 s trajectory.
+        arm_schedule = [(14.0, "work_a"), (74.0, "retracted")]
+        arm_duration = "30"
+        land_after_s = 120.0
+    else:
+        # The 7.735 kg configuration has only a small thrust margin.  Use the
+        # documented slow-work profile so arm acceleration is a measured
+        # disturbance rather than an unrealistic step impulse.
+        arm_schedule = [
+            (14.0, "flight_work_a"),
+            (34.0, "flight_work_b"),
+            (54.0, "retracted"),
+        ]
+        arm_duration = "8"
+        land_after_s = 72.0
     try:
         while time.monotonic() - start < args.timeout:
             if select.select([master], [], [], 0.1)[0]:
@@ -88,7 +104,7 @@ def main() -> int:
                         arm_process = subprocess.Popen(
                             [
                                 "ros2", "run", "drone_arm_sim", "arm_preset_control",
-                                "--preset", preset, "--duration", "3", "--wait",
+                                "--preset", preset, "--duration", arm_duration, "--wait",
                                 "--tolerance", "0.06",
                             ],
                             stdout=subprocess.PIPE,
@@ -98,7 +114,7 @@ def main() -> int:
                         sent.add(preset)
                         print(f"ARM_FLIGHT_SENT_{preset}", flush=True)
                         break
-                if elapsed >= 42.0 and "LAND" not in sent:
+                if elapsed >= land_after_s and "LAND" not in sent:
                     os.write(master, b"l")
                     sent.add("LAND")
                     print("ARM_FLIGHT_SENT_LAND", flush=True)
@@ -125,7 +141,11 @@ def main() -> int:
     ):
         if item not in output:
             missing.append(item)
-    for preset in ("work_a", "work_b", "retracted"):
+    required_presets = (
+        ("work_a", "retracted") if profile == "full_a"
+        else ("flight_work_a", "flight_work_b", "retracted")
+    )
+    for preset in required_presets:
         result = arm_results.get(preset)
         if result is None or result[0] != 0 or "ARM_PRESET_REACHED" not in result[1]:
             missing.append(f"arm:{preset}")
@@ -137,7 +157,7 @@ def main() -> int:
     if offboard_time is not None:
         arm_window = [
             state for state in states
-            if 12.0 <= state[0] - offboard_time <= 38.0
+            if 12.0 <= state[0] - offboard_time <= 70.0
         ]
     max_horizontal_drift = float("inf")
     altitude_span = float("inf")

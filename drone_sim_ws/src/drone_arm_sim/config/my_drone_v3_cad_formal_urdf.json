@@ -1,0 +1,61 @@
+{
+  "source_urdf": "/mnt/e/清洁无人机/drone_sim_ws/src/drone_arm_sim/urdf/my_drone_v2/my_drone_cad_dynamic.urdf",
+  "physical_evidence": "/mnt/e/清洁无人机/drone_sim_ws/analysis/cad_direct/cad_mass_properties.json",
+  "physical_config": "/mnt/e/清洁无人机/drone_sim_ws/src/drone_arm_sim/config/my_drone_v3_cad_physical.json",
+  "mass_override_source": "user fixed the temporary whole-aircraft mass at 7.735 kg on 2026-08-07",
+  "mass_distribution_method": "all link inertials scaled from CAD mesh-volume distribution; base link closed to exact aggregate CAD mass/COM/inertia",
+  "source_mass_kg": 4.1837327666,
+  "scale": 1.8488274542176395,
+  "formal_mass_kg": 7.7350000000055,
+  "formal_com_ros_flu_m": [
+    -0.004000187800251915,
+    -0.0006726565183063856,
+    -0.2044814450614173
+  ],
+  "formal_inertia_at_com_ros_flu_kg_m2": [
+    [
+      0.40206406205821477,
+      0.0005315545702028711,
+      0.005757124098861895
+    ],
+    [
+      0.0005315545702028711,
+      0.40309922493152567,
+      -0.00026014637748905493
+    ],
+    [
+      0.005757124098861895,
+      -0.00026014637748905493,
+      0.4119238060919126
+    ]
+  ],
+  "base_mass_kg": 2.509018705,
+  "base_com_ros_flu_m": [
+    -0.019250595800691037,
+    0.0034627229707656355,
+    -0.4351409790654675
+  ],
+  "base_inertia_at_com_ros_flu_kg_m2": [
+    [
+      0.07284832696128027,
+      -0.0010039758803715199,
+      0.012354392520185034
+    ],
+    [
+      -0.0010039758803715199,
+      0.05923078427015738,
+      -0.001626420050865493
+    ],
+    [
+      0.012354392520185034,
+      -0.001626420050865493,
+      0.2664761603511628
+    ]
+  ],
+  "base_inertia_eigenvalues": [
+    0.05915452941021813,
+    0.07212581808420743,
+    0.26727492408817494
+  ],
+  "flight_status_at_1p2_kgf_per_motor": "FEASIBLE_WITH_OPPOSITE_PITCH_HYPOTHESIS"
+}

@@ -27,6 +27,10 @@ setup(
             glob("urdf/my_drone_v2/*.urdf"),
         ),
         (
+            os.path.join("share", package_name, "urdf", "my_drone_v3"),
+            glob("urdf/my_drone_v3/*.urdf"),
+        ),
+        (
             os.path.join(
                 "share", package_name, "meshes", "my_drone_v2", "visual"
             ),
@@ -47,11 +51,13 @@ setup(
         "console_scripts": [
             "allocation_analysis = drone_arm_sim.allocation_analysis:main",
             "arm_preset_control = drone_arm_sim.arm_preset_control:main",
+            "build_formal_cad_urdf = drone_arm_sim.build_formal_cad_urdf:main",
             "floating_base_reaction = drone_arm_sim.floating_base_reaction:main",
             "flight_control_demo = drone_arm_sim.flight_control_demo:main",
             "gazebo_direct_motor_model = drone_arm_sim.gazebo_direct_motor_model:main",
             "gazebo_motor_controller = drone_arm_sim.gazebo_motor_controller:main",
             "gazebo_rotor_identification = drone_arm_sim.gazebo_rotor_identification:main",
+            "gazebo_sensor_delay = drone_arm_sim.gazebo_sensor_delay:main",
             "gazebo_wrench_controller = drone_arm_sim.gazebo_wrench_controller:main",
             "hover_acceptance = drone_arm_sim.hover_acceptance:main",
             "inverse_kinematics = drone_arm_sim.inverse_kinematics:main",

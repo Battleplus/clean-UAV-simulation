@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections import deque
 from pathlib import Path
 import re
 import unittest
@@ -16,12 +17,19 @@ from drone_arm_sim.floating_base_reaction import reaction_twist
 from drone_arm_sim.gazebo_wrench_controller import compute_wrench_enu
 from drone_arm_sim.gazebo_direct_motor_model import (
     FRD_TO_FLU,
+    battery_step,
+    command_to_current_a,
     command_to_thrust_n,
     direct_wrench_flu,
+    delayed_command_step,
+    environment_wrench_world,
     first_order_motor_step,
+    ground_effect_thrust_scale,
 )
 from drone_arm_sim.inverse_kinematics import solve_ik
+from drone_arm_sim.gazebo_sensor_delay import message_stamp_seconds
 from drone_arm_sim.model_analysis import UrdfModel, _rpy_matrix
+from scripts.generate_cad_px4_airframe import _thrust_to_command
 
 
 PACKAGE = Path(__file__).resolve().parents[1]
@@ -39,6 +47,14 @@ MEASURED_PHYSICAL_URDF = (
 CAD_V2_URDF = PACKAGE / "urdf" / "my_drone_v2" / "my_drone_cad_dynamic.urdf"
 CAD_V2_CONFIG_PATH = PACKAGE / "config" / "my_drone_v2_cad.json"
 CAD_V3_CONFIG_PATH = PACKAGE / "config" / "my_drone_v3_cad_physical.json"
+CAD_V3_FORMAL_URDF = PACKAGE / "urdf" / "my_drone_v3" / "my_drone_cad_formal_dynamic.urdf"
+CAD_V3_FORMAL_REPORT = PACKAGE / "config" / "my_drone_v3_cad_formal_urdf.json"
+CAD_V3_FLIGHT_CONFIG_PATH = (
+    PACKAGE / "config" / "my_drone_v3_cad_7p735_flight.json"
+)
+CAD_V3_AIRFRAME_PATH = (
+    WORKSPACE / "px4" / "airframes" / "4026_gz_my_drone_octorotor_7p735"
+)
 CAD_MANIFEST_PATH = WORKSPACE / "analysis" / "cad_direct" / "assembly_manifest.json"
 EXTRACTED_MOUNTS_PATH = (
     WORKSPACE / "analysis" / "motor_geometry" / "extracted_mounts.json"
@@ -100,6 +116,90 @@ class CoreRegressionTest(unittest.TestCase):
             first_order_motor_step(np.zeros(2), np.ones(2), 1.0, {}),
             np.ones(2),
         )
+
+    def test_environment_drag_opposes_relative_airflow(self):
+        config = {"environment_dynamics": {
+            "air_density_kg_m3": 1.2,
+            "quadratic_drag_area_cd_m2_body_flu": [0.1, 0.2, 0.3],
+            "angular_damping_n_m_per_rad_s_body_flu": [0.01, 0.02, 0.03],
+            "wind_velocity_world_enu_m_s": [1.0, 0.0, 0.0],
+        }}
+        force, torque = environment_wrench_world(
+            config, np.eye(3), np.array([3.0, -2.0, 0.0]),
+            np.array([1.0, -2.0, 0.5]),
+        )
+        np.testing.assert_allclose(force, [-0.24, 0.48, 0.0])
+        np.testing.assert_allclose(torque, [-0.01, 0.04, -0.015])
+        zero_force, zero_torque = environment_wrench_world(
+            {}, np.eye(3), np.ones(3), np.ones(3)
+        )
+        np.testing.assert_allclose(zero_force, np.zeros(3))
+        np.testing.assert_allclose(zero_torque, np.zeros(3))
+
+    def test_ground_effect_is_bounded_and_decays_with_height(self):
+        config = {"environment_dynamics": {"ground_effect": {
+            "enabled": True, "maximum_thrust_gain": 0.08,
+            "decay_height_m": 0.25,
+        }}}
+        self.assertAlmostEqual(ground_effect_thrust_scale(config, 0.0), 1.08)
+        self.assertGreater(ground_effect_thrust_scale(config, 0.25), 1.0)
+        self.assertLess(ground_effect_thrust_scale(config, 0.25), 1.08)
+        self.assertAlmostEqual(ground_effect_thrust_scale({}, 0.0), 1.0)
+
+    def test_battery_sag_uses_measured_current_and_respects_thrust_cap(self):
+        config = {
+            "static_current_model": {"points": [
+                {"throttle_percent": 0, "current_a": 0.0},
+                {"throttle_percent": 50, "current_a": 10.0},
+                {"throttle_percent": 100, "current_a": 30.0},
+            ]},
+            "battery_dynamics": {
+                "enabled": True, "reference_voltage_v": 14.8,
+                "full_voltage_v": 14.8, "empty_voltage_v": 13.2,
+                "minimum_loaded_voltage_v": 12.0, "capacity_ah": 10.0,
+                "pack_internal_resistance_ohm": 0.01,
+                "thrust_voltage_exponent": 2.0,
+            },
+        }
+        self.assertAlmostEqual(command_to_current_a(config, 0.25), 5.0)
+        soc, voltage, scale, current = battery_step(
+            config, np.full(8, 0.5), 1.0, 1.0
+        )
+        self.assertAlmostEqual(current, 80.0)
+        self.assertLess(soc, 1.0)
+        self.assertLess(voltage, 14.8)
+        self.assertGreater(scale, 0.0)
+        self.assertLess(scale, 1.0)
+        _, _, disabled_scale, disabled_current = battery_step(
+            {}, np.ones(8), 1.0, 1.0
+        )
+        self.assertEqual(disabled_scale, 1.0)
+        self.assertEqual(disabled_current, 0.0)
+
+    def test_actuator_transport_delay_uses_simulation_time(self):
+        pending = deque([
+            (1.000, np.full(8, 0.2)),
+            (1.004, np.full(8, 0.6)),
+        ])
+        current = np.zeros(8)
+        current = delayed_command_step(pending, current, 1.004, 0.008)
+        np.testing.assert_allclose(current, np.zeros(8))
+        current = delayed_command_step(pending, current, 1.008, 0.008)
+        np.testing.assert_allclose(current, np.full(8, 0.2))
+        current = delayed_command_step(pending, current, 1.012, 0.008)
+        np.testing.assert_allclose(current, np.full(8, 0.6))
+        self.assertFalse(pending)
+
+    def test_gazebo_sensor_delay_uses_message_simulation_stamp(self):
+        class Stamp:
+            sec = 12
+            nsec = 345000000
+        class Header:
+            stamp = Stamp()
+        class Message:
+            header = Header()
+        self.assertAlmostEqual(message_stamp_seconds(Message()), 12.345)
+        self.assertAlmostEqual(message_stamp_seconds(object(), 7.5), 7.5)
 
     def test_reachable_inverse_kinematics(self):
         source = {
@@ -364,6 +464,91 @@ class CoreRegressionTest(unittest.TestCase):
                 self.assertAlmostEqual(float(match.group(1)), expected, places=6)
         for motor in range(1, 9):
             self.assertRegex(airframe, rf"SIM_GZ_EC_MAX{motor}\s+1000\b")
+
+    def test_formal_cad_urdf_closes_aggregate_mass_com_and_inertia(self):
+        report = json.loads(CAD_V3_FORMAL_REPORT.read_text(encoding="utf-8"))
+        physical = json.loads(
+            (WORKSPACE / "analysis" / "cad_direct" / "cad_mass_properties.json")
+            .read_text(encoding="utf-8")
+        )
+        active_physical = json.loads(CAD_V3_CONFIG_PATH.read_text(encoding="utf-8"))
+        model = UrdfModel(CAD_V3_FORMAL_URDF)
+        mass, center, inertia = model.mass_properties({})
+        self.assertAlmostEqual(mass, active_physical["estimated_mass_kg"], places=7)
+        self.assertAlmostEqual(
+            active_physical["cad_density_estimated_mass_kg"],
+            physical["estimated_total_mass_kg"],
+            places=7,
+        )
+        np.testing.assert_allclose(center, report["formal_com_ros_flu_m"], atol=1e-8)
+        np.testing.assert_allclose(
+            inertia,
+            np.asarray(active_physical["estimated_ros_flu_inertia_at_com_kg_m2"]),
+            atol=1e-8,
+        )
+        self.assertGreater(float(np.min(np.linalg.eigvalsh(inertia))), 0.0)
+        self.assertEqual(
+            report["flight_status_at_1p2_kgf_per_motor"],
+            "FEASIBLE_WITH_OPPOSITE_PITCH_HYPOTHESIS",
+        )
+
+    def test_7p735_flight_config_preserves_cad_evidence_and_hover_margin(self):
+        config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
+        physical = json.loads(CAD_V3_CONFIG_PATH.read_text(encoding="utf-8"))
+        source = json.loads(
+            (WORKSPACE / "analysis" / "cad_direct" / "cad_mass_properties.json")
+            .read_text(encoding="utf-8")
+        )
+        self.assertAlmostEqual(config["estimated_all_up_mass_kg"], 7.735)
+        self.assertAlmostEqual(
+            physical["cad_density_estimated_mass_kg"],
+            source["estimated_total_mass_kg"],
+        )
+        self.assertAlmostEqual(
+            physical["inertia_scaling_from_cad_density_estimate"],
+            7.735 / source["estimated_total_mass_kg"],
+        )
+        self.assertEqual(
+            config["flight_feasibility_nonreversible"],
+            "FEASIBLE_WITH_OPPOSITE_PITCH_HYPOTHESIS",
+        )
+        self.assertLessEqual(
+            max(config["bounded_hover_thrust_n"]), config["maximum_thrust_n"]
+        )
+        self.assertLess(config["bounded_hover_residual_norm"], 1e-10)
+        self.assertFalse(config["battery_dynamics"]["enabled"])
+
+    def test_7p735_px4_hover_uses_static_thrust_inverse(self):
+        config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
+        mean_hover_thrust = float(np.mean(config["bounded_hover_thrust_n"]))
+        hover_command = _thrust_to_command(config, mean_hover_thrust)
+        self.assertAlmostEqual(hover_command, 0.873727, places=6)
+        self.assertNotAlmostEqual(
+            hover_command,
+            mean_hover_thrust / config["maximum_thrust_n"],
+            places=2,
+        )
+        airframe = CAD_V3_AIRFRAME_PATH.read_text(encoding="utf-8")
+        match = re.search(r"MPC_THR_HOVER\s+([-+0-9.eE]+)", airframe)
+        self.assertIsNotNone(match)
+        self.assertAlmostEqual(float(match.group(1)), hover_command, places=4)
+
+    def test_7p735_allocation_and_wrench_reference_points_are_distinct(self):
+        config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
+        matrix = allocation_matrix(config)
+        self.assertEqual(int(np.linalg.matrix_rank(matrix)), 6)
+        self.assertTrue(
+            any(
+                not np.allclose(rotor["position_m"], rotor["wrench_position_m"])
+                for rotor in config["rotors"]
+            )
+        )
+        expected_frd = matrix @ np.asarray(config["bounded_hover_thrust_n"])
+        np.testing.assert_allclose(
+            expected_frd,
+            [0.0, 0.0, -7.735 * 9.80665, 0.0, 0.0, 0.0],
+            atol=1e-9,
+        )
 
 
 if __name__ == "__main__":
