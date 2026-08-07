@@ -10,6 +10,7 @@ mkdir -p "${runtime_dir}"
 # same actuator topic and apply thrust twice to one Gazebo entity.
 if [[ "${CLEAN_STALE_RUNTIME:-1}" == "1" ]]; then
   pkill -x gazebo_direct_m 2>/dev/null || true
+  pkill -x gazebo_sensor_d 2>/dev/null || true
   pkill -x parameter_bridg 2>/dev/null || true
   pkill -x robot_state_pub 2>/dev/null || true
   pkill -x px4 2>/dev/null || true
@@ -56,6 +57,13 @@ setsid ros2 launch drone_arm_sim cad_direct_thrust.launch.py \
   reaction_moment_ratio_m:="${REACTION_MOMENT_RATIO_M:--1}" \
   wind_enu_x:="${WIND_ENU_X:-nan}" wind_enu_y:="${WIND_ENU_Y:-nan}" \
   wind_enu_z:="${WIND_ENU_Z:-nan}" \
+  battery_dynamics_enabled:="${BATTERY_DYNAMICS_ENABLED:-false}" \
+  battery_internal_resistance_ohm:="${BATTERY_INTERNAL_RESISTANCE_OHM:-nan}" \
+  battery_capacity_ah:="${BATTERY_CAPACITY_AH:-nan}" \
+  battery_full_voltage_v:="${BATTERY_FULL_VOLTAGE_V:-nan}" \
+  battery_empty_voltage_v:="${BATTERY_EMPTY_VOLTAGE_V:-nan}" \
+  battery_minimum_loaded_voltage_v:="${BATTERY_MINIMUM_LOADED_VOLTAGE_V:-nan}" \
+  battery_thrust_voltage_exponent:="${BATTERY_THRUST_VOLTAGE_EXPONENT:-nan}" \
   config_file:="${CONFIG_FILE:-${default_config_file}}" \
   >"${gazebo_log}" 2>&1 &
 echo $! >"${runtime_dir}/gazebo.pid"
@@ -80,7 +88,7 @@ for _ in $(seq 1 90); do
       # trajectory is received.  Freeze the documented CAD retracted pose
       # before any flight controller is allowed to arm.
       ros2 run drone_arm_sim arm_preset_control \
-        --preset retracted --duration 6 --wait --tolerance 0.20 \
+        --preset retracted --duration 8 --wait --tolerance 0.08 \
         >"${arm_init_log}" 2>&1
     fi
     echo "ROS2_DDS_NOARM_READY"

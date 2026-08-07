@@ -11,9 +11,11 @@ import xml.etree.ElementTree as ET
 
 import numpy as np
 
-from drone_arm_sim.allocation_analysis import allocation_matrix
+from drone_arm_sim.allocation_analysis import allocation_matrix, allocate_bounded_wrench
 from drone_arm_sim.flight_control_demo import simulate
 from drone_arm_sim.floating_base_reaction import reaction_twist
+from drone_arm_sim.coupled_dynamics import CoupledArmDynamics, JOINT_NAMES, Payload
+from drone_arm_sim.arm_coupling_monitor import bounded_compensation_ned
 from drone_arm_sim.gazebo_wrench_controller import compute_wrench_enu
 from drone_arm_sim.gazebo_direct_motor_model import (
     FRD_TO_FLU,
@@ -25,10 +27,13 @@ from drone_arm_sim.gazebo_direct_motor_model import (
     environment_wrench_world,
     first_order_motor_step,
     ground_effect_thrust_scale,
+    motor_wrench_frd,
+    per_motor_wrench_frd,
 )
 from drone_arm_sim.inverse_kinematics import solve_ik
 from drone_arm_sim.gazebo_sensor_delay import message_stamp_seconds
 from drone_arm_sim.model_analysis import UrdfModel, _rpy_matrix
+from drone_arm_sim.rl_env import make_default_env
 from scripts.generate_cad_px4_airframe import _thrust_to_command
 
 
@@ -55,6 +60,7 @@ CAD_V3_FLIGHT_CONFIG_PATH = (
 CAD_V3_AIRFRAME_PATH = (
     WORKSPACE / "px4" / "airframes" / "4026_gz_my_drone_octorotor_7p735"
 )
+SO101_MOTION_REFERENCE_PATH = PACKAGE / "config" / "so101_motion_reference.json"
 CAD_MANIFEST_PATH = WORKSPACE / "analysis" / "cad_direct" / "assembly_manifest.json"
 EXTRACTED_MOUNTS_PATH = (
     WORKSPACE / "analysis" / "motor_geometry" / "extracted_mounts.json"
@@ -549,6 +555,119 @@ class CoreRegressionTest(unittest.TestCase):
             [0.0, 0.0, -7.735 * 9.80665, 0.0, 0.0, 0.0],
             atol=1e-9,
         )
+
+    def test_7p735_motor_dynamics_table_is_explicit_and_rpm_honest(self):
+        config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
+        table = config["motor_dynamics_table"]
+        self.assertEqual(len(table["motors"]), 8)
+        self.assertEqual(table["input"], "normalized_command in [0,1]; no RPM telemetry is available")
+        self.assertIsNone(table["motors"][0]["thrust_coefficient_kf"])
+        self.assertIsNone(table["motors"][0]["reaction_torque_coefficient_kq"])
+        for item in table["motors"]:
+            self.assertEqual(item["px4_output"], item["motor"] - 1)
+            self.assertAlmostEqual(item["max_thrust_n"], 11.76798)
+            self.assertAlmostEqual(item["rise_time_constant_s"], 0.035)
+            self.assertAlmostEqual(item["fall_time_constant_s"], 0.035)
+
+    def test_each_motor_command_produces_force_and_torque(self):
+        config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
+        commands = np.array([0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85])
+        records = per_motor_wrench_frd(config, commands)
+        self.assertEqual(len(records), 8)
+        thrust = np.array([record["thrust_n"] for record in records])
+        wrench = np.concatenate((
+            sum((record["force_frd_n"] for record in records), start=np.zeros(3)),
+            sum((record["torque_frd_nm"] for record in records), start=np.zeros(3)),
+        ))
+        np.testing.assert_allclose(
+            wrench,
+            allocation_matrix(config, position_key="wrench_position_m") @ thrust,
+            atol=1e-10,
+        )
+        for motor in range(1, 9):
+            one_thrust, one_force, one_torque = motor_wrench_frd(config, motor, commands[motor - 1])
+            np.testing.assert_allclose(one_force, records[motor - 1]["force_frd_n"])
+            np.testing.assert_allclose(one_torque, records[motor - 1]["torque_frd_nm"])
+            self.assertGreaterEqual(one_thrust, 0.0)
+
+    def test_bounded_allocation_reports_hover_and_saturation(self):
+        config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
+        hover = np.array([0.0, 0.0, -7.735 * 9.80665, 0.0, 0.0, 0.0])
+        result = allocate_bounded_wrench(config, hover)
+        self.assertTrue(result["feasible"])
+        self.assertLess(result["residual_norm"], 1e-8)
+        self.assertEqual(result["thrust_n"].shape, (8,))
+        impossible = allocate_bounded_wrench(
+            config, np.array([0.0, 0.0, -200.0, 0.0, 0.0, 0.0])
+        )
+        self.assertTrue(np.any(impossible["saturated_high"]))
+        self.assertGreater(impossible["residual_norm"], 1.0)
+
+    def test_micro_flight_presets_are_limited_and_inside_joint_bounds(self):
+        reference = json.loads(SO101_MOTION_REFERENCE_PATH.read_text(encoding="utf-8"))
+        joints = {item["name"]: item for item in reference["joints"]}
+        retracted = reference["presets"]["retracted"]
+        for name in ("flight_micro_a", "flight_micro_b"):
+            target = reference["presets"][name]
+            for index, joint_name in enumerate((
+                "shoulder_pan", "shoulder_lift", "elbow_flex",
+                "wrist_flex", "wrist_roll", "gripper",
+            )):
+                limit = joints[joint_name]
+                self.assertGreaterEqual(target[index], limit["lower_rad"])
+                self.assertLessEqual(target[index], limit["upper_rad"])
+                self.assertLessEqual(abs(target[index] - retracted[index]), 0.04)
+
+    def test_coupled_arm_mass_properties_reaction_and_payload(self):
+        reference = json.loads(SO101_MOTION_REFERENCE_PATH.read_text(encoding="utf-8"))
+        dynamics = CoupledArmDynamics(CAD_V3_FORMAL_URDF, reference, target_mass_kg=7.735)
+        retracted = dict(zip(JOINT_NAMES, reference["presets"]["retracted"]))
+        work = dict(zip(JOINT_NAMES, reference["presets"]["work_a"]))
+        home = dynamics.state(retracted)
+        moving = dynamics.state(
+            work,
+            velocities={name: 0.2 for name in JOINT_NAMES},
+            accelerations={name: 0.3 for name in JOINT_NAMES},
+        )
+        loaded = dynamics.state(work, payload=Payload(0.25))
+        self.assertAlmostEqual(home.mass_kg, 7.735, places=8)
+        self.assertGreater(float(np.linalg.norm(moving.com_shift_m)), 1.0e-4)
+        self.assertGreater(float(np.linalg.norm(moving.reaction_torque_body_nm)), 1.0e-4)
+        self.assertGreater(loaded.mass_kg, home.mass_kg)
+        self.assertGreater(float(np.linalg.norm(loaded.com_shift_m)), float(np.linalg.norm(moving.com_shift_m)) * 0.1)
+        self.assertTrue(np.all(np.linalg.eigvalsh(loaded.inertia_at_com_kg_m2) > 0.0))
+        impulse_twist = dynamics.contact_delta_twist(work, np.array([0.0, 0.0, -1.0]), Payload(0.25))
+        self.assertGreater(float(np.linalg.norm(impulse_twist)), 1.0e-4)
+
+    def test_arm_feedforward_is_bounded_and_frame_converted(self):
+        result = bounded_compensation_ned(
+            np.array([0.0, 0.0, 7.735]), 7.735, np.eye(3), 0.6
+        )
+        np.testing.assert_allclose(result, [0.0, 0.0, 0.6])
+        lateral = bounded_compensation_ned(
+            np.array([7.735, 0.0, 0.0]), 7.735, np.eye(3), 0.6
+        )
+        np.testing.assert_allclose(lateral, [0.0, -0.6, 0.0])
+
+    def test_offline_rl_env_shapes_bounds_and_arm_coupling(self):
+        env = make_default_env("arm_pose")
+        reset = env.reset(seed=13)
+        observation = reset[0] if isinstance(reset, tuple) else reset
+        self.assertEqual(observation.shape, (25,))
+        self.assertEqual(env.action_space.shape, (14,))
+        np.testing.assert_allclose(env.action_space.low[:8], np.zeros(8))
+        np.testing.assert_allclose(env.action_space.low[8:], -np.ones(6))
+        action = env.hover_action()
+        action[8:] = 0.4
+        next_observation, reward, terminated, truncated, info = env.step(action)
+        self.assertEqual(next_observation.shape, (25,))
+        self.assertTrue(np.all(np.isfinite(next_observation)))
+        self.assertTrue(np.isfinite(reward))
+        self.assertFalse(terminated)
+        self.assertFalse(truncated)
+        self.assertAlmostEqual(info["mass_kg"], 7.735, places=8)
+        self.assertTrue(np.all(np.isfinite(info["reaction_force_body_n"])))
+        self.assertTrue(np.all(np.isfinite(info["reaction_torque_body_nm"])))
 
 
 if __name__ == "__main__":

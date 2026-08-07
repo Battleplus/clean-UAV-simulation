@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+from scipy.optimize import lsq_linear
 
 
 def _default_config() -> Path:
@@ -26,24 +27,81 @@ def _default_config() -> Path:
         )
 
 
-def allocation_matrix(config: dict) -> np.ndarray:
+def rotor_wrench_frd(
+    config: dict,
+    rotor: dict,
+    thrust_n: float,
+    position_key: str = "position_m",
+) -> tuple[np.ndarray, np.ndarray]:
+    """Return one rotor's force and torque in PX4 FRD for a positive thrust.
+
+    ``position_m`` is the vehicle-COM allocation reference.  Runtime Gazebo
+    application can request ``wrench_position_m`` to apply the same force at
+    the URDF base-link origin.
+    """
+    position = np.asarray(
+        rotor.get(position_key, rotor.get("position_m")), dtype=float
+    )
+    axis = np.asarray(rotor["axis_body"], dtype=float)
+    axis /= np.linalg.norm(axis)
+    force = float(thrust_n) * axis
+    moment_ratio = float(config.get("reaction_moment_ratio_m") or 0.0)
+    direction = float(rotor["direction"])
+    torque = np.cross(position, force) - direction * moment_ratio * force
+    return force, torque
+
+
+def allocation_matrix(
+    config: dict, position_key: str = "position_m"
+) -> np.ndarray:
     """Map non-negative rotor thrusts [N] to body wrench [N, N m]."""
     # A canted-rotor geometry can have full 6D authority before propeller
     # reaction torque is known.  Treat an explicit JSON null as "not modelled"
     # instead of silently borrowing an unrelated example coefficient.
-    moment_ratio = float(config.get("reaction_moment_ratio_m") or 0.0)
     columns = []
     for rotor in config["rotors"]:
-        position = np.asarray(rotor["position_m"], dtype=float)
-        axis = np.asarray(rotor["axis_body"], dtype=float)
-        axis /= np.linalg.norm(axis)
-        # direction follows PX4 CA_ROTOR*_KM: +1 is CCW / positive KM.
-        # PX4 effectiveness uses moment = r x (CT*n) - CT*KM*n.
-        direction = float(rotor["direction"])
-        force = axis
-        moment = np.cross(position, force) - direction * moment_ratio * force
+        force, moment = rotor_wrench_frd(config, rotor, 1.0, position_key)
         columns.append(np.concatenate((force, moment)))
     return np.column_stack(columns)
+
+
+def allocate_bounded_wrench(
+    config: dict,
+    desired_wrench: np.ndarray,
+    lower_thrust_n: float = 0.0,
+    upper_thrust_n: float | None = None,
+) -> dict:
+    """Solve bounded non-negative thrust allocation and expose saturation data."""
+    desired = np.asarray(desired_wrench, dtype=float)
+    if desired.shape != (6,) or not np.all(np.isfinite(desired)):
+        raise ValueError("desired_wrench must be a finite 6-element vector")
+    upper = (
+        float(upper_thrust_n)
+        if upper_thrust_n is not None
+        else float(config.get("maximum_thrust_n", config.get("maximum_rated_thrust_per_motor_n")))
+    )
+    lower = float(lower_thrust_n)
+    if not np.isfinite(lower) or not np.isfinite(upper) or lower < 0.0 or upper < lower:
+        raise ValueError("invalid thrust bounds")
+    matrix = allocation_matrix(config)
+    result = lsq_linear(matrix, desired, bounds=(lower, upper), lsmr_tol="auto")
+    thrust = np.asarray(result.x, dtype=float)
+    residual = matrix @ thrust - desired
+    tolerance = max(1e-8, 1e-6 * max(1.0, upper))
+    saturated_low = thrust <= lower + tolerance
+    saturated_high = thrust >= upper - tolerance
+    return {
+        "thrust_n": thrust,
+        "wrench": matrix @ thrust,
+        "residual": residual,
+        "residual_norm": float(np.linalg.norm(residual)),
+        "success": bool(result.success),
+        "feasible": bool(result.success and np.linalg.norm(residual) <= 1e-8),
+        "saturated_low": saturated_low,
+        "saturated_high": saturated_high,
+        "saturated_any": saturated_low | saturated_high,
+        "matrix": matrix,
+    }
 
 
 def main() -> None:

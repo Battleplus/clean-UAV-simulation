@@ -68,11 +68,28 @@ def load_presets() -> dict[str, list[float]]:
     return json.loads(config.read_text(encoding="utf-8"))["presets"]
 
 
+def load_motion_reference() -> dict:
+    config = (
+        Path(get_package_share_directory("drone_arm_sim"))
+        / "config"
+        / "so101_motion_reference.json"
+    )
+    return json.loads(config.read_text(encoding="utf-8"))
+
+
 def main(args=None) -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--preset",
-        choices=("retracted", "work_a", "work_b", "flight_work_a", "flight_work_b"),
+        choices=(
+            "retracted",
+            "work_a",
+            "work_b",
+            "flight_work_a",
+            "flight_work_b",
+            "flight_micro_a",
+            "flight_micro_b",
+        ),
         required=True,
     )
     parser.add_argument("--duration", type=float, default=3.0)
@@ -82,7 +99,26 @@ def main(args=None) -> None:
     if parsed.duration <= 0.0:
         parser.error("--duration must be positive")
 
-    target = load_presets()[parsed.preset]
+    reference = load_motion_reference()
+    target = reference["presets"][parsed.preset]
+    limits = {item["name"]: item for item in reference.get("joints", [])}
+    for name, value in zip(JOINT_NAMES, target):
+        limit = limits.get(name)
+        if limit is None:
+            raise RuntimeError(f"no safety limit is defined for joint {name}")
+        if not float(limit["lower_rad"]) <= float(value) <= float(limit["upper_rad"]):
+            raise RuntimeError(f"preset {parsed.preset} exceeds limit for joint {name}")
+    # A cubic trajectory can peak above average speed.  Reserve half of the
+    # configured joint velocity limit for a conservative ground/flight command.
+    min_duration = max(
+        abs(float(value) - float(reference["presets"]["retracted"][index]))
+        / max(1e-6, 0.5 * float(limits[name]["velocity_rad_s"]))
+        for index, (name, value) in enumerate(zip(JOINT_NAMES, target))
+    )
+    if parsed.duration < min_duration:
+        parser.error(
+            f"{parsed.preset} needs duration >= {min_duration:.3f}s for the 0.5x velocity safety limit"
+        )
     rclpy.init()
     node = ArmPresetCommander()
     try:

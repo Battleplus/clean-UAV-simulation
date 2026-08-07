@@ -602,6 +602,245 @@
   "formal_urdf": "urdf/my_drone_v3/my_drone_cad_formal_dynamic.urdf",
   "allocation_reference": "vehicle COM in PX4 FRD",
   "wrench_reference": "URDF base_link origin in PX4 FRD",
+  "motor_dynamics_table": {
+    "schema": 1,
+    "input": "normalized_command in [0,1]; no RPM telemetry is available",
+    "model_status": "normalized static thrust and first-order actuator model; real k_f, C_T, C_Q and RPM response remain uncalibrated",
+    "maximum_thrust_n": 11.76798,
+    "minimum_effective_command": 0.15,
+    "minimum_effective_thrust_n": 0.25497289999999995,
+    "reaction_torque_model": {
+      "method": "Q = (Q/T) * T",
+      "q_over_t_m": 0.001,
+      "status": "temporary estimate; replace with measured C_Q/C_T or RPM-thrust-torque table"
+    },
+    "motors": [
+      {
+        "motor": 1,
+        "px4_output": 0,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          0.3535533905932742,
+          0.3535533905932739,
+          -0.8660254037844385
+        ],
+        "position_frd_m": [
+          0.18561357019155345,
+          0.07592257045234005,
+          -0.19616886590649824
+        ],
+        "wrench_position_frd_m": [
+          0.18160588745030426,
+          0.07660588745030462,
+          0.008313843876330683
+        ],
+        "turning_direction": "CW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.035,
+        "fall_time_constant_s": 0.035
+      },
+      {
+        "motor": 2,
+        "px4_output": 1,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          -0.35355339059327323,
+          -0.3535533905932737,
+          -0.866025403784439
+        ],
+        "position_frd_m": [
+          -0.17759820470905516,
+          -0.07728920444826914,
+          -0.19616886590649846
+        ],
+        "wrench_position_frd_m": [
+          -0.18160588745030434,
+          -0.07660588745030457,
+          0.008313843876330461
+        ],
+        "turning_direction": "CW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.035,
+        "fall_time_constant_s": 0.035
+      },
+      {
+        "motor": 3,
+        "px4_output": 2,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          -0.35355339059327384,
+          -0.3535533905932736,
+          -0.8660254037844387
+        ],
+        "position_frd_m": [
+          0.08061357019155382,
+          0.18092257045233973,
+          -0.21279655365915948
+        ],
+        "wrench_position_frd_m": [
+          0.07660588745030467,
+          0.1816058874503043,
+          -0.008313843876330572
+        ],
+        "turning_direction": "CCW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.035,
+        "fall_time_constant_s": 0.035
+      },
+      {
+        "motor": 4,
+        "px4_output": 3,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          -0.3535533905932735,
+          0.3535533905932738,
+          -0.8660254037844388
+        ],
+        "position_frd_m": [
+          -0.17759820470905502,
+          0.07592257045234006,
+          -0.1961688659064985
+        ],
+        "wrench_position_frd_m": [
+          -0.1816058874503042,
+          0.07660588745030464,
+          0.008313843876330392
+        ],
+        "turning_direction": "CCW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.035,
+        "fall_time_constant_s": 0.035
+      },
+      {
+        "motor": 5,
+        "px4_output": 4,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          0.3535533905932745,
+          -0.3535533905932735,
+          -0.8660254037844385
+        ],
+        "position_frd_m": [
+          0.18561357019155322,
+          -0.07728920444826914,
+          -0.19616886590649832
+        ],
+        "wrench_position_frd_m": [
+          0.18160588745030404,
+          -0.07660588745030457,
+          0.008313843876330586
+        ],
+        "turning_direction": "CCW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.035,
+        "fall_time_constant_s": 0.035
+      },
+      {
+        "motor": 6,
+        "px4_output": 5,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          0.35355339059327373,
+          0.3535533905932736,
+          -0.8660254037844387
+        ],
+        "position_frd_m": [
+          -0.07259820470905541,
+          -0.1822892044482689,
+          -0.21279655365915948
+        ],
+        "wrench_position_frd_m": [
+          -0.07660588745030457,
+          -0.18160588745030432,
+          -0.008313843876330572
+        ],
+        "turning_direction": "CCW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.035,
+        "fall_time_constant_s": 0.035
+      },
+      {
+        "motor": 7,
+        "px4_output": 6,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          -0.3535533905932736,
+          0.3535533905932741,
+          -0.8660254037844386
+        ],
+        "position_frd_m": [
+          0.08061357019155378,
+          -0.18228920444826868,
+          -0.2127965536591594
+        ],
+        "wrench_position_frd_m": [
+          0.07660588745030462,
+          -0.1816058874503041,
+          -0.008313843876330503
+        ],
+        "turning_direction": "CW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.035,
+        "fall_time_constant_s": 0.035
+      },
+      {
+        "motor": 8,
+        "px4_output": 7,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          0.3535533905932736,
+          -0.353553390593274,
+          -0.8660254037844387
+        ],
+        "position_frd_m": [
+          -0.07259820470905538,
+          0.1809225704523396,
+          -0.2127965536591594
+        ],
+        "wrench_position_frd_m": [
+          -0.07660588745030454,
+          0.18160588745030415,
+          -0.008313843876330475
+        ],
+        "turning_direction": "CW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.035,
+        "fall_time_constant_s": 0.035
+      }
+    ]
+  },
   "bounded_hover_thrust_n": [
     10.675140123819938,
     11.222149903275122,

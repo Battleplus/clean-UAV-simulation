@@ -49,6 +49,51 @@ def main() -> None:
         rotor["axis_body"] = list(axes[motor]["axis_body"])
         rotor["thrust_sign_source"] = axes[motor]["thrust_sign_source"]
         config["rotors"].append(rotor)
+    thrust_points = config["static_thrust_model"]["points"]
+    positive_points = [
+        point for point in thrust_points
+        if float(point.get("rated_capped_thrust_n", point["measured_thrust_n"])) > 0.0
+    ]
+    first_effective = positive_points[0]
+    config["motor_dynamics_table"] = {
+        "schema": 1,
+        "input": "normalized_command in [0,1]; no RPM telemetry is available",
+        "model_status": (
+            "normalized static thrust and first-order actuator model; real k_f, "
+            "C_T, C_Q and RPM response remain uncalibrated"
+        ),
+        "maximum_thrust_n": float(config["maximum_thrust_n"]),
+        "minimum_effective_command": float(first_effective["throttle_percent"]) / 100.0,
+        "minimum_effective_thrust_n": float(
+            first_effective.get("rated_capped_thrust_n", first_effective["measured_thrust_n"])
+        ),
+        "reaction_torque_model": {
+            "method": "Q = (Q/T) * T",
+            "q_over_t_m": float(config["reaction_moment_ratio_m"]),
+            "status": "temporary estimate; replace with measured C_Q/C_T or RPM-thrust-torque table",
+        },
+        "motors": [
+            {
+                "motor": int(rotor["motor"]),
+                "px4_output": int(rotor["motor"]) - 1,
+                "max_thrust_n": float(config["maximum_thrust_n"]),
+                "min_effective_thrust_n": float(
+                    first_effective.get("rated_capped_thrust_n", first_effective["measured_thrust_n"])
+                ),
+                "thrust_axis_frd": list(rotor["axis_body"]),
+                "position_frd_m": list(rotor["position_m"]),
+                "wrench_position_frd_m": list(rotor["wrench_position_m"]),
+                "turning_direction": rotor["turning_direction"],
+                "thrust_coefficient_kf": None,
+                "thrust_coefficient_status": "unavailable_without RPM",
+                "reaction_torque_coefficient_kq": None,
+                "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+                "rise_time_constant_s": float(config["motor_dynamics"]["rise_time_constant_s"]),
+                "fall_time_constant_s": float(config["motor_dynamics"]["fall_time_constant_s"]),
+            }
+            for rotor in config["rotors"]
+        ],
+    }
     config["maximum_vertical_force_n"] = scenario["maximum_upward_vertical_force_n"]
     config["maximum_supported_mass_kg"] = scenario["maximum_supported_mass_kg"]
     config["estimated_vertical_thrust_to_weight"] = scenario["maximum_vertical_thrust_to_weight"]

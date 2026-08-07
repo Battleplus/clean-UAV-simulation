@@ -33,6 +33,7 @@ except ModuleNotFoundError:
     EntityWrench = None
 
 from drone_arm_sim.gazebo_wrench_controller import quaternion_matrix_xyzw
+from drone_arm_sim.allocation_analysis import rotor_wrench_frd
 
 
 FRD_TO_FLU = np.diag([1.0, -1.0, -1.0])
@@ -98,6 +99,54 @@ def first_order_motor_step(
     return np.clip(current + alpha * (target - current), 0.0, 1.0)
 
 
+def motor_wrench_frd(
+    config: dict,
+    motor_number: int,
+    normalized_command: float,
+    thrust_scale: float = 1.0,
+) -> tuple[float, np.ndarray, np.ndarray]:
+    """Map one normalized motor command to thrust, force and torque in PX4 FRD.
+
+    The function intentionally exposes the current model boundary: when RPM is
+    unavailable, thrust is obtained from the measured normalized static table and
+    reaction torque uses the configured temporary Q/T ratio.
+    """
+    motor = int(motor_number)
+    rotor = next((item for item in config["rotors"] if int(item["motor"]) == motor), None)
+    if rotor is None:
+        raise ValueError(f"unknown motor number: {motor_number}")
+    thrust = command_to_thrust_n(config, normalized_command)
+    thrust *= max(0.0, float(thrust_scale))
+    force, torque = rotor_wrench_frd(
+        config, rotor, thrust, position_key="wrench_position_m"
+    )
+    return float(thrust), force, torque
+
+
+def per_motor_wrench_frd(
+    config: dict,
+    normalized_by_motor: np.ndarray,
+    thrust_scale: float = 1.0,
+) -> list[dict]:
+    """Return force/torque records for all eight actuator inputs."""
+    commands = np.asarray(normalized_by_motor, dtype=float)
+    if commands.shape != (8,):
+        raise ValueError("Expected exactly eight motor commands")
+    records = []
+    for motor in range(1, 9):
+        thrust, force, torque = motor_wrench_frd(
+            config, motor, commands[motor - 1], thrust_scale
+        )
+        records.append({
+            "motor": motor,
+            "command": float(np.clip(commands[motor - 1], 0.0, 1.0)),
+            "thrust_n": thrust,
+            "force_frd_n": force,
+            "torque_frd_nm": torque,
+        })
+    return records
+
+
 def direct_wrench_flu(
     config: dict, normalized_by_motor: np.ndarray, thrust_scale: float = 1.0
 ) -> tuple[np.ndarray, np.ndarray]:
@@ -110,26 +159,9 @@ def direct_wrench_flu(
 
     total_force = np.zeros(3)
     total_torque = np.zeros(3)
-    moment_ratio = config.get("reaction_moment_ratio_m")
-    for rotor in config["rotors"]:
-        motor_index = int(rotor["motor"]) - 1
-        thrust = command_to_thrust_n(config, commands[motor_index]) * max(
-            0.0, float(thrust_scale)
-        )
-        position = FRD_TO_FLU @ np.asarray(
-            rotor.get("wrench_position_m", rotor["position_m"]), dtype=float
-        )
-        axis = FRD_TO_FLU @ np.asarray(rotor["axis_body"], dtype=float)
-        axis /= np.linalg.norm(axis)
-        force = thrust * axis
-        total_force += force
-        total_torque += np.cross(position, force)
-        if moment_ratio is not None:
-            # Match the PX4 effectiveness sign convention used elsewhere in
-            # this package: +1 is CCW, moment = -direction * ratio * force.
-            total_torque -= (
-                float(rotor["direction"]) * float(moment_ratio) * force
-            )
+    for record in per_motor_wrench_frd(config, commands, thrust_scale):
+        total_force += FRD_TO_FLU @ record["force_frd_n"]
+        total_torque += FRD_TO_FLU @ record["torque_frd_nm"]
     return total_force, total_torque
 
 
@@ -252,6 +284,8 @@ class DirectMotorModel(Node):
         velocity_command_scale: float,
         reaction_moment_ratio_m: float | None = None,
         wind_velocity_world_enu_m_s: list[float] | None = None,
+        battery_dynamics_enabled: bool | None = None,
+        battery_overrides: dict[str, float] | None = None,
     ):
         super().__init__("my_drone_gazebo_direct_motor_model")
         self.config = json.loads(config_path.read_text(encoding="utf-8"))
@@ -272,6 +306,19 @@ class DirectMotorModel(Node):
                 "wind override ENU m/s: "
                 f"{environment['wind_velocity_world_enu_m_s']}"
             )
+        if battery_dynamics_enabled is not None or battery_overrides:
+            battery = self.config.setdefault("battery_dynamics", {})
+            if battery_dynamics_enabled is not None:
+                battery["enabled"] = bool(battery_dynamics_enabled)
+            for key, value in (battery_overrides or {}).items():
+                if np.isfinite(value):
+                    battery[key] = float(value)
+            self.get_logger().info(
+                "battery dynamics override: "
+                f"enabled={bool(battery.get('enabled', False))} "
+                f"R={float(battery.get('pack_internal_resistance_ohm', 0.0)):.6g} ohm "
+                f"capacity={float(battery.get('capacity_ah', 0.0)):.6g} Ah"
+            )
         self.entity_name = entity_name
         self.velocity_command_scale = velocity_command_scale
         self.rotation_flu_to_world: np.ndarray | None = None
@@ -288,6 +335,7 @@ class DirectMotorModel(Node):
         self.battery_loaded_voltage_v = 14.8
         self.battery_thrust_scale = 1.0
         self.battery_current_a = 0.0
+        self.last_dynamics_log_time_s: float | None = None
         self.publisher = self.create_publisher(
             EntityWrench, "/world/flight_world/wrench", 10
         )
@@ -338,6 +386,19 @@ class DirectMotorModel(Node):
             self.battery_state_of_charge,
             dt_s,
         )
+        if self.last_dynamics_log_time_s is None or (
+            simulation_time_s - self.last_dynamics_log_time_s >= 1.0
+        ):
+            self.last_dynamics_log_time_s = simulation_time_s
+            self.get_logger().info(
+                "MOTOR_DYNAMIC_STATE "
+                f"sim_s={simulation_time_s:.3f} "
+                f"cmd_max={float(np.max(self.target_commands)):.4f} "
+                f"filtered_max={float(np.max(self.filtered_commands)):.4f} "
+                f"voltage_v={self.battery_loaded_voltage_v:.4f} "
+                f"thrust_scale={self.battery_thrust_scale:.6f} "
+                f"current_a={self.battery_current_a:.4f}"
+            )
         quaternion = np.array(
             [
                 message.pose.pose.orientation.x,
@@ -453,6 +514,20 @@ def main() -> None:
     parser.add_argument("--velocity-command-scale", type=float, default=1000.0)
     parser.add_argument("--reaction-moment-ratio-m", type=float, default=-1.0)
     parser.add_argument("--wind-enu", type=float, nargs=3, default=None)
+    parser.add_argument(
+        "--battery-dynamics-enabled",
+        default=None,
+        choices=("true", "false"),
+        help="override battery_dynamics.enabled without editing the baseline JSON",
+    )
+    parser.add_argument("--battery-internal-resistance-ohm", type=float, default=float("nan"))
+    parser.add_argument("--battery-capacity-ah", type=float, default=float("nan"))
+    parser.add_argument("--battery-full-voltage-v", type=float, default=float("nan"))
+    parser.add_argument("--battery-empty-voltage-v", type=float, default=float("nan"))
+    parser.add_argument(
+        "--battery-minimum-loaded-voltage-v", type=float, default=float("nan")
+    )
+    parser.add_argument("--battery-thrust-voltage-exponent", type=float, default=float("nan"))
     parsed, ros_arguments = parser.parse_known_args()
     if rclpy is None:
         raise SystemExit("ROS 2 Python packages are not available")
@@ -464,6 +539,15 @@ def main() -> None:
         parsed.velocity_command_scale,
         parsed.reaction_moment_ratio_m,
         parsed.wind_enu,
+        None if parsed.battery_dynamics_enabled is None else parsed.battery_dynamics_enabled == "true",
+        {
+            "pack_internal_resistance_ohm": parsed.battery_internal_resistance_ohm,
+            "capacity_ah": parsed.battery_capacity_ah,
+            "full_voltage_v": parsed.battery_full_voltage_v,
+            "empty_voltage_v": parsed.battery_empty_voltage_v,
+            "minimum_loaded_voltage_v": parsed.battery_minimum_loaded_voltage_v,
+            "thrust_voltage_exponent": parsed.battery_thrust_voltage_exponent,
+        },
     )
     try:
         rclpy.spin(node)

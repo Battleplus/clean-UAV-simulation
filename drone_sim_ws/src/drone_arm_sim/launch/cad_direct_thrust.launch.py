@@ -83,6 +83,20 @@ def generate_launch_description():
                     LaunchConfiguration("wind_enu_x"),
                     LaunchConfiguration("wind_enu_y"),
                     LaunchConfiguration("wind_enu_z"),
+                    "--battery-dynamics-enabled",
+                    LaunchConfiguration("battery_dynamics_enabled"),
+                    "--battery-internal-resistance-ohm",
+                    LaunchConfiguration("battery_internal_resistance_ohm"),
+                    "--battery-capacity-ah",
+                    LaunchConfiguration("battery_capacity_ah"),
+                    "--battery-full-voltage-v",
+                    LaunchConfiguration("battery_full_voltage_v"),
+                    "--battery-empty-voltage-v",
+                    LaunchConfiguration("battery_empty_voltage_v"),
+                    "--battery-minimum-loaded-voltage-v",
+                    LaunchConfiguration("battery_minimum_loaded_voltage_v"),
+                    "--battery-thrust-voltage-exponent",
+                    LaunchConfiguration("battery_thrust_voltage_exponent"),
                 ],
             )
         ],
@@ -146,6 +160,27 @@ def generate_launch_description():
             )
         ],
     )
+    arm_coupling_monitor = TimerAction(
+        period=10.0,
+        condition=IfCondition(LaunchConfiguration("enable_arm_control")),
+        actions=[
+            Node(
+                package="drone_arm_sim",
+                executable="arm_coupling_monitor",
+                output="screen",
+                arguments=[
+                    "--urdf", str(robot),
+                    "--motion-reference",
+                    str(package_share / "config" / "so101_motion_reference.json"),
+                    "--rate-hz", LaunchConfiguration("arm_coupling_rate_hz"),
+                    "--target-mass-kg", LaunchConfiguration("arm_coupling_target_mass_kg"),
+                    "--payload-mass-kg", LaunchConfiguration("arm_payload_mass_kg"),
+                    "--feedforward-limit-m-s2",
+                    LaunchConfiguration("arm_feedforward_limit_m_s2"),
+                ],
+            )
+        ],
+    )
     return LaunchDescription(
         [
             DeclareLaunchArgument("spawn_z", default_value="1.0"),
@@ -161,6 +196,17 @@ def generate_launch_description():
             DeclareLaunchArgument("mag_delay_ms", default_value="10"),
             DeclareLaunchArgument("baro_delay_ms", default_value="20"),
             DeclareLaunchArgument("navsat_delay_ms", default_value="50"),
+            DeclareLaunchArgument("battery_dynamics_enabled", default_value="false"),
+            DeclareLaunchArgument("battery_internal_resistance_ohm", default_value="nan"),
+            DeclareLaunchArgument("battery_capacity_ah", default_value="nan"),
+            DeclareLaunchArgument("battery_full_voltage_v", default_value="nan"),
+            DeclareLaunchArgument("battery_empty_voltage_v", default_value="nan"),
+            DeclareLaunchArgument("battery_minimum_loaded_voltage_v", default_value="nan"),
+            DeclareLaunchArgument("battery_thrust_voltage_exponent", default_value="nan"),
+            DeclareLaunchArgument("arm_coupling_rate_hz", default_value="3.0"),
+            DeclareLaunchArgument("arm_coupling_target_mass_kg", default_value="7.735"),
+            DeclareLaunchArgument("arm_payload_mass_kg", default_value="0.0"),
+            DeclareLaunchArgument("arm_feedforward_limit_m_s2", default_value="0.6"),
             DeclareLaunchArgument(
                 "config_file",
                 default_value=str(package_share / "config" / "my_drone_v2_cad.json"),
@@ -179,5 +225,6 @@ def generate_launch_description():
             controller,
             joint_state_controller,
             arm_controller,
+            arm_coupling_monitor,
         ]
     )

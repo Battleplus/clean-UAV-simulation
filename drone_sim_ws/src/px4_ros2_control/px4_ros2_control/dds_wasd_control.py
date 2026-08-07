@@ -16,7 +16,9 @@ import tty
 from dataclasses import dataclass
 from typing import Optional
 
+import numpy as np
 import rclpy
+from geometry_msgs.msg import AccelStamped
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 
@@ -70,10 +72,15 @@ class DdsWasdControl(Node):
     RATE_HZ = 20.0
     STATUS_TIMEOUT_S = 1.0
     PRESTREAM_S = 2.0
-    MOVE_STEP_M = 0.35
-    ALT_STEP_M = 0.20
-    YAW_STEP_RAD = math.radians(12.0)
+    # Small, repeatable increments leave control allocation headroom for the
+    # canted X8.  Holding a key repeats the same increment, so WASD remains
+    # continuous while a single key press cannot demand a near-saturation jump.
+    MOVE_STEP_M = 0.15
+    ALT_STEP_M = 0.12
+    YAW_STEP_RAD = math.radians(6.0)
     TAKEOFF_HEIGHT_M = 1.2
+    MAX_POSITION_ERROR_M = 3.0
+    MAX_VERTICAL_ERROR_M = 2.0
 
     def __init__(self, arm_only: bool = False) -> None:
         super().__init__("my_drone_dds_wasd_control")
@@ -96,6 +103,11 @@ class DdsWasdControl(Node):
         self.exit_requested = False
         self.emergency_confirm_until = 0.0
         self.last_state_report = 0.0
+        self.arm_feedforward_enabled = os.environ.get(
+            "ARM_FEEDFORWARD_ENABLED", "false"
+        ).lower() in {"1", "true", "yes", "on"}
+        self.arm_feedforward_ned = [0.0, 0.0, 0.0]
+        self.last_arm_feedforward_monotonic = 0.0
 
         px4_qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -136,7 +148,17 @@ class DdsWasdControl(Node):
             self._actuator_outputs_cb,
             px4_qos,
         )
+        self.create_subscription(
+            AccelStamped,
+            "/my_drone/arm_feedforward_acceleration_ned",
+            self._arm_feedforward_cb,
+            10,
+        )
         self.timer = self.create_timer(1.0 / self.RATE_HZ, self._tick)
+        if self.arm_feedforward_enabled:
+            self.get_logger().info(
+                "ARM_FEEDFORWARD enabled; reading bounded NED acceleration"
+            )
 
     def now_us(self) -> int:
         return self.get_clock().now().nanoseconds // 1000
@@ -165,6 +187,15 @@ class DdsWasdControl(Node):
     def _actuator_outputs_cb(self, msg: ActuatorOutputs) -> None:
         self.actuator_outputs = msg
         self.last_actuator_monotonic = time.monotonic()
+
+    def _arm_feedforward_cb(self, msg: AccelStamped) -> None:
+        values = np.asarray(
+            [msg.accel.linear.x, msg.accel.linear.y, msg.accel.linear.z],
+            dtype=float,
+        )
+        if np.all(np.isfinite(values)) and float(np.linalg.norm(values)) <= 2.0:
+            self.arm_feedforward_ned = values.tolist()
+            self.last_arm_feedforward_monotonic = time.monotonic()
 
     def state_fresh(self) -> bool:
         now = time.monotonic()
@@ -202,7 +233,13 @@ class DdsWasdControl(Node):
         nan = float("nan")
         sp.position = [self.target.north, self.target.east, self.target.down]
         sp.velocity = [nan, nan, nan]
-        sp.acceleration = [nan, nan, nan]
+        if (
+            self.arm_feedforward_enabled
+            and time.monotonic() - self.last_arm_feedforward_monotonic < 0.6
+        ):
+            sp.acceleration = list(self.arm_feedforward_ned)
+        else:
+            sp.acceleration = [nan, nan, nan]
         sp.jerk = [nan, nan, nan]
         sp.yaw = self.target.yaw
         sp.yawspeed = nan
@@ -220,6 +257,10 @@ class DdsWasdControl(Node):
             self.local.y,
             self.local.z - self.TAKEOFF_HEIGHT_M,
             self.local.heading,
+        )
+        self.get_logger().info(
+            f"target NED=({self.target.north:.2f}, {self.target.east:.2f}, "
+            f"{self.target.down:.2f}) yaw={math.degrees(self.target.yaw):.1f} deg"
         )
         self.prestream_started = time.monotonic()
         self.offboard_requested = True
@@ -373,6 +414,25 @@ class DdsWasdControl(Node):
         if not self.state_fresh():
             self.get_logger().error("PX4 status timeout: stopping Offboard stream")
             self.offboard_requested = False
+            return
+
+        horizontal_error = math.hypot(
+            self.local.x - self.target.north,
+            self.local.y - self.target.east,
+        )
+        vertical_error = abs(self.local.z - self.target.down)
+        if (
+            self.status.arming_state == VehicleStatus.ARMING_STATE_ARMED
+            and (
+                horizontal_error > self.MAX_POSITION_ERROR_M
+                or vertical_error > self.MAX_VERTICAL_ERROR_M
+            )
+        ):
+            self.get_logger().error(
+                "Position safety gate exceeded; requesting LAND "
+                f"horizontal={horizontal_error:.2f} m vertical={vertical_error:.2f} m"
+            )
+            self.land()
             return
 
         self.publish_hold()

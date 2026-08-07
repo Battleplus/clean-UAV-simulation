@@ -1,5 +1,28 @@
 # clean-UAV-simulation
 
+## Current verification status (steps 4-10)
+
+The reproducible verification record is [drone_sim_ws/analysis/第4-10步实测验收记录.md](drone_sim_ws/analysis/第4-10步实测验收记录.md).
+
+Useful WSL commands for the current worktree:
+
+```bash
+cd /mnt/e/清洁无人机/drone_sim_ws
+source /opt/ros/jazzy/setup.bash
+source /home/asus/ros2_px4_build_ws/install/setup.bash
+source install/setup.bash
+PYTHONPATH=src/drone_arm_sim python3 scripts/validate_motor_battery_dynamics.py
+python3 scripts/test_ros2_dds_wasd_pty.py --timeout 100
+ARM_FLIGHT_PROFILE=micro python3 scripts/test_ros2_dds_arm_flight_pty.py --timeout 100
+PYTHONPATH=src/drone_arm_sim python3 scripts/analyze_arm_coupling.py
+```
+
+The default baseline keeps battery dynamics disabled. To run an isolated
+experimental battery case without editing the baseline JSON, set
+`BATTERY_DYNAMICS_ENABLED=true` and pass the desired resistance/capacity to
+`wsl_start_ros2_dds_noarm.sh`. Full arm work profiles remain diagnostic only;
+the accepted flight profile is `ARM_FLIGHT_PROFILE=micro`.
+
 基于真实 CAD 总装的 `my_drone` 八旋翼无人机＋SO101 机械臂仿真工程。项目在默认 WSL（Ubuntu 24.04）中运行，使用 ROS 2 Jazzy、Gazebo Sim、`gz_ros2_control` 和 PX4 SITL，实现 PX4 飞行控制、ROS 2 机械臂关节控制以及 WASD 键盘操控。
 
 This repository contains a CAD-based octocopter simulation with an SO101 arm. PX4 is responsible for flight control, while ROS 2 / `ros2_control` drives the arm. The vehicle model, motor allocation and launch scripts are kept reproducible so that the simulation can be calibrated with measured propeller data later.
@@ -124,7 +147,14 @@ bash scripts/run_ros2_arm_preset.sh work_b 3
 bash scripts/run_ros2_arm_preset.sh retracted 3
 ```
 
-飞行验收使用幅度受限、渐进的安全动作：`flight_work_a`、`flight_work_b`、`retracted`。这些动作已经通过联动回归测试；完整 `work_a/work_b` 在飞行中会明显消耗推力余量，当前可能使电机饱和并触发 failsafe，因此不属于默认飞行动作。
+飞行验收只使用幅度受限、渐进的 `flight_micro_a`、`flight_micro_b` 和 `retracted`。`flight_work_a/b` 实飞曾产生约 `12.6 m` 水平漂移，完整 `work_a/work_b` 的风险更高，因此两者都不属于默认飞行动作。
+
+启用机械臂控制时，启动文件会同时运行 `arm_coupling_monitor`，实时计算总质心、惯量、关节运动反作用力/力矩，并发布：
+
+- `/my_drone/arm_reaction_wrench_body`
+- `/my_drone/arm_feedforward_acceleration_ned`
+
+前馈默认只计算和记录，不注入 PX4。完成无前馈基线后，可在 WASD 控制终端中设置 `ARM_FEEDFORWARD_ENABLED=true` 进行 A/B 试验。前馈限幅默认 `0.6 m/s²`。
 
 ## 测试与验收
 
@@ -136,7 +166,7 @@ source /opt/ros/jazzy/setup.bash
 PYTHONPATH=src/drone_arm_sim pytest -q src/drone_arm_sim/test/test_core.py
 ```
 
-当前结果：`20 passed`。
+当前结果：`27 passed`。
 
 启动正式后端后，可运行：
 
@@ -144,10 +174,21 @@ PYTHONPATH=src/drone_arm_sim pytest -q src/drone_arm_sim/test/test_core.py
 source /home/asus/ros2_px4_build_ws/install/setup.bash
 source install/setup.bash
 python3 scripts/test_ros2_dds_wasd_pty.py --timeout 100
-python3 scripts/test_ros2_dds_arm_flight_pty.py --timeout 130
+ARM_FLIGHT_PROFILE=micro python3 scripts/test_ros2_dds_arm_flight_pty.py --timeout 130
+PYTHONPATH=src/drone_arm_sim python3 scripts/analyze_arm_coupling.py
+PYTHONPATH=src/drone_arm_sim python3 scripts/rl_env_smoke_test.py --task hover --steps 200
 ```
 
-通过标志：`DDS_WASD_PTY_PASS`、`DDS_ARM_FLIGHT_PASS`。最近一次机械臂安全飞行测试的水平漂移约 `0.071 m`、高度跨度约 `0.123 m`，无 failsafe，并正常降落解除武装。
+通过标志：`DDS_WASD_PTY_PASS`、`DDS_ARM_FLIGHT_PASS`、`ARM_COUPLING_ANALYSIS_PASS`。最近一次 `flight_micro_a/b` 机械臂安全飞行测试的水平漂移约 `0.357 m`、高度跨度约 `1.450 m`，无 failsafe，并正常降落解除武装。
+
+## 第 11 步：离线 RL 接口
+
+`drone_sim_ws/src/drone_arm_sim/drone_arm_sim/rl_env.py` 提供一个与正式
+CAD 配置共享推力分配、电池模型和 SO101 质量/质心/惯量模型的离线
+Gymnasium 兼容环境。动作是 8 个归一化电机命令加 6 个关节速度命令，
+观测维度为 25。它已经通过 `rl_env_smoke_test.py` 和核心回归测试，但
+明确不是 PX4/Gazebo-in-the-loop；接触、完整姿态和真实电机闭环仍需在
+Gazebo 中验证后才能用于训练策略。
 
 ## 已知限制与后续标定
 
@@ -163,6 +204,8 @@ python3 scripts/test_ros2_dds_arm_flight_pty.py --timeout 130
 当前可飞版本已冻结为回退基线，详见：[BASELINE_7P735_FLYABLE.md](BASELINE_7P735_FLYABLE.md)。后续校准和机械臂耦合实验应从标签 `baseline-7p735-flyable` 创建独立分支，不覆盖正式模型。
 
 物理事实冻结记录见：[电机物理冻结表_第2步.md](drone_sim_ws/analysis/电机物理冻结表_第2步.md) 和 [质量重心惯量表_第3步.md](drone_sim_ws/analysis/质量重心惯量表_第3步.md)。其中明确区分 CAD 几何事实、用户安装表、临时飞行假设和待校准参数。
+
+第 4～5 步的动力学接口、分配矩阵和饱和验收见：[动力学与分配验收_第4-5步.md](drone_sim_ws/analysis/动力学与分配验收_第4-5步.md)。
 
 ## 安全与贡献
 

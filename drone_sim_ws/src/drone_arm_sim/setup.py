@@ -50,6 +50,7 @@ setup(
     entry_points={
         "console_scripts": [
             "allocation_analysis = drone_arm_sim.allocation_analysis:main",
+            "arm_coupling_monitor = drone_arm_sim.arm_coupling_monitor:main",
             "arm_preset_control = drone_arm_sim.arm_preset_control:main",
             "build_formal_cad_urdf = drone_arm_sim.build_formal_cad_urdf:main",
             "floating_base_reaction = drone_arm_sim.floating_base_reaction:main",

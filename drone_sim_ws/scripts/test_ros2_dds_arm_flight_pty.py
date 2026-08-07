@@ -49,6 +49,16 @@ def main() -> int:
         arm_schedule = [(14.0, "work_a"), (74.0, "retracted")]
         arm_duration = "30"
         land_after_s = 120.0
+    elif profile == "micro":
+        # Flight-safe identification motion: 25% of the reduced flight_work
+        # presets, sent over a long trajectory.
+        arm_schedule = [
+            (14.0, "flight_micro_a"),
+            (34.0, "flight_micro_b"),
+            (54.0, "retracted"),
+        ]
+        arm_duration = "14"
+        land_after_s = 72.0
     else:
         # The 7.735 kg configuration has only a small thrust margin.  Use the
         # documented slow-work profile so arm acceleration is a measured
@@ -60,6 +70,8 @@ def main() -> int:
         ]
         arm_duration = "8"
         land_after_s = 72.0
+    safety_abort = False
+    safety_abort_reason = ""
     try:
         while time.monotonic() - start < args.timeout:
             if select.select([master], [], [], 0.1)[0]:
@@ -98,8 +110,47 @@ def main() -> int:
 
             if offboard_time is not None:
                 elapsed = time.monotonic() - offboard_time
+                if not safety_abort and elapsed > 8.0:
+                    flight_states = [
+                        state for state in states
+                        if 0.0 <= state[0] - offboard_time <= elapsed
+                    ]
+                    if flight_states:
+                        north0, east0, down0 = flight_states[0][3:6]
+                        latest = flight_states[-1]
+                        drift = math.hypot(latest[3] - north0, latest[4] - east0)
+                        altitude_error = abs(latest[5] - down0)
+                        if drift > 2.0 or altitude_error > 1.8:
+                            safety_abort = True
+                            safety_abort_reason = (
+                                f"drift={drift:.3f}m altitude_delta={altitude_error:.3f}m"
+                            )
+                            print(
+                                f"ARM_FLIGHT_SAFETY_ABORT {safety_abort_reason}",
+                                flush=True,
+                            )
+                            if arm_process is not None and arm_process.poll() is None:
+                                arm_process.terminate()
+                                arm_process = None
+                                arm_label = None
+                            if "retracted" not in sent:
+                                arm_label = "retracted"
+                                arm_process = subprocess.Popen(
+                                    [
+                                        "ros2", "run", "drone_arm_sim", "arm_preset_control",
+                                        "--preset", "retracted", "--duration", "10", "--wait",
+                                        "--tolerance", "0.08",
+                                    ],
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    text=True,
+                                )
+                                sent.add("retracted")
+                            os.write(master, b"l")
+                            sent.add("LAND")
+                            print("ARM_FLIGHT_SAFETY_LAND", flush=True)
                 for at, preset in arm_schedule:
-                    if elapsed >= at and preset not in sent and arm_process is None:
+                    if not safety_abort and elapsed >= at and preset not in sent and arm_process is None:
                         arm_label = preset
                         arm_process = subprocess.Popen(
                             [
@@ -114,7 +165,7 @@ def main() -> int:
                         sent.add(preset)
                         print(f"ARM_FLIGHT_SENT_{preset}", flush=True)
                         break
-                if elapsed >= land_after_s and "LAND" not in sent:
+                if not safety_abort and elapsed >= land_after_s and "LAND" not in sent:
                     os.write(master, b"l")
                     sent.add("LAND")
                     print("ARM_FLIGHT_SENT_LAND", flush=True)
@@ -143,7 +194,11 @@ def main() -> int:
             missing.append(item)
     required_presets = (
         ("work_a", "retracted") if profile == "full_a"
-        else ("flight_work_a", "flight_work_b", "retracted")
+        else (
+            ("flight_micro_a", "flight_micro_b", "retracted")
+            if profile == "micro"
+            else ("flight_work_a", "flight_work_b", "retracted")
+        )
     )
     for preset in required_presets:
         result = arm_results.get(preset)
@@ -157,7 +212,7 @@ def main() -> int:
     if offboard_time is not None:
         arm_window = [
             state for state in states
-            if 12.0 <= state[0] - offboard_time <= 70.0
+            if 0.0 <= state[0] - offboard_time <= 70.0
         ]
     max_horizontal_drift = float("inf")
     altitude_span = float("inf")
@@ -174,6 +229,8 @@ def main() -> int:
         f"horizontal_drift_m={max_horizontal_drift:.3f} "
         f"altitude_span_m={altitude_span:.3f} samples={len(arm_window)}"
     )
+    if safety_abort:
+        print(f"ARM_FLIGHT_ABORTED reason={safety_abort_reason}")
     if missing or not climbed or not no_failsafe or not stable:
         print(
             f"DDS_ARM_FLIGHT_FAIL missing={missing} climbed={climbed} "
