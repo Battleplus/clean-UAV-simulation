@@ -1,0 +1,558 @@
+{
+  "schema": 1,
+  "source_assembly": "E:\\清洁无人机\\零件\\完整零件\\组合无人机.SLDASM",
+  "source_probe": "E:\\清洁无人机\\drone_sim_ws\\analysis\\cad_direct\\axis_face_probe.json",
+  "method": "SolidWorks IFace2.GetSurface / ISurface.IsCylinder / CylinderParams",
+  "body_origin": "mean SolidWorks component bounding-box centre of eight f电机 instances",
+  "assembly_to_ros_flu": "X=-CAD_Z, Y=-CAD_X, Z=CAD_Y",
+  "assembly_to_px4_frd": "X=-CAD_Z, Y=CAD_X, Z=-CAD_Y",
+  "body_frame_frozen": {
+    "ros_flu": "+X nose, +Y left, +Z up",
+    "px4_frd": "+X nose, +Y right, +Z down",
+    "clockwise_motor_order_from_nose_right": [
+      1,
+      3,
+      8,
+      4,
+      2,
+      6,
+      7,
+      5
+    ],
+    "pusher_motors": [
+      3,
+      6,
+      7,
+      8
+    ],
+    "puller_motors": [
+      1,
+      2,
+      4,
+      5
+    ],
+    "upward_thrust_motors": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "downward_thrust_motors": [
+      4,
+      5,
+      7,
+      8
+    ]
+  },
+  "assembly_bbox_origin_m": [
+    -0.06443653447931826,
+    0.037365550279939826,
+    -0.00034346811153619997
+  ],
+  "motors": [
+    {
+      "motor": 1,
+      "cad_key": [
+        2,
+        2
+      ],
+      "motor_instance": "f机架总成-2/f电机-2",
+      "propeller_instance": "f机架总成-2/f螺旋桨-2",
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "assembly_axis_point_mm": [
+        12.169352970986369,
+        29.051706403609142,
+        -181.94935556184046
+      ],
+      "assembly_propeller_axis_point_mm": [
+        13.230013142766186,
+        31.649782614962493,
+        -183.01001573362026
+      ],
+      "assembly_thrust_axis": [
+        0.3535533905932739,
+        0.8660254037844385,
+        -0.3535533905932742
+      ],
+      "cad_propeller_side_axis_frd": [
+        0.3535533905932742,
+        0.3535533905932739,
+        -0.8660254037844385
+      ],
+      "ros_flu_thrust_axis": [
+        0.3535533905932742,
+        -0.3535533905932739,
+        0.8660254037844385
+      ],
+      "px4_frd_thrust_axis": [
+        0.3535533905932742,
+        0.3535533905932739,
+        -0.8660254037844385
+      ],
+      "px4_frd_position_m": [
+        0.18160588745030426,
+        0.07660588745030462,
+        0.008313843876330683
+      ],
+      "px4_frd_propeller_position_m": [
+        0.18266654762208406,
+        0.07766654762208444,
+        0.005715767664977334
+      ],
+      "tilt_deg": 30.000000000000018,
+      "azimuth_deg": 44.99999999999998,
+      "propeller_side_tilt_deg": 30.000000000000018,
+      "propulsion_mode": "puller",
+      "vertical_thrust_direction": "up",
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "motor_propeller_line_offset_mm": 3.274864922277287e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "coaxial_motor_face_radii_mm": [
+        2.4999999999999996,
+        11.0,
+        22.59424920127795
+      ]
+    },
+    {
+      "motor": 2,
+      "cad_key": [
+        2,
+        3
+      ],
+      "motor_instance": "f机架总成-2/f电机-3",
+      "propeller_instance": "f机架总成-2/f螺旋桨-3",
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "assembly_axis_point_mm": [
+        -141.04242192962283,
+        29.051706403609366,
+        181.26241933876813
+      ],
+      "assembly_propeller_axis_point_mm": [
+        -142.10308210140266,
+        31.649782614962678,
+        182.32307951054796
+      ],
+      "assembly_thrust_axis": [
+        -0.3535533905932737,
+        0.866025403784439,
+        0.35355339059327323
+      ],
+      "cad_propeller_side_axis_frd": [
+        -0.35355339059327323,
+        -0.3535533905932737,
+        -0.866025403784439
+      ],
+      "ros_flu_thrust_axis": [
+        -0.35355339059327323,
+        0.3535533905932737,
+        0.866025403784439
+      ],
+      "px4_frd_thrust_axis": [
+        -0.35355339059327323,
+        -0.3535533905932737,
+        -0.866025403784439
+      ],
+      "px4_frd_position_m": [
+        -0.18160588745030434,
+        -0.07660588745030457,
+        0.008313843876330461
+      ],
+      "px4_frd_propeller_position_m": [
+        -0.18266654762208417,
+        -0.0776665476220844,
+        0.005715767664977146
+      ],
+      "tilt_deg": 29.999999999999954,
+      "azimuth_deg": -134.99999999999997,
+      "propeller_side_tilt_deg": 29.999999999999954,
+      "propulsion_mode": "puller",
+      "vertical_thrust_direction": "up",
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "coaxial_motor_face_radii_mm": [
+        2.4999999999999996,
+        11.0,
+        22.59424920127795
+      ]
+    },
+    {
+      "motor": 3,
+      "cad_key": [
+        1,
+        3
+      ],
+      "motor_instance": "f机架总成-1/f电机-3",
+      "propeller_instance": "f机架总成-1/f螺旋桨-3",
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "assembly_axis_point_mm": [
+        117.16935297098603,
+        45.6793941562704,
+        -76.94935556184086
+      ],
+      "assembly_propeller_axis_point_mm": [
+        118.23001314276584,
+        43.081317944917075,
+        -78.01001573362068
+      ],
+      "assembly_thrust_axis": [
+        0.3535533905932736,
+        -0.8660254037844387,
+        -0.35355339059327384
+      ],
+      "cad_propeller_side_axis_frd": [
+        0.35355339059327384,
+        0.3535533905932736,
+        0.8660254037844387
+      ],
+      "ros_flu_thrust_axis": [
+        -0.35355339059327384,
+        0.3535533905932736,
+        0.8660254037844387
+      ],
+      "px4_frd_thrust_axis": [
+        -0.35355339059327384,
+        -0.3535533905932736,
+        -0.8660254037844387
+      ],
+      "px4_frd_position_m": [
+        0.07660588745030467,
+        0.1816058874503043,
+        -0.008313843876330572
+      ],
+      "px4_frd_propeller_position_m": [
+        0.07766654762208448,
+        0.1826665476220841,
+        -0.00571576766497725
+      ],
+      "tilt_deg": 29.999999999999993,
+      "azimuth_deg": -135.00000000000003,
+      "propeller_side_tilt_deg": 150.0,
+      "propulsion_mode": "pusher",
+      "vertical_thrust_direction": "up",
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "motor_propeller_line_offset_mm": 1.811234284755796e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "coaxial_motor_face_radii_mm": [
+        2.4999999999999996,
+        11.0,
+        22.59424920127795
+      ]
+    },
+    {
+      "motor": 4,
+      "cad_key": [
+        2,
+        4
+      ],
+      "motor_instance": "f机架总成-2/f电机-4",
+      "propeller_instance": "f机架总成-2/f螺旋桨-4",
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "assembly_axis_point_mm": [
+        12.169352970986383,
+        29.051706403609433,
+        181.26241933876798
+      ],
+      "assembly_propeller_axis_point_mm": [
+        13.230013142766188,
+        31.649782614962763,
+        182.32307951054779
+      ],
+      "assembly_thrust_axis": [
+        0.3535533905932738,
+        0.8660254037844388,
+        0.3535533905932735
+      ],
+      "cad_propeller_side_axis_frd": [
+        -0.3535533905932735,
+        0.3535533905932738,
+        -0.8660254037844388
+      ],
+      "ros_flu_thrust_axis": [
+        0.3535533905932735,
+        0.3535533905932738,
+        -0.8660254037844388
+      ],
+      "px4_frd_thrust_axis": [
+        0.3535533905932735,
+        -0.3535533905932738,
+        0.8660254037844388
+      ],
+      "px4_frd_position_m": [
+        -0.1816058874503042,
+        0.07660588745030464,
+        0.008313843876330392
+      ],
+      "px4_frd_propeller_position_m": [
+        -0.182666547622084,
+        0.07766654762208444,
+        0.005715767664977063
+      ],
+      "tilt_deg": 150.00000000000003,
+      "azimuth_deg": -45.00000000000003,
+      "propeller_side_tilt_deg": 29.99999999999998,
+      "propulsion_mode": "puller",
+      "vertical_thrust_direction": "down",
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "coaxial_motor_face_radii_mm": [
+        2.4999999999999996,
+        11.0,
+        22.59424920127795
+      ]
+    },
+    {
+      "motor": 5,
+      "cad_key": [
+        2,
+        1
+      ],
+      "motor_instance": "f机架总成-2/f电机-1",
+      "propeller_instance": "f机架总成-2/f螺旋桨-1",
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "assembly_axis_point_mm": [
+        -141.04242192962283,
+        29.05170640360924,
+        -181.94935556184024
+      ],
+      "assembly_propeller_axis_point_mm": [
+        -142.10308210140263,
+        31.649782614962533,
+        -183.01001573362015
+      ],
+      "assembly_thrust_axis": [
+        -0.3535533905932735,
+        0.8660254037844385,
+        -0.3535533905932745
+      ],
+      "cad_propeller_side_axis_frd": [
+        0.3535533905932745,
+        -0.3535533905932735,
+        -0.8660254037844385
+      ],
+      "ros_flu_thrust_axis": [
+        -0.3535533905932745,
+        -0.3535533905932735,
+        -0.8660254037844385
+      ],
+      "px4_frd_thrust_axis": [
+        -0.3535533905932745,
+        0.3535533905932735,
+        0.8660254037844385
+      ],
+      "px4_frd_position_m": [
+        0.18160588745030404,
+        -0.07660588745030457,
+        0.008313843876330586
+      ],
+      "px4_frd_propeller_position_m": [
+        0.18266654762208395,
+        -0.07766654762208437,
+        0.005715767664977292
+      ],
+      "tilt_deg": 149.99999999999997,
+      "azimuth_deg": 135.00000000000009,
+      "propeller_side_tilt_deg": 30.000000000000018,
+      "propulsion_mode": "puller",
+      "vertical_thrust_direction": "down",
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "motor_propeller_line_offset_mm": 9.488200048182762e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "coaxial_motor_face_radii_mm": [
+        2.4999999999999996,
+        11.0,
+        22.59424920127795
+      ]
+    },
+    {
+      "motor": 6,
+      "cad_key": [
+        1,
+        2
+      ],
+      "motor_instance": "f机架总成-1/f电机-2",
+      "propeller_instance": "f机架总成-1/f螺旋桨-2",
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "assembly_axis_point_mm": [
+        -246.04242192962258,
+        45.6793941562704,
+        76.26241933876837
+      ],
+      "assembly_propeller_axis_point_mm": [
+        -247.10308210140232,
+        43.08131794491705,
+        77.32307951054818
+      ],
+      "assembly_thrust_axis": [
+        -0.3535533905932736,
+        -0.8660254037844387,
+        0.35355339059327373
+      ],
+      "cad_propeller_side_axis_frd": [
+        -0.35355339059327373,
+        -0.3535533905932736,
+        0.8660254037844387
+      ],
+      "ros_flu_thrust_axis": [
+        0.35355339059327373,
+        -0.3535533905932736,
+        0.8660254037844387
+      ],
+      "px4_frd_thrust_axis": [
+        0.35355339059327373,
+        0.3535533905932736,
+        -0.8660254037844387
+      ],
+      "px4_frd_position_m": [
+        -0.07660588745030457,
+        -0.18160588745030432,
+        -0.008313843876330572
+      ],
+      "px4_frd_propeller_position_m": [
+        -0.07766654762208439,
+        -0.18266654762208406,
+        -0.00571576766497723
+      ],
+      "tilt_deg": 29.999999999999993,
+      "azimuth_deg": 44.99999999999999,
+      "propeller_side_tilt_deg": 150.0,
+      "propulsion_mode": "pusher",
+      "vertical_thrust_direction": "up",
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "motor_propeller_line_offset_mm": 7.735613448393047e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "coaxial_motor_face_radii_mm": [
+        2.4999999999999996,
+        11.0,
+        22.59424920127795
+      ]
+    },
+    {
+      "motor": 7,
+      "cad_key": [
+        1,
+        1
+      ],
+      "motor_instance": "f机架总成-1/f电机-1",
+      "propeller_instance": "f机架总成-1/f螺旋桨-1",
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "assembly_axis_point_mm": [
+        -246.04242192962235,
+        45.67939415627033,
+        -76.94935556184082
+      ],
+      "assembly_propeller_axis_point_mm": [
+        -247.1030821014022,
+        43.08131794491704,
+        -78.01001573362062
+      ],
+      "assembly_thrust_axis": [
+        -0.3535533905932741,
+        -0.8660254037844386,
+        -0.3535533905932736
+      ],
+      "cad_propeller_side_axis_frd": [
+        0.3535533905932736,
+        -0.3535533905932741,
+        0.8660254037844386
+      ],
+      "ros_flu_thrust_axis": [
+        0.3535533905932736,
+        0.3535533905932741,
+        -0.8660254037844386
+      ],
+      "px4_frd_thrust_axis": [
+        0.3535533905932736,
+        -0.3535533905932741,
+        0.8660254037844386
+      ],
+      "px4_frd_position_m": [
+        0.07660588745030462,
+        -0.1816058874503041,
+        -0.008313843876330503
+      ],
+      "px4_frd_propeller_position_m": [
+        0.07766654762208443,
+        -0.18266654762208395,
+        -0.005715767664977216
+      ],
+      "tilt_deg": 150.0,
+      "azimuth_deg": -45.00000000000004,
+      "propeller_side_tilt_deg": 150.0,
+      "propulsion_mode": "pusher",
+      "vertical_thrust_direction": "down",
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "motor_propeller_line_offset_mm": 2.091245844657973e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "coaxial_motor_face_radii_mm": [
+        2.4999999999999996,
+        11.0,
+        22.59424920127795
+      ]
+    },
+    {
+      "motor": 8,
+      "cad_key": [
+        1,
+        4
+      ],
+      "motor_instance": "f机架总成-1/f电机-4",
+      "propeller_instance": "f机架总成-1/f螺旋桨-4",
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "assembly_axis_point_mm": [
+        117.16935297098591,
+        45.6793941562703,
+        76.26241933876834
+      ],
+      "assembly_propeller_axis_point_mm": [
+        118.23001314276573,
+        43.08131794491697,
+        77.32307951054815
+      ],
+      "assembly_thrust_axis": [
+        0.353553390593274,
+        -0.8660254037844387,
+        0.3535533905932736
+      ],
+      "cad_propeller_side_axis_frd": [
+        -0.3535533905932736,
+        0.353553390593274,
+        0.8660254037844387
+      ],
+      "ros_flu_thrust_axis": [
+        -0.3535533905932736,
+        -0.353553390593274,
+        -0.8660254037844387
+      ],
+      "px4_frd_thrust_axis": [
+        -0.3535533905932736,
+        0.353553390593274,
+        0.8660254037844387
+      ],
+      "px4_frd_position_m": [
+        -0.07660588745030454,
+        0.18160588745030415,
+        -0.008313843876330475
+      ],
+      "px4_frd_propeller_position_m": [
+        -0.07766654762208434,
+        0.18266654762208398,
+        -0.005715767664977139
+      ],
+      "tilt_deg": 150.0,
+      "azimuth_deg": 134.99999999999997,
+      "propeller_side_tilt_deg": 150.0,
+      "propulsion_mode": "pusher",
+      "vertical_thrust_direction": "down",
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "motor_propeller_line_offset_mm": 2.455281089561238e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "coaxial_motor_face_radii_mm": [
+        2.4999999999999996,
+        11.0,
+        22.59424920127795
+      ]
+    }
+  ]
+}

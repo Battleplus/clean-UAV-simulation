@@ -1,0 +1,79 @@
+{
+  "schema": 1,
+  "purpose": "Motion and controller reference reused from the previously validated SO101 simulation",
+  "geometry_policy": "Do not reuse old joint origins or axes; use analysis/cad_direct/so101_joint_evidence.json",
+  "zero_configuration": "Current CAD retracted pose",
+  "joints": [
+    {
+      "name": "shoulder_pan",
+      "lower_rad": -1.91986,
+      "upper_rad": 1.91986,
+      "effort_nm": 3.0,
+      "velocity_rad_s": 2.0,
+      "damping": 0.25,
+      "friction": 0.05,
+      "pid": [5.0, 0.02, 0.5]
+    },
+    {
+      "name": "shoulder_lift",
+      "lower_rad": -1.74533,
+      "upper_rad": 1.74533,
+      "effort_nm": 3.0,
+      "velocity_rad_s": 2.0,
+      "damping": 0.25,
+      "friction": 0.05,
+      "pid": [6.0, 0.02, 0.6]
+    },
+    {
+      "name": "elbow_flex",
+      "lower_rad": -1.69,
+      "upper_rad": 1.69,
+      "effort_nm": 3.0,
+      "velocity_rad_s": 2.0,
+      "damping": 0.25,
+      "friction": 0.05,
+      "pid": [5.0, 0.02, 0.5]
+    },
+    {
+      "name": "wrist_flex",
+      "lower_rad": -1.65806,
+      "upper_rad": 1.65806,
+      "effort_nm": 2.0,
+      "velocity_rad_s": 2.0,
+      "damping": 0.2,
+      "friction": 0.04,
+      "pid": [3.0, 0.01, 0.3]
+    },
+    {
+      "name": "wrist_roll",
+      "lower_rad": -2.74385,
+      "upper_rad": 2.84121,
+      "effort_nm": 2.0,
+      "velocity_rad_s": 2.0,
+      "damping": 0.15,
+      "friction": 0.03,
+      "pid": [3.0, 0.01, 0.3]
+    },
+    {
+      "name": "gripper",
+      "lower_rad": -0.174533,
+      "upper_rad": 1.74533,
+      "effort_nm": 1.0,
+      "velocity_rad_s": 2.0,
+      "damping": 0.15,
+      "friction": 0.03,
+      "pid": [2.0, 0.01, 0.2]
+    }
+  ],
+  "presets": {
+    "retracted": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+    "work_a": [0.4, -0.6, 0.8, -0.5, 0.3, 0.8],
+    "work_b": [-0.4, -0.3, 0.5, 0.2, -0.3, 0.3]
+  },
+  "validation_trajectory": [
+    {"time_s": 1.0, "preset": "retracted"},
+    {"time_s": 4.0, "preset": "work_a"},
+    {"time_s": 7.0, "preset": "work_b"},
+    {"time_s": 10.0, "preset": "retracted"}
+  ]
+}

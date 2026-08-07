@@ -1,0 +1,35 @@
+# ROS / colcon generated files
+**/build/
+**/build_ros2/
+**/install/
+**/install_ros2/
+**/log/
+**/log_ros2/
+
+# Python caches
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# IDE and OS files
+.vs/
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
+
+# Compiled helper outputs
+**/bin/
+**/obj/
+
+# Local dependency caches and scratch extraction
+drone_sim_ws/.deps/
+_wsl_extract/
+.workbuddy/
+
+# Large upstream archive; PX4 is maintained separately
+PX4-main.tar.gz
+
+# Runtime simulator logs
+*.ulg
+

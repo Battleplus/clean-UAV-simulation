@@ -1,0 +1,177 @@
+{
+  "schema": 1,
+  "source_assembly": "E:\\清洁无人机\\零件\\完整零件\\组合无人机.SLDASM",
+  "source_probe": "E:\\清洁无人机\\drone_sim_ws\\analysis\\cad_direct\\axis_face_probe.json",
+  "body_origin_cad_m": [
+    -0.06443653447931824,
+    0.037365550279939826,
+    -0.0003434681115362017
+  ],
+  "assembly_to_ros_flu": "X=-CAD_Z, Y=-CAD_X, Z=CAD_Y",
+  "zero_configuration": "CAD retracted assembly pose",
+  "mapping_basis": "SO101 serial kinematic order and matching drive-servo instance suffix",
+  "joints": [
+    {
+      "joint": "shoulder_pan",
+      "servo_instance": "SCS215_7",
+      "axis_source": "SolidWorks central drive-horn cylindrical face (r=9.6 mm)",
+      "source_component": "fSO101 Assembly-1/SO101 Assembly.step-1/Сборка14.step-1/SCS215_7.step-1/金属舵盘（驱动）.step-1",
+      "assembly_axis_point_m": [
+        -0.06453596694911458,
+        -0.1300012987276199,
+        -6.876398333573348e-05
+      ],
+      "assembly_axis": [
+        -4.718447854656915e-16,
+        -0.9999619230641714,
+        -0.008726535498374408
+      ],
+      "ros_flu_axis_point_m": [
+        -0.0002747041282004682,
+        9.943246979633724e-05,
+        -0.16736684900755971
+      ],
+      "ros_flu_axis": [
+        0.008726535498374408,
+        4.718447854656915e-16,
+        -0.9999619230641714
+      ],
+      "source_radius_mm": 9.6
+    },
+    {
+      "joint": "shoulder_lift",
+      "servo_instance": "SCS215_7_1",
+      "axis_source": "SolidWorks central drive-horn cylindrical face (r=9.6 mm)",
+      "source_component": "fSO101 Assembly-1/SO101 Assembly.step-1/Сборка14_1.step-1/SCS215_7_1.step-1/金属舵盘（驱动）.step-1",
+      "assembly_axis_point_m": [
+        -0.07809082711362218,
+        -0.18732914650014731,
+        -0.03138569161346732
+      ],
+      "assembly_axis": [
+        -0.9999619230641713,
+        7.615242181698359e-05,
+        -0.008726203218642453
+      ],
+      "ros_flu_axis_point_m": [
+        0.031042223501931115,
+        0.013654292634303941,
+        -0.22469469678008713
+      ],
+      "ros_flu_axis": [
+        0.008726203218642453,
+        0.9999619230641713,
+        7.615242181698359e-05
+      ],
+      "source_radius_mm": 9.6
+    },
+    {
+      "joint": "elbow_flex",
+      "servo_instance": "SCS215_7_2",
+      "axis_source": "SolidWorks central drive-horn cylindrical face (r=9.6 mm)",
+      "source_component": "fSO101 Assembly-1/SO101 Assembly.step-1/Сборка14_2.step-1/SCS215_7_2.step-1/金属舵盘（驱动）.step-1",
+      "assembly_axis_point_m": [
+        -0.07657952951254118,
+        -0.21604513365515554,
+        0.08105545614063357
+      ],
+      "assembly_axis": [
+        -0.9999238475781955,
+        0.008802352740801104,
+        -0.008649718529758474
+      ],
+      "ros_flu_axis_point_m": [
+        -0.08139892425216977,
+        0.012142995033222942,
+        -0.25341068393509536
+      ],
+      "ros_flu_axis": [
+        0.008649718529758476,
+        0.9999238475781956,
+        0.008802352740801106
+      ],
+      "source_radius_mm": 9.6
+    },
+    {
+      "joint": "wrist_flex",
+      "servo_instance": "SCS215_7_3",
+      "axis_source": "SolidWorks central drive-horn cylindrical face (r=9.6 mm)",
+      "source_component": "fSO101 Assembly-1/SO101 Assembly.step-1/Сборка14_3.step-1/SCS215_7_3.step-1/金属舵盘（驱动）.step-1",
+      "assembly_axis_point_m": [
+        -0.07449736607648974,
+        -0.21986722795178815,
+        -0.05310265388506818
+      ],
+      "assembly_axis": [
+        -0.999847700955417,
+        0.017451403874803473,
+        0.0001529606664393495
+      ],
+      "ros_flu_axis_point_m": [
+        0.052759185773531975,
+        0.010060831597171499,
+        -0.25723277823172797
+      ],
+      "ros_flu_axis": [
+        -0.0001529606664393495,
+        0.999847700955417,
+        0.017451403874803473
+      ],
+      "source_radius_mm": 9.6
+    },
+    {
+      "joint": "wrist_roll",
+      "servo_instance": "SCS215_7_4",
+      "axis_source": "SolidWorks central drive-horn cylindrical face (r=9.6 mm)",
+      "source_component": "fSO101 Assembly-1/SO101 Assembly.step-1/Сборка14_4.step-1/SCS215_7_4.step-1/金属舵盘（驱动）.step-1",
+      "assembly_axis_point_m": [
+        -0.057374728988072915,
+        -0.21965378831900179,
+        -0.11130101852368005
+      ],
+      "assembly_axis": [
+        6.645215744737614e-07,
+        0.008802682095902513,
+        -0.9999612556431758
+      ],
+      "ros_flu_axis_point_m": [
+        0.11095755041214385,
+        -0.0070618054912453265,
+        -0.2570193385989416
+      ],
+      "ros_flu_axis": [
+        0.9999612556431758,
+        -6.645215744737614e-07,
+        0.008802682095902513
+      ],
+      "source_radius_mm": 9.6
+    },
+    {
+      "joint": "gripper",
+      "servo_instance": "SCS215_7_5",
+      "axis_source": "SolidWorks central drive-horn cylindrical face (r=9.6 mm)",
+      "source_component": "fSO101 Assembly-1/SO101 Assembly.step-1/Сборка14_5.step-1/SCS215_7_5.step-1/金属舵盘（驱动）.step-1",
+      "assembly_axis_point_m": [
+        -0.04167165124571531,
+        -0.23962831716267383,
+        -0.1382298808575243
+      ],
+      "assembly_axis": [
+        0.9999619259454086,
+        -0.008725873067878491,
+        -7.614954071753767e-05
+      ],
+      "ros_flu_axis_point_m": [
+        0.1378864127459881,
+        -0.02276488323360293,
+        -0.2769938674426137
+      ],
+      "ros_flu_axis": [
+        7.614954071753767e-05,
+        -0.9999619259454086,
+        -0.008725873067878491
+      ],
+      "source_radius_mm": 9.6
+    }
+  ]
+}

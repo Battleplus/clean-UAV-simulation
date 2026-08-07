@@ -1,0 +1,23 @@
+{
+  "description": "Example only: 0.35 m radius, 15 degree tilt. direction +1 means CCW and positive PX4 KM.",
+  "example_mass_kg": 2.632006,
+  "gravity_m_s2": 9.81,
+  "reaction_moment_ratio_m": 0.02,
+  "motor_time_constant_s": 0.035,
+  "motor_constant_n_per_rad_s_squared": 8.54858e-06,
+  "maximum_rotor_speed_rad_s": 1100.0,
+  "rotor_velocity_slowdown_sim": 10,
+  "virtual_rotor_mass_kg": 0.0001,
+  "minimum_thrust_n": 0.0,
+  "maximum_thrust_n": 10.3437818,
+  "rotors": [
+    {"name": "rotor_1", "position_m": [0.35, 0.0, 0.0], "axis_body": [0.183013, 0.183013, -0.965926], "direction": 1},
+    {"name": "rotor_2", "position_m": [0.247487, 0.247487, 0.0], "axis_body": [0.258819, 0.0, -0.965926], "direction": -1},
+    {"name": "rotor_3", "position_m": [0.0, 0.35, 0.0], "axis_body": [-0.183013, 0.183013, -0.965926], "direction": 1},
+    {"name": "rotor_4", "position_m": [-0.247487, 0.247487, 0.0], "axis_body": [0.0, 0.258819, -0.965926], "direction": -1},
+    {"name": "rotor_5", "position_m": [-0.35, 0.0, 0.0], "axis_body": [-0.183013, -0.183013, -0.965926], "direction": 1},
+    {"name": "rotor_6", "position_m": [-0.247487, -0.247487, 0.0], "axis_body": [-0.258819, 0.0, -0.965926], "direction": -1},
+    {"name": "rotor_7", "position_m": [0.0, -0.35, 0.0], "axis_body": [0.183013, -0.183013, -0.965926], "direction": 1},
+    {"name": "rotor_8", "position_m": [0.247487, -0.247487, 0.0], "axis_body": [0.0, -0.258819, -0.965926], "direction": -1}
+  ]
+}

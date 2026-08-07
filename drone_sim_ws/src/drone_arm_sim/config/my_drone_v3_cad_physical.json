@@ -1,0 +1,1076 @@
+{
+  "schema": 3,
+  "description": "Formal CAD physical baseline. It is intentionally separate from the lower-mass flight prototype.",
+  "source_assembly": "/mnt/e/清洁无人机/零件/完整零件/组合无人机.SLDASM",
+  "geometry_evidence": "analysis/cad_direct/motor_axis_evidence.json",
+  "pitch_evidence": "analysis/cad_direct/propeller_pitch_geometry_evidence.json",
+  "physical_evidence": "analysis/cad_direct/cad_mass_properties.json",
+  "coordinate_frames": {
+    "cad_assembly": "immutable SolidWorks assembly origin",
+    "ros_flu": "+X nose, +Y left, +Z up; origin at provisional CAD-derived COM",
+    "px4_frd": "+X nose, +Y right, +Z down; origin at provisional CAD-derived COM",
+    "cad_to_ros_flu": "X=-CAD_Z, Y=-CAD_X, Z=CAD_Y",
+    "cad_to_px4_frd": "X=-CAD_Z, Y=CAD_X, Z=-CAD_Y"
+  },
+  "estimated_mass_kg": 8.567252067844061,
+  "estimated_cad_com_m": [
+    -0.06375321748135368,
+    -0.16711715950288908,
+    0.003664214629712963
+  ],
+  "estimated_ros_flu_inertia_at_com_kg_m2": [
+    [
+      0.445324391348221,
+      0.0005887475101134194,
+      0.006376565396324815
+    ],
+    [
+      0.0005887475101134194,
+      0.4464709332055872,
+      -0.0002881369864805086
+    ],
+    [
+      0.006376565396324815,
+      -0.0002881369864805086,
+      0.45624500058649275
+    ]
+  ],
+  "mass_status": "provisional density-derived; replace motors, servos and propellers with specification masses and calibrate to whole-aircraft weighing",
+  "maximum_rated_thrust_per_motor_n": 11.76798,
+  "static_thrust_model": {
+    "method": "piecewise-linear interpolation of supplied 14.8 V static test table",
+    "rated_cap_n": 11.76798,
+    "note": "90% measured point is 1.283 kgf but output is capped at the user-rated 1.2 kgf until test conditions are reconciled",
+    "points": [
+      {
+        "throttle_percent": 0,
+        "measured_thrust_gf": 0,
+        "measured_thrust_n": 0.0,
+        "rated_capped_thrust_n": 0.0
+      },
+      {
+        "throttle_percent": 15,
+        "measured_thrust_gf": 26,
+        "measured_thrust_n": 0.25497289999999995,
+        "rated_capped_thrust_n": 0.25497289999999995
+      },
+      {
+        "throttle_percent": 20,
+        "measured_thrust_gf": 79,
+        "measured_thrust_n": 0.77472535,
+        "rated_capped_thrust_n": 0.77472535
+      },
+      {
+        "throttle_percent": 25,
+        "measured_thrust_gf": 142,
+        "measured_thrust_n": 1.3925442999999997,
+        "rated_capped_thrust_n": 1.3925442999999997
+      },
+      {
+        "throttle_percent": 30,
+        "measured_thrust_gf": 160,
+        "measured_thrust_n": 1.569064,
+        "rated_capped_thrust_n": 1.569064
+      },
+      {
+        "throttle_percent": 35,
+        "measured_thrust_gf": 254,
+        "measured_thrust_n": 2.4908891,
+        "rated_capped_thrust_n": 2.4908891
+      },
+      {
+        "throttle_percent": 40,
+        "measured_thrust_gf": 372,
+        "measured_thrust_n": 3.6480737999999997,
+        "rated_capped_thrust_n": 3.6480737999999997
+      },
+      {
+        "throttle_percent": 45,
+        "measured_thrust_gf": 457,
+        "measured_thrust_n": 4.48163905,
+        "rated_capped_thrust_n": 4.48163905
+      },
+      {
+        "throttle_percent": 50,
+        "measured_thrust_gf": 545,
+        "measured_thrust_n": 5.34462425,
+        "rated_capped_thrust_n": 5.34462425
+      },
+      {
+        "throttle_percent": 55,
+        "measured_thrust_gf": 562,
+        "measured_thrust_n": 5.5113373,
+        "rated_capped_thrust_n": 5.5113373
+      },
+      {
+        "throttle_percent": 60,
+        "measured_thrust_gf": 630,
+        "measured_thrust_n": 6.178189499999999,
+        "rated_capped_thrust_n": 6.178189499999999
+      },
+      {
+        "throttle_percent": 65,
+        "measured_thrust_gf": 673,
+        "measured_thrust_n": 6.59987545,
+        "rated_capped_thrust_n": 6.59987545
+      },
+      {
+        "throttle_percent": 70,
+        "measured_thrust_gf": 725,
+        "measured_thrust_n": 7.1098212499999995,
+        "rated_capped_thrust_n": 7.1098212499999995
+      },
+      {
+        "throttle_percent": 75,
+        "measured_thrust_gf": 831,
+        "measured_thrust_n": 8.149326149999998,
+        "rated_capped_thrust_n": 8.149326149999998
+      },
+      {
+        "throttle_percent": 80,
+        "measured_thrust_gf": 909,
+        "measured_thrust_n": 8.91424485,
+        "rated_capped_thrust_n": 8.91424485
+      },
+      {
+        "throttle_percent": 85,
+        "measured_thrust_gf": 1041,
+        "measured_thrust_n": 10.208722649999999,
+        "rated_capped_thrust_n": 10.208722649999999
+      },
+      {
+        "throttle_percent": 90,
+        "measured_thrust_gf": 1283,
+        "measured_thrust_n": 12.581931949999998,
+        "rated_capped_thrust_n": 11.76798
+      }
+    ]
+  },
+  "motor_dynamics": {
+    "rise_time_constant_s": 0.035,
+    "fall_time_constant_s": 0.035,
+    "status": "initial estimate only; must be replaced by measured step response"
+  },
+  "reaction_torque": {
+    "modelled_in_allocation_report": false,
+    "reason": "no RPM-torque or C_Q evidence; zero used for geometry authority audit"
+  },
+  "rotor_axis_lines_unsigned": [
+    {
+      "motor": 1,
+      "position_m": [
+        0.18561357019155345,
+        0.07592257045234005,
+        -0.19616886590649824
+      ],
+      "turning_direction": "CW",
+      "direction": -1,
+      "propulsion_mode": "puller",
+      "cad_shaft_axis_line_frd": [
+        0.3535533905932742,
+        0.3535533905932739,
+        -0.8660254037844385
+      ],
+      "cad_axis_point_mm": [
+        12.169352970986369,
+        29.051706403609142,
+        -181.94935556184046
+      ],
+      "motor_propeller_line_offset_mm": 3.274864922277287e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED"
+    },
+    {
+      "motor": 2,
+      "position_m": [
+        -0.17759820470905516,
+        -0.07728920444826914,
+        -0.19616886590649846
+      ],
+      "turning_direction": "CW",
+      "direction": -1,
+      "propulsion_mode": "puller",
+      "cad_shaft_axis_line_frd": [
+        -0.35355339059327323,
+        -0.3535533905932737,
+        -0.866025403784439
+      ],
+      "cad_axis_point_mm": [
+        -141.04242192962283,
+        29.051706403609366,
+        181.26241933876813
+      ],
+      "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED"
+    },
+    {
+      "motor": 3,
+      "position_m": [
+        0.08061357019155382,
+        0.18092257045233973,
+        -0.21279655365915948
+      ],
+      "turning_direction": "CCW",
+      "direction": 1,
+      "propulsion_mode": "pusher",
+      "cad_shaft_axis_line_frd": [
+        0.35355339059327384,
+        0.3535533905932736,
+        0.8660254037844387
+      ],
+      "cad_axis_point_mm": [
+        117.16935297098603,
+        45.6793941562704,
+        -76.94935556184086
+      ],
+      "motor_propeller_line_offset_mm": 1.811234284755796e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED"
+    },
+    {
+      "motor": 4,
+      "position_m": [
+        -0.17759820470905502,
+        0.07592257045234006,
+        -0.1961688659064985
+      ],
+      "turning_direction": "CCW",
+      "direction": 1,
+      "propulsion_mode": "puller",
+      "cad_shaft_axis_line_frd": [
+        -0.3535533905932735,
+        0.3535533905932738,
+        -0.8660254037844388
+      ],
+      "cad_axis_point_mm": [
+        12.169352970986383,
+        29.051706403609433,
+        181.26241933876798
+      ],
+      "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED"
+    },
+    {
+      "motor": 5,
+      "position_m": [
+        0.18561357019155322,
+        -0.07728920444826914,
+        -0.19616886590649832
+      ],
+      "turning_direction": "CCW",
+      "direction": 1,
+      "propulsion_mode": "puller",
+      "cad_shaft_axis_line_frd": [
+        0.3535533905932745,
+        -0.3535533905932735,
+        -0.8660254037844385
+      ],
+      "cad_axis_point_mm": [
+        -141.04242192962283,
+        29.05170640360924,
+        -181.94935556184024
+      ],
+      "motor_propeller_line_offset_mm": 9.488200048182762e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED"
+    },
+    {
+      "motor": 6,
+      "position_m": [
+        -0.07259820470905541,
+        -0.1822892044482689,
+        -0.21279655365915948
+      ],
+      "turning_direction": "CCW",
+      "direction": 1,
+      "propulsion_mode": "pusher",
+      "cad_shaft_axis_line_frd": [
+        -0.35355339059327373,
+        -0.3535533905932736,
+        0.8660254037844387
+      ],
+      "cad_axis_point_mm": [
+        -246.04242192962258,
+        45.6793941562704,
+        76.26241933876837
+      ],
+      "motor_propeller_line_offset_mm": 7.735613448393047e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED"
+    },
+    {
+      "motor": 7,
+      "position_m": [
+        0.08061357019155378,
+        -0.18228920444826868,
+        -0.2127965536591594
+      ],
+      "turning_direction": "CW",
+      "direction": -1,
+      "propulsion_mode": "pusher",
+      "cad_shaft_axis_line_frd": [
+        0.3535533905932736,
+        -0.3535533905932741,
+        0.8660254037844386
+      ],
+      "cad_axis_point_mm": [
+        -246.04242192962235,
+        45.67939415627033,
+        -76.94935556184082
+      ],
+      "motor_propeller_line_offset_mm": 2.091245844657973e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED"
+    },
+    {
+      "motor": 8,
+      "position_m": [
+        -0.07259820470905538,
+        0.1809225704523396,
+        -0.2127965536591594
+      ],
+      "turning_direction": "CW",
+      "direction": -1,
+      "propulsion_mode": "pusher",
+      "cad_shaft_axis_line_frd": [
+        -0.3535533905932736,
+        0.353553390593274,
+        0.8660254037844387
+      ],
+      "cad_axis_point_mm": [
+        117.16935297098591,
+        45.6793941562703,
+        76.26241933876834
+      ],
+      "motor_propeller_line_offset_mm": 2.455281089561238e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED"
+    }
+  ],
+  "scenarios": {
+    "user_declared_installed_propellers": [
+      {
+        "motor": 1,
+        "position_m": [
+          0.18561357019155345,
+          0.07592257045234005,
+          -0.19616886590649824
+        ],
+        "turning_direction": "CW",
+        "direction": -1,
+        "propulsion_mode": "puller",
+        "cad_shaft_axis_line_frd": [
+          0.3535533905932742,
+          0.3535533905932739,
+          -0.8660254037844385
+        ],
+        "cad_axis_point_mm": [
+          12.169352970986369,
+          29.051706403609142,
+          -181.94935556184046
+        ],
+        "motor_propeller_line_offset_mm": 3.274864922277287e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          0.3535533905932742,
+          0.3535533905932739,
+          -0.8660254037844385
+        ],
+        "thrust_sign_source": "user-declared CW/CCW + puller/pusher table; not resolved by flat CAD propeller geometry"
+      },
+      {
+        "motor": 2,
+        "position_m": [
+          -0.17759820470905516,
+          -0.07728920444826914,
+          -0.19616886590649846
+        ],
+        "turning_direction": "CW",
+        "direction": -1,
+        "propulsion_mode": "puller",
+        "cad_shaft_axis_line_frd": [
+          -0.35355339059327323,
+          -0.3535533905932737,
+          -0.866025403784439
+        ],
+        "cad_axis_point_mm": [
+          -141.04242192962283,
+          29.051706403609366,
+          181.26241933876813
+        ],
+        "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          -0.35355339059327323,
+          -0.3535533905932737,
+          -0.866025403784439
+        ],
+        "thrust_sign_source": "user-declared CW/CCW + puller/pusher table; not resolved by flat CAD propeller geometry"
+      },
+      {
+        "motor": 3,
+        "position_m": [
+          0.08061357019155382,
+          0.18092257045233973,
+          -0.21279655365915948
+        ],
+        "turning_direction": "CCW",
+        "direction": 1,
+        "propulsion_mode": "pusher",
+        "cad_shaft_axis_line_frd": [
+          0.35355339059327384,
+          0.3535533905932736,
+          0.8660254037844387
+        ],
+        "cad_axis_point_mm": [
+          117.16935297098603,
+          45.6793941562704,
+          -76.94935556184086
+        ],
+        "motor_propeller_line_offset_mm": 1.811234284755796e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          -0.35355339059327384,
+          -0.3535533905932736,
+          -0.8660254037844387
+        ],
+        "thrust_sign_source": "user-declared CW/CCW + puller/pusher table; not resolved by flat CAD propeller geometry"
+      },
+      {
+        "motor": 4,
+        "position_m": [
+          -0.17759820470905502,
+          0.07592257045234006,
+          -0.1961688659064985
+        ],
+        "turning_direction": "CCW",
+        "direction": 1,
+        "propulsion_mode": "puller",
+        "cad_shaft_axis_line_frd": [
+          -0.3535533905932735,
+          0.3535533905932738,
+          -0.8660254037844388
+        ],
+        "cad_axis_point_mm": [
+          12.169352970986383,
+          29.051706403609433,
+          181.26241933876798
+        ],
+        "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          0.3535533905932735,
+          -0.3535533905932738,
+          0.8660254037844388
+        ],
+        "thrust_sign_source": "user-declared CW/CCW + puller/pusher table; not resolved by flat CAD propeller geometry"
+      },
+      {
+        "motor": 5,
+        "position_m": [
+          0.18561357019155322,
+          -0.07728920444826914,
+          -0.19616886590649832
+        ],
+        "turning_direction": "CCW",
+        "direction": 1,
+        "propulsion_mode": "puller",
+        "cad_shaft_axis_line_frd": [
+          0.3535533905932745,
+          -0.3535533905932735,
+          -0.8660254037844385
+        ],
+        "cad_axis_point_mm": [
+          -141.04242192962283,
+          29.05170640360924,
+          -181.94935556184024
+        ],
+        "motor_propeller_line_offset_mm": 9.488200048182762e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          -0.3535533905932745,
+          0.3535533905932735,
+          0.8660254037844385
+        ],
+        "thrust_sign_source": "user-declared CW/CCW + puller/pusher table; not resolved by flat CAD propeller geometry"
+      },
+      {
+        "motor": 6,
+        "position_m": [
+          -0.07259820470905541,
+          -0.1822892044482689,
+          -0.21279655365915948
+        ],
+        "turning_direction": "CCW",
+        "direction": 1,
+        "propulsion_mode": "pusher",
+        "cad_shaft_axis_line_frd": [
+          -0.35355339059327373,
+          -0.3535533905932736,
+          0.8660254037844387
+        ],
+        "cad_axis_point_mm": [
+          -246.04242192962258,
+          45.6793941562704,
+          76.26241933876837
+        ],
+        "motor_propeller_line_offset_mm": 7.735613448393047e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          0.35355339059327373,
+          0.3535533905932736,
+          -0.8660254037844387
+        ],
+        "thrust_sign_source": "user-declared CW/CCW + puller/pusher table; not resolved by flat CAD propeller geometry"
+      },
+      {
+        "motor": 7,
+        "position_m": [
+          0.08061357019155378,
+          -0.18228920444826868,
+          -0.2127965536591594
+        ],
+        "turning_direction": "CW",
+        "direction": -1,
+        "propulsion_mode": "pusher",
+        "cad_shaft_axis_line_frd": [
+          0.3535533905932736,
+          -0.3535533905932741,
+          0.8660254037844386
+        ],
+        "cad_axis_point_mm": [
+          -246.04242192962235,
+          45.67939415627033,
+          -76.94935556184082
+        ],
+        "motor_propeller_line_offset_mm": 2.091245844657973e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          0.3535533905932736,
+          -0.3535533905932741,
+          0.8660254037844386
+        ],
+        "thrust_sign_source": "user-declared CW/CCW + puller/pusher table; not resolved by flat CAD propeller geometry"
+      },
+      {
+        "motor": 8,
+        "position_m": [
+          -0.07259820470905538,
+          0.1809225704523396,
+          -0.2127965536591594
+        ],
+        "turning_direction": "CW",
+        "direction": -1,
+        "propulsion_mode": "pusher",
+        "cad_shaft_axis_line_frd": [
+          -0.3535533905932736,
+          0.353553390593274,
+          0.8660254037844387
+        ],
+        "cad_axis_point_mm": [
+          117.16935297098591,
+          45.6793941562703,
+          76.26241933876834
+        ],
+        "motor_propeller_line_offset_mm": 2.455281089561238e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          -0.3535533905932736,
+          0.353553390593274,
+          0.8660254037844387
+        ],
+        "thrust_sign_source": "user-declared CW/CCW + puller/pusher table; not resolved by flat CAD propeller geometry"
+      }
+    ],
+    "opposite_pitch_all_up_hypothesis": [
+      {
+        "motor": 1,
+        "position_m": [
+          0.18561357019155345,
+          0.07592257045234005,
+          -0.19616886590649824
+        ],
+        "turning_direction": "CW",
+        "direction": -1,
+        "propulsion_mode": "puller",
+        "cad_shaft_axis_line_frd": [
+          0.3535533905932742,
+          0.3535533905932739,
+          -0.8660254037844385
+        ],
+        "cad_axis_point_mm": [
+          12.169352970986369,
+          29.051706403609142,
+          -181.94935556184046
+        ],
+        "motor_propeller_line_offset_mm": 3.274864922277287e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          0.3535533905932742,
+          0.3535533905932739,
+          -0.8660254037844385
+        ],
+        "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+      },
+      {
+        "motor": 2,
+        "position_m": [
+          -0.17759820470905516,
+          -0.07728920444826914,
+          -0.19616886590649846
+        ],
+        "turning_direction": "CW",
+        "direction": -1,
+        "propulsion_mode": "puller",
+        "cad_shaft_axis_line_frd": [
+          -0.35355339059327323,
+          -0.3535533905932737,
+          -0.866025403784439
+        ],
+        "cad_axis_point_mm": [
+          -141.04242192962283,
+          29.051706403609366,
+          181.26241933876813
+        ],
+        "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          -0.35355339059327323,
+          -0.3535533905932737,
+          -0.866025403784439
+        ],
+        "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+      },
+      {
+        "motor": 3,
+        "position_m": [
+          0.08061357019155382,
+          0.18092257045233973,
+          -0.21279655365915948
+        ],
+        "turning_direction": "CCW",
+        "direction": 1,
+        "propulsion_mode": "pusher",
+        "cad_shaft_axis_line_frd": [
+          0.35355339059327384,
+          0.3535533905932736,
+          0.8660254037844387
+        ],
+        "cad_axis_point_mm": [
+          117.16935297098603,
+          45.6793941562704,
+          -76.94935556184086
+        ],
+        "motor_propeller_line_offset_mm": 1.811234284755796e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          -0.35355339059327384,
+          -0.3535533905932736,
+          -0.8660254037844387
+        ],
+        "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+      },
+      {
+        "motor": 4,
+        "position_m": [
+          -0.17759820470905502,
+          0.07592257045234006,
+          -0.1961688659064985
+        ],
+        "turning_direction": "CCW",
+        "direction": 1,
+        "propulsion_mode": "puller",
+        "cad_shaft_axis_line_frd": [
+          -0.3535533905932735,
+          0.3535533905932738,
+          -0.8660254037844388
+        ],
+        "cad_axis_point_mm": [
+          12.169352970986383,
+          29.051706403609433,
+          181.26241933876798
+        ],
+        "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          -0.3535533905932735,
+          0.3535533905932738,
+          -0.8660254037844388
+        ],
+        "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+      },
+      {
+        "motor": 5,
+        "position_m": [
+          0.18561357019155322,
+          -0.07728920444826914,
+          -0.19616886590649832
+        ],
+        "turning_direction": "CCW",
+        "direction": 1,
+        "propulsion_mode": "puller",
+        "cad_shaft_axis_line_frd": [
+          0.3535533905932745,
+          -0.3535533905932735,
+          -0.8660254037844385
+        ],
+        "cad_axis_point_mm": [
+          -141.04242192962283,
+          29.05170640360924,
+          -181.94935556184024
+        ],
+        "motor_propeller_line_offset_mm": 9.488200048182762e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          0.3535533905932745,
+          -0.3535533905932735,
+          -0.8660254037844385
+        ],
+        "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+      },
+      {
+        "motor": 6,
+        "position_m": [
+          -0.07259820470905541,
+          -0.1822892044482689,
+          -0.21279655365915948
+        ],
+        "turning_direction": "CCW",
+        "direction": 1,
+        "propulsion_mode": "pusher",
+        "cad_shaft_axis_line_frd": [
+          -0.35355339059327373,
+          -0.3535533905932736,
+          0.8660254037844387
+        ],
+        "cad_axis_point_mm": [
+          -246.04242192962258,
+          45.6793941562704,
+          76.26241933876837
+        ],
+        "motor_propeller_line_offset_mm": 7.735613448393047e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          0.35355339059327373,
+          0.3535533905932736,
+          -0.8660254037844387
+        ],
+        "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+      },
+      {
+        "motor": 7,
+        "position_m": [
+          0.08061357019155378,
+          -0.18228920444826868,
+          -0.2127965536591594
+        ],
+        "turning_direction": "CW",
+        "direction": -1,
+        "propulsion_mode": "pusher",
+        "cad_shaft_axis_line_frd": [
+          0.3535533905932736,
+          -0.3535533905932741,
+          0.8660254037844386
+        ],
+        "cad_axis_point_mm": [
+          -246.04242192962235,
+          45.67939415627033,
+          -76.94935556184082
+        ],
+        "motor_propeller_line_offset_mm": 2.091245844657973e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          -0.3535533905932736,
+          0.3535533905932741,
+          -0.8660254037844386
+        ],
+        "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+      },
+      {
+        "motor": 8,
+        "position_m": [
+          -0.07259820470905538,
+          0.1809225704523396,
+          -0.2127965536591594
+        ],
+        "turning_direction": "CW",
+        "direction": -1,
+        "propulsion_mode": "pusher",
+        "cad_shaft_axis_line_frd": [
+          -0.3535533905932736,
+          0.353553390593274,
+          0.8660254037844387
+        ],
+        "cad_axis_point_mm": [
+          117.16935297098591,
+          45.6793941562703,
+          76.26241933876834
+        ],
+        "motor_propeller_line_offset_mm": 2.455281089561238e-14,
+        "motor_propeller_axis_angle_deg": 0.0,
+        "pitch_geometry_status": "PITCH_GEOMETRY_UNRESOLVED",
+        "axis_body": [
+          0.3535533905932736,
+          -0.353553390593274,
+          -0.8660254037844387
+        ],
+        "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+      }
+    ]
+  },
+  "allocation_results": [
+    {
+      "name": "user_declared_installed_propellers",
+      "allocation_matrix_6x8": [
+        [
+          0.3535533905932742,
+          -0.35355339059327323,
+          -0.35355339059327384,
+          0.3535533905932735,
+          -0.3535533905932745,
+          0.35355339059327373,
+          0.3535533905932736,
+          -0.3535533905932736
+        ],
+        [
+          0.3535533905932739,
+          -0.3535533905932737,
+          -0.3535533905932736,
+          -0.3535533905932738,
+          0.3535533905932735,
+          0.3535533905932736,
+          -0.3535533905932741,
+          0.353553390593274
+        ],
+        [
+          -0.8660254037844385,
+          -0.866025403784439,
+          -0.8660254037844387,
+          0.8660254037844388,
+          0.8660254037844385,
+          -0.8660254037844387,
+          0.8660254037844386,
+          0.8660254037844387
+        ],
+        [
+          0.0036052929377394655,
+          -0.0024217531795894254,
+          -0.23191848518246538,
+          -0.003605292937739521,
+          0.0024217531795893976,
+          0.2331020249406155,
+          -0.23310202494061538,
+          0.23191848518246533
+        ],
+        [
+          0.09138989940293149,
+          -0.08444838927447125,
+          0.14504834272840494,
+          0.08444838927447104,
+          -0.0913898994029312,
+          -0.13810683259994438,
+          -0.14504834272840483,
+          0.13810683259994433
+        ],
+        [
+          0.038781624875364795,
+          0.0354645871492225,
+          0.03546458714922246,
+          0.03594776523218321,
+          0.03829844679240385,
+          0.038781624875364844,
+          0.03594776523218312,
+          0.03829844679240396
+        ]
+      ],
+      "rank": 6,
+      "singular_values": [
+        2.449510384509187,
+        1.0594568816609873,
+        1.0032108209582147,
+        0.32351605934294786,
+        0.3063456268354814,
+        0.10499911124834169
+      ],
+      "condition_number": 23.32886779122974,
+      "hover_target_wrench": [
+        0.0,
+        0.0,
+        -84.01604249112296,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unconstrained_hover_thrust_n": [
+        11.822418430335096,
+        12.430923943913301,
+        11.822418430335121,
+        -12.556001084304116,
+        -11.697341289944376,
+        12.430923943913267,
+        -11.697341289944385,
+        -12.556001084304096
+      ],
+      "unconstrained_all_nonnegative": false,
+      "unconstrained_within_rated_max": false,
+      "bounded_hover_thrust_n": [
+        11.767979999999998,
+        11.767979999999998,
+        11.767979999999998,
+        8.844091032325089e-20,
+        8.884292010095166e-20,
+        11.767979999999998,
+        8.966141531707288e-20,
+        8.763296165993972e-20
+      ],
+      "bounded_hover_residual": [
+        1.065814175356817e-14,
+        2.664534541933708e-15,
+        43.25056396621417,
+        0.027855744406229732,
+        0.16337510472303896,
+        1.7474558763622055
+      ],
+      "bounded_hover_residual_norm": 43.28616814645016,
+      "maximum_upward_vertical_force_n": 40.765478524908794,
+      "maximum_supported_mass_kg": 4.156921938165306,
+      "maximum_vertical_thrust_to_weight": 0.4852106492544686,
+      "hover_feasible_at_rated_1p2_kgf": false
+    },
+    {
+      "name": "opposite_pitch_all_up_hypothesis",
+      "allocation_matrix_6x8": [
+        [
+          0.3535533905932742,
+          -0.35355339059327323,
+          -0.35355339059327384,
+          -0.3535533905932735,
+          0.3535533905932745,
+          0.35355339059327373,
+          -0.3535533905932736,
+          0.3535533905932736
+        ],
+        [
+          0.3535533905932739,
+          -0.3535533905932737,
+          -0.3535533905932736,
+          0.3535533905932738,
+          -0.3535533905932735,
+          0.3535533905932736,
+          0.3535533905932741,
+          -0.353553390593274
+        ],
+        [
+          -0.8660254037844385,
+          -0.866025403784439,
+          -0.8660254037844387,
+          -0.8660254037844388,
+          -0.8660254037844385,
+          -0.8660254037844387,
+          -0.8660254037844386,
+          -0.8660254037844387
+        ],
+        [
+          0.0036052929377394655,
+          -0.0024217531795894254,
+          -0.23191848518246538,
+          0.003605292937739521,
+          -0.0024217531795893976,
+          0.2331020249406155,
+          0.23310202494061538,
+          -0.23191848518246533
+        ],
+        [
+          0.09138989940293149,
+          -0.08444838927447125,
+          0.14504834272840494,
+          -0.08444838927447104,
+          0.0913898994029312,
+          -0.13810683259994438,
+          0.14504834272840483,
+          -0.13810683259994433
+        ],
+        [
+          0.038781624875364795,
+          0.0354645871492225,
+          0.03546458714922246,
+          -0.03594776523218321,
+          -0.03829844679240385,
+          0.038781624875364844,
+          -0.03594776523218312,
+          -0.03829844679240396
+        ]
+      ],
+      "rank": 6,
+      "singular_values": [
+        2.449510384509187,
+        1.0594568816609873,
+        1.0032108209582147,
+        0.32351605934294786,
+        0.3063456268354814,
+        0.10499911124834169
+      ],
+      "condition_number": 23.32886779122974,
+      "hover_target_wrench": [
+        0.0,
+        0.0,
+        -84.01604249112296,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "unconstrained_hover_thrust_n": [
+        11.822418430335096,
+        12.430923943913301,
+        11.822418430335121,
+        12.556001084304116,
+        11.697341289944376,
+        12.430923943913267,
+        11.697341289944385,
+        12.556001084304096
+      ],
+      "unconstrained_all_nonnegative": true,
+      "unconstrained_within_rated_max": false,
+      "bounded_hover_thrust_n": [
+        11.767979999999998,
+        11.767979999999998,
+        11.767979999999998,
+        11.767979999999998,
+        11.767979999999998,
+        11.767979999999998,
+        11.767979999999998,
+        11.767979999999998
+      ],
+      "bounded_hover_residual": [
+        2.3092638912203256e-14,
+        7.993605777301127e-15,
+        2.4850854413053867,
+        0.05571148881245991,
+        0.32675020944607613,
+        5.384581669432009e-15
+      ],
+      "bounded_hover_residual_norm": 2.5070937597040013,
+      "maximum_upward_vertical_force_n": 81.53095704981759,
+      "maximum_supported_mass_kg": 8.313843876330612,
+      "maximum_vertical_thrust_to_weight": 0.9704212985089372,
+      "hover_feasible_at_rated_1p2_kgf": false
+    }
+  ]
+}

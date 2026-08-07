@@ -1,0 +1,73 @@
+<?xml version="1.0"?>
+<!--
+  Geometry source (authoritative):
+    E:/清洁无人机/零件/完整零件/组合无人机.SLDASM
+    SHA-256: 0cbd1455f3bf9c4acee91a4f5ee997f8fc823cd7817ba7f4a217f9fc029ee202
+
+  This is the first CAD-import gate: one rigid link with the complete assembly
+  visual and a deliberately simple collision box.  The 10 kg inertia is a
+  provisional box estimate, not a SolidWorks material result.  Subsequent
+  my_drone_v2 files split motors, rotors, and SO101 joints without changing the
+  CAD coordinate mapping established here.
+
+  CAD -> ROS FLU: X_ros=-Z_cad, Y_ros=-X_cad, Z_ros=+Y_cad.
+  Origin: mean of the eight exported motor bounding-box centres.
+-->
+<robot name="my_drone_v2_cad_fixed">
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0 0 -0.089579" rpy="0 0 0"/>
+      <mass value="10.0"/>
+      <inertia
+        ixx="0.331956202" ixy="0" ixz="0"
+        iyy="0.331956190" iyz="0" izz="0.403662632"/>
+    </inertial>
+    <visual name="cad_full_assembly_visual">
+      <origin
+        xyz="0.252707546 0.253348461 -0.295802200"
+        rpy="1.570796327 0 -1.570796327"/>
+      <geometry>
+        <mesh
+          filename="package://drone_arm_sim/meshes/my_drone_v2/visual/full_assembly.stl"
+          scale="0.001 0.001 0.001"/>
+      </geometry>
+      <material name="cad_gray">
+        <color rgba="0.62 0.66 0.72 1"/>
+      </material>
+    </visual>
+    <collision name="bringup_box_collision">
+      <origin xyz="0 0 -0.075" rpy="0 0 0"/>
+      <geometry><box size="0.46 0.46 0.16"/></geometry>
+    </collision>
+  </link>
+
+  <gazebo reference="base_link">
+    <sensor name="air_pressure_sensor" type="air_pressure">
+      <always_on>1</always_on><update_rate>50</update_rate>
+      <gz_frame_id>base_link</gz_frame_id>
+    </sensor>
+    <sensor name="magnetometer_sensor" type="magnetometer">
+      <always_on>1</always_on><update_rate>100</update_rate>
+      <gz_frame_id>base_link</gz_frame_id>
+    </sensor>
+    <sensor name="imu_sensor" type="imu">
+      <always_on>1</always_on><update_rate>250</update_rate>
+      <gz_frame_id>base_link</gz_frame_id><imu/>
+    </sensor>
+    <sensor name="navsat_sensor" type="navsat">
+      <always_on>1</always_on><update_rate>30</update_rate>
+      <gz_frame_id>base_link</gz_frame_id>
+    </sensor>
+  </gazebo>
+
+  <gazebo>
+    <plugin filename="gz-sim-odometry-publisher-system"
+            name="gz::sim::systems::OdometryPublisher">
+      <dimensions>3</dimensions>
+      <odom_publish_frequency>100</odom_publish_frequency>
+      <odom_topic>/model/my_drone_v2/odometry</odom_topic>
+      <odom_frame>world</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+    </plugin>
+  </gazebo>
+</robot>

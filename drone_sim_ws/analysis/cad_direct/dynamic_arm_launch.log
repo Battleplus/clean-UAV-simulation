@@ -1,0 +1,75 @@
+[INFO] [launch]: All log files can be found below /home/asus/.ros/log/2026-08-05-11-42-45-612977-LAPTOP-FHNQ6FG2-6181
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [gazebo-1]: process started with pid [6201]
+[INFO] [parameter_bridge-2]: process started with pid [6202]
+[parameter_bridge-2] [INFO] [1785901367.861762786] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/model/my_drone/odometry (gz.msgs.Odometry) -> /model/my_drone/odometry (nav_msgs/msg/Odometry)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1785901367.865439041] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/world/flight_world/wrench (ros_gz_interfaces/msg/EntityWrench) -> /world/flight_world/wrench (gz.msgs.EntityWrench)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1785901367.868925887] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/my_drone/command/motor_speed (gz.msgs.Actuators) -> /my_drone/command/motor_speed (actuator_msgs/msg/Actuators)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1785901367.870939366] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/model/my_drone/joint_trajectory (gz.msgs.JointTrajectory) -> /model/my_drone/joint_trajectory (trajectory_msgs/msg/JointTrajectory)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1785901367.874794113] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/model/my_drone/joint_trajectory (trajectory_msgs/msg/JointTrajectory) -> /model/my_drone/joint_trajectory (gz.msgs.JointTrajectory)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1785901367.875799445] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/flight_world/model/my_drone/joint_state (gz.msgs.Model) -> /world/flight_world/model/my_drone/joint_state (sensor_msgs/msg/JointState)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1785901367.878303289] [ros_gz_bridge]: Creating ROS->GZ Bridge: [/world/flight_world/model/my_drone/joint_state (sensor_msgs/msg/JointState) -> /world/flight_world/model/my_drone/joint_state (gz.msgs.Model)] (Lazy 0)
+[parameter_bridge-2] [INFO] [1785901367.879256285] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/clock (gz.msgs.Clock) -> /clock (rosgraph_msgs/msg/Clock)] (Lazy 0)
+[gazebo-1] [1;32m[Msg] [0m[1;32mGazebo Sim Server v[0m[1;32m8.11.0[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mLoading SDF world file[[0m[1;32m/mnt/e/清洁无人机/drone_sim_ws/install/drone_arm_sim/share/drone_arm_sim/worlds/flight_world_250hz.sdf[0m[1;32m].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing entity system service on [[0m[1;32m/[0m[1;32mentity/system/add[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mCreate[0m[1;32m service on [[0m[1;32m/world/flight_world/create_multiple[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mCreate[0m[1;32m service on [[0m[1;32m/world/flight_world/create_multiple/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mRemove[0m[1;32m service on [[0m[1;32m/world/flight_world/remove[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mRemove[0m[1;32m service on [[0m[1;32m/world/flight_world/remove/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/flight_world/set_pose[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/flight_world/set_pose/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/flight_world/set_pose_vector[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPose[0m[1;32m service on [[0m[1;32m/world/flight_world/set_pose_vector/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mLight configuration[0m[1;32m service on [[0m[1;32m/world/flight_world/light_config[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mLight configuration[0m[1;32m service on [[0m[1;32m/world/flight_world/light_config/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPhysics[0m[1;32m service on [[0m[1;32m/world/flight_world/set_physics[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPhysics[0m[1;32m service on [[0m[1;32m/world/flight_world/set_physics/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mSphericalCoordinates[0m[1;32m service on [[0m[1;32m/world/flight_world/set_spherical_coordinates[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mSphericalCoordinates[0m[1;32m service on [[0m[1;32m/world/flight_world/set_spherical_coordinates/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mEnable collision[0m[1;32m service on [[0m[1;32m/world/flight_world/enable_collision[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mEnable collision[0m[1;32m service on [[0m[1;32m/world/flight_world/enable_collision/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mDisable collision[0m[1;32m service on [[0m[1;32m/world/flight_world/disable_collision[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mDisable collision[0m[1;32m service on [[0m[1;32m/world/flight_world/disable_collision/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/flight_world/visual_config[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/flight_world/visual_config/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/flight_world/wheel_slip[0m[1;32m] (async)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mMaterial[0m[1;32m service on [[0m[1;32m/world/flight_world/wheel_slip/blocking[0m[1;32m] (blocking)[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mListening to instantaneous wrench commands in [[0m[1;32m/world/flight_world/wrench[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mListening to persistent wrench commands in [[0m[1;32m/world/flight_world/wrench/persistent[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mListening to wrench clear commands in [[0m[1;32m/world/flight_world/wrench/clear[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mLoaded level [[0m[1;32mdefault[0m[1;32m][0m[1;32m[0m
+[INFO] [gazebo_direct_motor_model-3]: process started with pid [6231]
+[INFO] [create-4]: process started with pid [6246]
+[create-4] [INFO] [1785901370.039513105] [ros_gz_sim]: Entity creation successful.
+[INFO] [create-4]: process has finished cleanly [pid 6246]
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing world controls on [[0m[1;32m/world/flight_world[0m[1;32m/control], [[0m[1;32m/world/flight_world[0m[1;32m/control/state] and [[0m[1;32m/world/flight_world[0m[1;32m/playback/control][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing GUI information on [[0m[1;32m/world/flight_world[0m[1;32m/[0m[1;32mgui/info[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mWorld [[0m[1;32mflight_world[0m[1;32m] initialized with [[0m[1;32mflight_step[0m[1;32m] physics profile.[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing world SDF generation service on [[0m[1;32m/world/flight_world[0m[1;32m/[0m[1;32mgenerate_world_sdf[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing world names on [[0m[1;32m/gazebo/worlds[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mResource path add service on [[0m[1;32m/gazebo/resource_paths/add[0m[1;32m].[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mResource path get service on [[0m[1;32m/gazebo/resource_paths/get[0m[1;32m].[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mResource path resolve service on [[0m[1;32m/gazebo/resource_paths/resolve[0m[1;32m].[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mResource paths published on [[0m[1;32m/gazebo/resource_paths[0m[1;32m].[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServer control service on [[0m[1;32m/server_control[0m[1;32m].[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mFound no publishers on /stats, adding root stats topic[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mFound no publishers on /clock, adding root clock topic[0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32m[JointTrajectoryController] Setting up controller for [[0m[1;32mmy_drone[0m[1;32m(Entity=[0m[1;32m10[0m[1;32m)].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32m[JointTrajectoryController] Configured joint [[0m[1;32mshoulder_pan[0m[1;32m(Entity=[0m[1;32m57[0m[1;32m)].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32m[JointTrajectoryController] Configured joint [[0m[1;32mshoulder_lift[0m[1;32m(Entity=[0m[1;32m58[0m[1;32m)].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32m[JointTrajectoryController] Configured joint [[0m[1;32melbow_flex[0m[1;32m(Entity=[0m[1;32m59[0m[1;32m)].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32m[JointTrajectoryController] Configured joint [[0m[1;32mwrist_flex[0m[1;32m(Entity=[0m[1;32m60[0m[1;32m)].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32m[JointTrajectoryController] Configured joint [[0m[1;32mwrist_roll[0m[1;32m(Entity=[0m[1;32m61[0m[1;32m)].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32m[JointTrajectoryController] Configured joint [[0m[1;32mgripper[0m[1;32m(Entity=[0m[1;32m62[0m[1;32m)].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32m[JointTrajectoryController] Subscribing to joint trajectory commands on topic [[0m[1;32m/model/my_drone/joint_trajectory[0m[1;32m].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32m[JointTrajectoryController] Advertising joint trajectory progress on topic [[0m[1;32m/model/my_drone/joint_trajectory_progress[0m[1;32m].[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mOdometryPublisher publishing odometry on [[0m[1;32m/model/my_drone/odometry[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mOdometryPublisher publishing odometry with covariance on [[0m[1;32m/model/my_drone/odometry_with_covariance[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mOdometryPublisher publishing Pose_V (TF) on [[0m[1;32m/model/my_drone/pose[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing scene information on [[0m[1;32m/world/flight_world[0m[1;32m/[0m[1;32mscene/info[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing graph information on [[0m[1;32m/world/flight_world[0m[1;32m/[0m[1;32mscene/graph[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing full state on [[0m[1;32m/world/flight_world[0m[1;32m/[0m[1;32mstate[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mServing full state (async) on [[0m[1;32m/world/flight_world[0m[1;32m/[0m[1;32mstate_async[0m[1;32m][0m[1;32m[0m
+[gazebo-1] [1;32m[Msg] [0m[1;32mPublishing scene information on [[0m[1;32m/world/flight_world/scene/info[0m[1;32m][0m[1;32m[0m
+[parameter_bridge-2] [INFO] [1785901370.233888375] [ros_gz_bridge]: Passing message from ROS ros_gz_interfaces/msg/EntityWrench to Gazebo gz.msgs.EntityWrench (showing msg only once per type)

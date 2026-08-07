@@ -1,0 +1,295 @@
+{
+  "description": "Formal rotor lines extracted from SolidWorks cylindrical faces; bounding-box centre-to-centre axes are not used.",
+  "source_manifest": "analysis/cad_direct/assembly_manifest.json",
+  "axis_source": "analysis/cad_direct/motor_axis_evidence.json",
+  "axis_extraction_method": "SolidWorks IFace2.GetSurface / ISurface.IsCylinder / CylinderParams",
+  "body_frame_frozen": {
+    "ros_flu": "+X nose, +Y left, +Z up",
+    "px4_frd": "+X nose, +Y right, +Z down",
+    "clockwise_motor_order_from_nose_right": [
+      1,
+      3,
+      8,
+      4,
+      2,
+      6,
+      7,
+      5
+    ],
+    "pusher_motors": [
+      3,
+      6,
+      7,
+      8
+    ],
+    "puller_motors": [
+      1,
+      2,
+      4,
+      5
+    ],
+    "upward_thrust_motors": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "downward_thrust_motors": [
+      4,
+      5,
+      7,
+      8
+    ]
+  },
+  "assembly_sha256": "0cbd1455f3bf9c4acee91a4f5ee997f8fc823cd7817ba7f4a217f9fc029ee202",
+  "coordinate_frame": "PX4 body FRD; ROS FLU uses X=-CAD Z, Y=-CAD X, Z=CAD Y",
+  "cad_origin_mm": [
+    253.34846091270447,
+    295.8022003173828,
+    252.7075457572937
+  ],
+  "density_kg_m3": 1300.0,
+  "mesh_volume_m3": 0.003218255976636863,
+  "estimated_all_up_mass_kg": 4.183732769627922,
+  "maximum_thrust_n": 11.76798,
+  "minimum_thrust_n": 0.0,
+  "command_model": "thrust_n = normalized_command * maximum_thrust_n",
+  "reaction_moment_ratio_m": null,
+  "maximum_vertical_force_n": 3.9195247047985046e-15,
+  "maximum_supported_mass_kg": 3.9968028886505636e-16,
+  "estimated_vertical_thrust_to_weight": 9.553198324868194e-17,
+  "rotors": [
+    {
+      "motor": 1,
+      "name": "rotor_1_link",
+      "cad_instance": "f机架总成-2 f电机-2",
+      "position_m": [
+        0.18160588745030426,
+        0.07660588745030462,
+        0.008313843876330683
+      ],
+      "axis_body": [
+        0.3535533905932742,
+        0.3535533905932739,
+        -0.8660254037844385
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 30.000000000000018,
+      "azimuth_deg": 44.99999999999998,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.3535533905932742,
+        0.3535533905932739,
+        -0.8660254037844385
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 3.274864922277287e-14,
+      "motor_propeller_axis_angle_deg": 0.0
+    },
+    {
+      "motor": 2,
+      "name": "rotor_2_link",
+      "cad_instance": "f机架总成-2 f电机-3",
+      "position_m": [
+        -0.18160588745030434,
+        -0.07660588745030457,
+        0.008313843876330461
+      ],
+      "axis_body": [
+        -0.35355339059327323,
+        -0.3535533905932737,
+        -0.866025403784439
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 29.999999999999954,
+      "azimuth_deg": -134.99999999999997,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.35355339059327323,
+        -0.3535533905932737,
+        -0.866025403784439
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
+      "motor_propeller_axis_angle_deg": 0.0
+    },
+    {
+      "motor": 3,
+      "name": "rotor_3_link",
+      "cad_instance": "f机架总成-1 f电机-3",
+      "position_m": [
+        0.07660588745030467,
+        0.1816058874503043,
+        -0.008313843876330572
+      ],
+      "axis_body": [
+        -0.35355339059327384,
+        -0.3535533905932736,
+        -0.8660254037844387
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 29.999999999999993,
+      "azimuth_deg": -135.00000000000003,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.35355339059327384,
+        0.3535533905932736,
+        0.8660254037844387
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 1.811234284755796e-14,
+      "motor_propeller_axis_angle_deg": 0.0
+    },
+    {
+      "motor": 4,
+      "name": "rotor_4_link",
+      "cad_instance": "f机架总成-2 f电机-4",
+      "position_m": [
+        -0.1816058874503042,
+        0.07660588745030464,
+        0.008313843876330392
+      ],
+      "axis_body": [
+        0.3535533905932735,
+        -0.3535533905932738,
+        0.8660254037844388
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 150.00000000000003,
+      "azimuth_deg": -45.00000000000003,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.3535533905932735,
+        0.3535533905932738,
+        -0.8660254037844388
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
+      "motor_propeller_axis_angle_deg": 0.0
+    },
+    {
+      "motor": 5,
+      "name": "rotor_5_link",
+      "cad_instance": "f机架总成-2 f电机-1",
+      "position_m": [
+        0.18160588745030404,
+        -0.07660588745030457,
+        0.008313843876330586
+      ],
+      "axis_body": [
+        -0.3535533905932745,
+        0.3535533905932735,
+        0.8660254037844385
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 149.99999999999997,
+      "azimuth_deg": 135.00000000000009,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.3535533905932745,
+        -0.3535533905932735,
+        -0.8660254037844385
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 9.488200048182762e-14,
+      "motor_propeller_axis_angle_deg": 0.0
+    },
+    {
+      "motor": 6,
+      "name": "rotor_6_link",
+      "cad_instance": "f机架总成-1 f电机-2",
+      "position_m": [
+        -0.07660588745030457,
+        -0.18160588745030432,
+        -0.008313843876330572
+      ],
+      "axis_body": [
+        0.35355339059327373,
+        0.3535533905932736,
+        -0.8660254037844387
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 29.999999999999993,
+      "azimuth_deg": 44.99999999999999,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.35355339059327373,
+        -0.3535533905932736,
+        0.8660254037844387
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 7.735613448393047e-14,
+      "motor_propeller_axis_angle_deg": 0.0
+    },
+    {
+      "motor": 7,
+      "name": "rotor_7_link",
+      "cad_instance": "f机架总成-1 f电机-1",
+      "position_m": [
+        0.07660588745030462,
+        -0.1816058874503041,
+        -0.008313843876330503
+      ],
+      "axis_body": [
+        0.3535533905932736,
+        -0.3535533905932741,
+        0.8660254037844386
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 150.0,
+      "azimuth_deg": -45.00000000000004,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.3535533905932736,
+        -0.3535533905932741,
+        0.8660254037844386
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 2.091245844657973e-14,
+      "motor_propeller_axis_angle_deg": 0.0
+    },
+    {
+      "motor": 8,
+      "name": "rotor_8_link",
+      "cad_instance": "f机架总成-1 f电机-4",
+      "position_m": [
+        -0.07660588745030454,
+        0.18160588745030415,
+        -0.008313843876330475
+      ],
+      "axis_body": [
+        -0.3535533905932736,
+        0.353553390593274,
+        0.8660254037844387
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 150.0,
+      "azimuth_deg": 134.99999999999997,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.3535533905932736,
+        0.353553390593274,
+        0.8660254037844387
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 2.455281089561238e-14,
+      "motor_propeller_axis_angle_deg": 0.0
+    }
+  ]
+}

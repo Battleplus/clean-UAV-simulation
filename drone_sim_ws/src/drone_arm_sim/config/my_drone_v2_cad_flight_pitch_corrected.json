@@ -1,0 +1,344 @@
+{
+  "description": "Flight scenario derived from the authoritative CAD config by fitting opposite-pitch propellers to motors 4, 5, 7 and 8. CAD positions, shaft lines, tilt, mass and arm dynamics are unchanged.",
+  "source_manifest": "analysis/cad_direct/assembly_manifest.json",
+  "axis_source": "analysis/cad_direct/motor_axis_evidence.json",
+  "axis_extraction_method": "SolidWorks IFace2.GetSurface / ISurface.IsCylinder / CylinderParams",
+  "body_frame_frozen": {
+    "ros_flu": "+X nose, +Y left, +Z up",
+    "px4_frd": "+X nose, +Y right, +Z down",
+    "clockwise_motor_order_from_nose_right": [
+      1,
+      3,
+      8,
+      4,
+      2,
+      6,
+      7,
+      5
+    ],
+    "pusher_motors": [
+      3,
+      6,
+      7,
+      8
+    ],
+    "puller_motors": [
+      1,
+      2,
+      4,
+      5
+    ],
+    "upward_thrust_motors": [
+      1,
+      2,
+      3,
+      6
+    ],
+    "downward_thrust_motors": [
+      4,
+      5,
+      7,
+      8
+    ]
+  },
+  "assembly_sha256": "0cbd1455f3bf9c4acee91a4f5ee997f8fc823cd7817ba7f4a217f9fc029ee202",
+  "coordinate_frame": "PX4 body FRD; ROS FLU uses X=-CAD Z, Y=-CAD X, Z=CAD Y",
+  "cad_origin_mm": [
+    253.34846091270447,
+    295.8022003173828,
+    252.7075457572937
+  ],
+  "density_kg_m3": 1300.0,
+  "mesh_volume_m3": 0.0032182559766368627,
+  "estimated_all_up_mass_kg": 4.183732769627921,
+  "maximum_thrust_n": 11.76798,
+  "minimum_thrust_n": 0.0,
+  "command_model": "piecewise-linear interpolation of supplied 14.8 V static thrust table; capped at rated 1.2 kgf",
+  "static_thrust_model": {
+    "method": "piecewise-linear interpolation of supplied 14.8 V static test table",
+    "rated_cap_n": 11.76798,
+    "throttle_percent": [0, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90],
+    "rated_capped_thrust_n": [0.0, 0.2549729, 0.77472535, 1.3925443, 1.569064, 2.4908891, 3.6480738, 4.48163905, 5.34462425, 5.5113373, 6.1781895, 6.59987545, 7.10982125, 8.14932615, 8.91424485, 10.20872265, 11.76798],
+    "status": "measured table supplied by user; 90 percent point capped from 1.283 kgf to rated 1.2 kgf"
+  },
+  "motor_dynamics": {
+    "rise_time_constant_s": 0.035,
+    "fall_time_constant_s": 0.035,
+    "status": "initial estimate only; replace with measured step response"
+  },
+  "reaction_moment_ratio_m": 0.001,
+  "reaction_moment_estimate": {
+    "formula": "Q = (Q/T) * T",
+    "q_over_t_m": 0.001,
+    "status": "enabled as a clean single-bridge closed-loop estimate",
+    "validation": "Q/T=0.001 m passed PX4 DDS takeoff, hover, W/D/S/A, Q/E yaw, landing and disarm on 2026-08-06",
+    "superseded_trials": [
+      "Earlier Q/T=0.010 m and 0.001 m divergence observations were contaminated by multiple orphan ROS-Gazebo bridges applying the same wrench repeatedly"
+    ],
+    "calibration_required": "replace with measured RPM-thrust-torque data or C_Q/C_T and propeller diameter",
+    "not_inherited_from_legacy_example": true
+  },
+  "maximum_vertical_force_n": 81.53095704981759,
+  "maximum_supported_mass_kg": 8.313843876330612,
+  "estimated_vertical_thrust_to_weight": 1.987183296382001,
+  "rotors": [
+    {
+      "motor": 1,
+      "name": "rotor_1_link",
+      "cad_instance": "f机架总成-2 f电机-2",
+      "position_m": [
+        0.18160588745030426,
+        0.07660588745030462,
+        0.008313843876330683
+      ],
+      "axis_body": [
+        0.3535533905932742,
+        0.3535533905932739,
+        -0.8660254037844385
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 30.000000000000018,
+      "azimuth_deg": 44.99999999999998,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.3535533905932742,
+        0.3535533905932739,
+        -0.8660254037844385
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 3.274864922277287e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_evidence_motor": "f机架总成-2/f电机-2",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-2"
+    },
+    {
+      "motor": 2,
+      "name": "rotor_2_link",
+      "cad_instance": "f机架总成-2 f电机-3",
+      "position_m": [
+        -0.18160588745030434,
+        -0.07660588745030457,
+        0.008313843876330461
+      ],
+      "axis_body": [
+        -0.35355339059327323,
+        -0.3535533905932737,
+        -0.866025403784439
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 29.999999999999954,
+      "azimuth_deg": -134.99999999999997,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.35355339059327323,
+        -0.3535533905932737,
+        -0.866025403784439
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_evidence_motor": "f机架总成-2/f电机-3",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-3"
+    },
+    {
+      "motor": 3,
+      "name": "rotor_3_link",
+      "cad_instance": "f机架总成-1 f电机-3",
+      "position_m": [
+        0.07660588745030467,
+        0.1816058874503043,
+        -0.008313843876330572
+      ],
+      "axis_body": [
+        -0.35355339059327384,
+        -0.3535533905932736,
+        -0.8660254037844387
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 29.999999999999993,
+      "azimuth_deg": -135.00000000000003,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.35355339059327384,
+        0.3535533905932736,
+        0.8660254037844387
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 1.811234284755796e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_evidence_motor": "f机架总成-1/f电机-3",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-3"
+    },
+    {
+      "motor": 4,
+      "name": "rotor_4_link",
+      "cad_instance": "f机架总成-2 f电机-4",
+      "position_m": [
+        -0.1816058874503042,
+        0.07660588745030464,
+        0.008313843876330392
+      ],
+      "axis_body": [
+        -0.3535533905932735,
+        0.3535533905932738,
+        -0.8660254037844388
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 150.00000000000003,
+      "azimuth_deg": -45.00000000000003,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.3535533905932735,
+        0.3535533905932738,
+        -0.8660254037844388
+      ],
+      "thrust_sign_status": "FLIGHT SCENARIO: opposite-pitch prop makes vertical thrust upward",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_evidence_motor": "f机架总成-2/f电机-4",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-4",
+      "vertical_thrust_direction": "up"
+    },
+    {
+      "motor": 5,
+      "name": "rotor_5_link",
+      "cad_instance": "f机架总成-2 f电机-1",
+      "position_m": [
+        0.18160588745030404,
+        -0.07660588745030457,
+        0.008313843876330586
+      ],
+      "axis_body": [
+        0.3535533905932745,
+        -0.3535533905932735,
+        -0.8660254037844385
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 149.99999999999997,
+      "azimuth_deg": 135.00000000000009,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.3535533905932745,
+        -0.3535533905932735,
+        -0.8660254037844385
+      ],
+      "thrust_sign_status": "FLIGHT SCENARIO: opposite-pitch prop makes vertical thrust upward",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 9.488200048182762e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_evidence_motor": "f机架总成-2/f电机-1",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-1",
+      "vertical_thrust_direction": "up"
+    },
+    {
+      "motor": 6,
+      "name": "rotor_6_link",
+      "cad_instance": "f机架总成-1 f电机-2",
+      "position_m": [
+        -0.07660588745030457,
+        -0.18160588745030432,
+        -0.008313843876330572
+      ],
+      "axis_body": [
+        0.35355339059327373,
+        0.3535533905932736,
+        -0.8660254037844387
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 29.999999999999993,
+      "azimuth_deg": 44.99999999999999,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.35355339059327373,
+        -0.3535533905932736,
+        0.8660254037844387
+      ],
+      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 7.735613448393047e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_evidence_motor": "f机架总成-1/f电机-2",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-2"
+    },
+    {
+      "motor": 7,
+      "name": "rotor_7_link",
+      "cad_instance": "f机架总成-1 f电机-1",
+      "position_m": [
+        0.07660588745030462,
+        -0.1816058874503041,
+        -0.008313843876330503
+      ],
+      "axis_body": [
+        -0.3535533905932736,
+        0.3535533905932741,
+        -0.8660254037844386
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 150.0,
+      "azimuth_deg": -45.00000000000004,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.3535533905932736,
+        -0.3535533905932741,
+        0.8660254037844386
+      ],
+      "thrust_sign_status": "FLIGHT SCENARIO: opposite-pitch prop makes vertical thrust upward",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 2.091245844657973e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_evidence_motor": "f机架总成-1/f电机-1",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-1",
+      "vertical_thrust_direction": "up"
+    },
+    {
+      "motor": 8,
+      "name": "rotor_8_link",
+      "cad_instance": "f机架总成-1 f电机-4",
+      "position_m": [
+        -0.07660588745030454,
+        0.18160588745030415,
+        -0.008313843876330475
+      ],
+      "axis_body": [
+        0.3535533905932736,
+        -0.353553390593274,
+        -0.8660254037844387
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 150.0,
+      "azimuth_deg": 134.99999999999997,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.3535533905932736,
+        0.353553390593274,
+        0.8660254037844387
+      ],
+      "thrust_sign_status": "FLIGHT SCENARIO: opposite-pitch prop makes vertical thrust upward",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 2.455281089561238e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_evidence_motor": "f机架总成-1/f电机-4",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-4",
+      "vertical_thrust_direction": "up"
+    }
+  ],
+  "best_case_upward_force_n_nonreversible": 40.765478524908794,
+  "best_case_supported_mass_kg_nonreversible": 4.156921938165306,
+  "best_case_thrust_to_weight_nonreversible": 0.9935916481910005,
+  "flight_feasibility_nonreversible": "FEASIBLE",
+  "scenario": "opposite_pitch_props_on_4_5_7_8",
+  "authoritative_source": "config/my_drone_v2_cad.json"
+}

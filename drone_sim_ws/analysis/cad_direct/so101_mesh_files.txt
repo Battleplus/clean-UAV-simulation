@@ -1,0 +1,134 @@
+﻿full_assembly - fSO101 Assembly-1 fbase2-1.STL
+full_assembly - fSO101 Assembly-1 fMoving_Jaw_SO101-md-1.STL
+full_assembly - fSO101 Assembly-1 f插头-2.STL
+full_assembly - fSO101 Assembly-1 f测力天平-1.STL
+full_assembly - fSO101 Assembly-1 f相机支架-1.STL
+full_assembly - fSO101 Assembly-1 f连杆-1.STL
+full_assembly - fSO101 Assembly-1 f零件5^Wrist_Roll_Follower_SO101-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 Component1.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 Component2.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 Component3.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 Component4.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 Component6.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 DIN 555 - M3 Steel 6 Plain.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 DIN 934 - M3 x 0.5 Steel 6 Plain.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 Rotation_Pitch_SO101.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-10.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-11.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-12.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-13.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-14.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-15.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-16.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-17.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-18.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-19.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-20.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-21.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ 1-42 x 3_16 Steel Grade 2 Plain.step-22.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __- 0-48 x 3_16 Steel Grade 2 Plain.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __- 0-48 x 3_16 Steel Grade 2 Plain.step-2.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __- 1-42 x 3_16 Steel Grade 2 Plain.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __- 1-42 x 3_16 Steel Grade 2 Plain.step-2.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __- 1-42 x 3_16 Steel Grade 2 Plain.step-5.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __- 1-42 x 3_16 Steel Grade 2 Plain.step-6.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __- 1-42 x 3_16 Steel Grade 2 Plain.step-7.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __- 1-42 x 3_16 Steel Grade 2 Plain.step-8.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __- 1-42 x 3_16 Steel Grade 2 Plain.step-9.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __-1 SCS215_7_1.step-1 MOTOR-1723_3.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __-1 SCS215_7_2.step-1 MOTOR-1723_3.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __-1 SCS215_7_3.step-1 MOTOR-1723_3.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __-1 SCS215_7_4.step-1 MOTOR-1723_3.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __-1 SCS215_7_5.step-1 MOTOR-1723_3.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __.step-1 Motor_holder_SO101_Base-2.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __0.step-1 Wrist_Roll_Pitch_SO100-4.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-10.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-11.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-12.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-13.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-14.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-15.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-16.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-17.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-18.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-19.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-20.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-21.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-22.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-23.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-24.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-25.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-26.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-27.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-28.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-29.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-30.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-31.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-32.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-33.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-34.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-35.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-36.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-37.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-38.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-39.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-40.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-41.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-42.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-43.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-44.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __045 - M3 x 6 - H Steel 4.6 Plain.step-45.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __1 SCS215_7_1.step-1 PCB-CHAZUO_92.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __1 SCS215_7_2.step-1 PCB-CHAZUO_92.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __1 SCS215_7_3.step-1 PCB-CHAZUO_92.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __1 SCS215_7_4.step-1 PCB-CHAZUO_92.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __1 SCS215_7_5.step-1 PCB-CHAZUO_92.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __1.step-1 SCS215_7_1.step-1 ZK_122.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __2.step-1 SCS215_7_2.step-1 ZK_122.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __3.step-1 SCS215_7_3.step-1 ZK_122.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __4.step-1 SCS215_7.step-1 金属舵盘（从动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __4.step-1 SCS215_7.step-1 金属舵盘（驱动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __4.step-1 SCS215_7_4.step-1 ZK_122.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __5.step-1 SCS215_7_5.step-1 ZK_122.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __7045 - M3 x 6 - H Steel 4.6 Plain.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __7045 - M3 x 6 - H Steel 4.6 Plain.step-2.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __7045 - M3 x 6 - H Steel 4.6 Plain.step-3.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __7045 - M3 x 6 - H Steel 4.6 Plain.step-4.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __7045 - M3 x 6 - H Steel 4.6 Plain.step-5.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __7045 - M3 x 6 - H Steel 4.6 Plain.step-6.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __7045 - M3 x 6 - H Steel 4.6 Plain.step-7.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __7045 - M3 x 6 - H Steel 4.6 Plain.step-8.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __7045 - M3 x 6 - H Steel 4.6 Plain.step-9.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7.step-1 MOTOR-1723_3.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7_1.step-1 SG-ZIJI_15.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7_1.step-1 XG-ZIJI_16.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7_2.step-1 SG-ZIJI_15.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7_2.step-1 XG-ZIJI_16.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7_3.step-1 SG-ZIJI_15.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7_3.step-1 XG-ZIJI_16.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7_4.step-1 SG-ZIJI_15.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7_4.step-1 XG-ZIJI_16.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7_5.step-1 SG-ZIJI_15.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __ep-1 SCS215_7_5.step-1 XG-ZIJI_16.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __p-1 SCS215_7.step-1 PCB-CHAZUO_92.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __rm_SO101.step-1 Under_arm_SO101-1.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __rm_SO101.step-1 Upper_arm_SO101-0.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 Motor_holder_SO101_Wrist-3.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7.step-1 SG-ZIJI_15.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7.step-1 XG-ZIJI_16.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7_1.step-1 金属舵盘（从动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7_1.step-1 金属舵盘（驱动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7_2.step-1 金属舵盘（从动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7_2.step-1 金属舵盘（驱动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7_3.step-1 金属舵盘（从动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7_3.step-1 金属舵盘（驱动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7_4.step-1 金属舵盘（驱动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7_5.step-1 金属舵盘（从动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __step-1 SCS215_7_5.step-1 金属舵盘（驱动）.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 ___1.step-1 SCS215_7_1.step-1 GE_27.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 ___2.step-1 SCS215_7_2.step-1 GE_27.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 ___3.step-1 SCS215_7_3.step-1 GE_27.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 ___4.step-1 SCS215_7_4.step-1 GE_27.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 ___5.step-1 SCS215_7_5.step-1 GE_27.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 __а14.step-1 SCS215_7.step-1 ZK_122.step-1.STL
+full_assembly - fSO101 Assembly-1 SO101 Assembly.step-1 Сборка14.step-1 SCS215_7.step-1 GE_27.step-1.STL

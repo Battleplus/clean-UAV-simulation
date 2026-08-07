@@ -1,0 +1,99 @@
+{
+  "description": "Rotor positions and thrust axes are derived from the eight motor mounts in drone_body.stl and retain the measured CAD tilt. No old 0.35 m example geometry, virtual rotor mass, RPM, or motorConstant is used.",
+  "source_model": "urdf/drone_with_arm_controlled.urdf",
+  "source_mesh": "meshes/drone_body.stl",
+  "geometry_method": "Position from PCA symmetry axis plus upper axial vertex-plane centre; thrust axes follow the extracted mount normals",
+  "coordinate_frame": "PX4 body FRD: +X forward along arm, +Y right, +Z down",
+  "maximum_thrust_n": 11.76798,
+  "minimum_thrust_n": 0.0,
+  "command_model": "thrust_n = normalized_command * maximum_thrust_n",
+  "reaction_moment_ratio_m": null,
+  "reaction_moment_status": "unknown; do not use for calibrated yaw simulation",
+  "mass_profiles": {
+    "physical_estimate": {
+      "all_up_mass_kg": 10.0,
+      "status": "provisional estimate from 7734812.709 mm^3 CAD assembly volume at 1.3 g/cm^3 average density"
+    },
+    "flight_test": {
+      "all_up_mass_kg": 4.750472427,
+      "status": "simulation bring-up mass giving 1.8 vertical thrust-to-weight ratio with the measured tilt; not a physical mass claim"
+    }
+  },
+  "maximum_vertical_force_n": 83.855196775,
+  "maximum_supported_mass_kg": 8.550850369,
+  "physical_estimate_hover_capable": false,
+  "rotors": [
+    {
+      "motor": 1,
+      "name": "rotor_1_frame",
+      "position_m": [0.210595584, 0.082986950, -0.077492706],
+      "axis_body": [0.000000177, 0.258819043, -0.965925827],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 15.0
+    },
+    {
+      "motor": 3,
+      "name": "rotor_3_frame",
+      "position_m": [0.077658883, 0.181558221, -0.047907710],
+      "axis_body": [-0.353553412, -0.353553533, -0.866025337],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 30.000007643
+    },
+    {
+      "motor": 8,
+      "name": "rotor_8_frame",
+      "position_m": [-0.075552892, 0.181558221, -0.047907710],
+      "axis_body": [0.353553381, -0.353553558, -0.866025340],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 30.000007359
+    },
+    {
+      "motor": 4,
+      "name": "rotor_4_frame",
+      "position_m": [-0.191725180, 0.087730547, -0.058646427],
+      "axis_body": [-0.353553245, 0.353553316, -0.866025493],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 29.999989724
+    },
+    {
+      "motor": 2,
+      "name": "rotor_2_frame",
+      "position_m": [-0.196760723, -0.074438371, -0.074227627],
+      "axis_body": [0.000000177, -0.267238327, -0.963630467],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 15.499997092
+    },
+    {
+      "motor": 6,
+      "name": "rotor_6_frame",
+      "position_m": [-0.075552892, -0.181653590, -0.047907710],
+      "axis_body": [0.353553407, 0.353553412, -0.866025388],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 30.000001757
+    },
+    {
+      "motor": 7,
+      "name": "rotor_7_frame",
+      "position_m": [0.077658883, -0.181653590, -0.047907710],
+      "axis_body": [-0.353553438, 0.353553387, -0.866025386],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 30.000002041
+    },
+    {
+      "motor": 5,
+      "name": "rotor_5_frame",
+      "position_m": [0.193831174, -0.087825858, -0.058646427],
+      "axis_body": [0.353553392, -0.353553391, -0.866025403],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 30.000000092
+    }
+  ]
+}
