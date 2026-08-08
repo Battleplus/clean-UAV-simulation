@@ -18,8 +18,9 @@ from drone_arm_sim.coupled_dynamics import CoupledArmDynamics, JOINT_NAMES
 from drone_arm_sim.allocation_analysis import allocation_matrix
 from drone_arm_sim.gazebo_direct_motor_model import (
     FRD_TO_FLU,
+    actuator_command_to_thrust_n,
     battery_step,
-    command_to_thrust_n,
+    thrust_to_actuator_command,
 )
 
 try:
@@ -60,7 +61,7 @@ class MyDroneArmEnv(BaseEnv):
         max_episode_steps: int = 2000,
         wind_ned_m_s2: np.ndarray | None = None,
     ) -> None:
-        if task not in {"hover", "wind_hover", "arm_pose", "joint_trajectory"}:
+        if task not in {"hover", "wind_hover", "arm_pose", "joint_trajectory", "ee_trajectory"}:
             raise ValueError(f"unknown task {task}")
         self.config = config
         self.dynamics = dynamics
@@ -98,20 +99,7 @@ class MyDroneArmEnv(BaseEnv):
         return float(self.config.get("hover_command", 0.8737))
 
     def _thrust_to_command(self, thrust_n: float) -> float:
-        model = self.config.get("static_thrust_model")
-        points = model.get("points", []) if isinstance(model, dict) else []
-        if not points:
-            maximum = float(self.config.get("maximum_thrust_n", 0.0))
-            return float(np.clip(thrust_n / maximum, 0.0, 1.0)) if maximum > 0.0 else 0.0
-        throttle = np.asarray([float(p["throttle_percent"]) for p in points])
-        thrust = np.asarray([
-            float(p.get("rated_capped_thrust_n", p.get("measured_thrust_n", 0.0)))
-            for p in points
-        ])
-        order = np.argsort(thrust, kind="stable")
-        unique_thrust, unique_indices = np.unique(thrust[order], return_index=True)
-        unique_throttle = throttle[order][unique_indices]
-        return float(np.clip(np.interp(thrust_n, unique_thrust, unique_throttle) / 100.0, 0.0, 1.0))
+        return thrust_to_actuator_command(self.config, thrust_n)
 
     def hover_action(self) -> np.ndarray:
         """Return the bounded per-motor hover command from the formal allocation."""
@@ -123,9 +111,33 @@ class MyDroneArmEnv(BaseEnv):
         return np.r_[motors, np.zeros(6)]
 
     def _target_joints(self) -> np.ndarray:
-        if self.task in {"arm_pose", "joint_trajectory"}:
+        if self.task == "arm_pose":
             return np.asarray(self.config.get("rl_work_pose_rad", [0.4, -0.6, 0.8, -0.5, 0.3, 0.8]), dtype=float)
+        if self.task == "joint_trajectory":
+            work = np.asarray(self.config.get("rl_work_pose_rad", [0.4, -0.6, 0.8, -0.5, 0.3, 0.8]), dtype=float)
+            return self._trajectory_progress() * work
+        if self.task == "ee_trajectory":
+            return self.joints.copy()
         return np.zeros(6)
+
+    def _ee_position(self, joints: np.ndarray) -> np.ndarray:
+        positions = dict(zip(JOINT_NAMES, np.asarray(joints, dtype=float)))
+        transform = self.dynamics.model.link_transforms(positions).get("gripper_link")
+        if transform is None:
+            raise ValueError("formal URDF does not contain gripper_link")
+        return np.asarray(transform[:3, 3], dtype=float)
+
+    def _trajectory_progress(self) -> float:
+        duration = float(self.config.get("rl_trajectory_duration_s", 2.0))
+        return float(np.clip(self.steps * self.dt_s / max(duration, self.dt_s), 0.0, 1.0))
+
+    def _target_ee_position(self) -> np.ndarray:
+        progress = self._trajectory_progress()
+        target = (1.0 - progress) * self._home_ee_position + progress * self._work_ee_position
+        if self.task == "ee_trajectory":
+            target = target.copy()
+            target[1] += 0.02 * np.sin(np.pi * progress)
+        return target
 
     def _observation(self) -> np.ndarray:
         return np.concatenate(
@@ -153,6 +165,14 @@ class MyDroneArmEnv(BaseEnv):
         self.soc = 1.0
         self.steps = 0
         self.last_action = self.hover_action()
+        # End-effector trajectory endpoints are derived from the formal URDF,
+        # so they stay aligned with the CAD arm if the model is regenerated.
+        self._home_ee_position = self._ee_position(self.joints)
+        work_pose = np.asarray(
+            self.config.get("rl_work_pose_rad", [0.4, -0.6, 0.8, -0.5, 0.3, 0.8]),
+            dtype=float,
+        )
+        self._work_ee_position = self._ee_position(work_pose)
         observation = self._observation()
         info = {"task": self.task, "px4_in_the_loop": False, "mass_kg": self.mass_kg}
         return (observation, info) if gym is not None else observation
@@ -186,7 +206,7 @@ class MyDroneArmEnv(BaseEnv):
         )
         self.soc = soc
         thrusts = np.asarray(
-            [command_to_thrust_n(self.config, value) for value in motor_commands]
+            [actuator_command_to_thrust_n(self.config, value) for value in motor_commands]
         ) * thrust_scale
         body_wrench_frd = self.allocation @ thrusts
         # CoupledArmDynamics reports the reaction wrench in ROS FLU while
@@ -217,12 +237,16 @@ class MyDroneArmEnv(BaseEnv):
         self.last_action = action
         target_position = np.zeros(3)
         target_joints = self._target_joints()
+        ee_position = self._ee_position(self.joints)
+        ee_target = self._target_ee_position()
+        ee_error = ee_position - ee_target
         reward = -(
             float(np.dot(self.position_ned - target_position, self.position_ned - target_position))
             + 0.1 * float(np.dot(self.velocity_ned, self.velocity_ned))
             + 0.2 * float(np.dot(self.attitude_rpy, self.attitude_rpy))
             + 0.01 * float(np.dot(action[8:], action[8:]))
             + 0.5 * float(np.dot(self.joints - target_joints, self.joints - target_joints))
+            + (2.0 * float(np.dot(ee_error, ee_error)) if self.task == "ee_trajectory" else 0.0)
         )
         terminated = bool(
             np.linalg.norm(self.position_ned) > 5.0
@@ -239,6 +263,11 @@ class MyDroneArmEnv(BaseEnv):
             "reaction_force_body_n": arm_state.reaction_force_body_n.copy(),
             "reaction_torque_body_nm": arm_state.reaction_torque_body_nm.copy(),
             "battery_thrust_scale": thrust_scale,
+            "end_effector_position_m": ee_position.copy(),
+            "end_effector_target_m": ee_target.copy(),
+            "end_effector_error_m": ee_error.copy(),
+            "end_effector_error_norm_m": float(np.linalg.norm(ee_error)),
+            "target_joints_rad": target_joints.copy(),
             "safety_terminated": terminated,
         }
         observation = self._observation()

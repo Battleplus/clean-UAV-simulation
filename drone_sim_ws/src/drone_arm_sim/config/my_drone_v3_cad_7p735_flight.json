@@ -597,6 +597,15 @@
   },
   "actuator_transport_delay_s": 0.008,
   "actuator_transport_delay_status": "initial two-physics-step estimate; replace with measured PX4-output-to-ESC response latency",
+  "rl_work_pose_rad": [
+    0.4,
+    -0.6,
+    0.8,
+    -0.5,
+    0.3,
+    0.8
+  ],
+  "rl_trajectory_duration_s": 2.0,
   "temporary_fixed_mass_kg": 7.735,
   "mass_override_source": "user fixed the temporary whole-aircraft mass at 7.735 kg on 2026-08-07",
   "formal_urdf": "urdf/my_drone_v3/my_drone_cad_formal_dynamic.urdf",
@@ -604,7 +613,7 @@
   "wrench_reference": "URDF base_link origin in PX4 FRD",
   "motor_dynamics_table": {
     "schema": 1,
-    "input": "normalized_command in [0,1]; no RPM telemetry is available",
+    "input": "PX4 normalized_thrust in [0,1]; no RPM telemetry is available",
     "model_status": "normalized static thrust and first-order actuator model; real k_f, C_T, C_Q and RPM response remain uncalibrated",
     "maximum_thrust_n": 11.76798,
     "minimum_effective_command": 0.15,
@@ -859,5 +868,29 @@
     -3.9968028886505635e-15,
     -2.886579864025407e-15
   ],
-  "bounded_hover_residual_norm": 2.9840845339480473e-14
+  "bounded_hover_residual_norm": 2.9840845339480473e-14,
+  "actuator_input_model": "hover_scaled_linear_thrust_with_rated_cap",
+  "actuator_normalization": {
+    "px4_hover_command": 0.85,
+    "physical_hover_thrust_n": 10.948645013547555,
+    "physical_hover_fraction": 0.930375902537866,
+    "linear_thrust_per_command_n": 12.880758839467711,
+    "rated_thrust_command": 0.9136092171791879,
+    "maximum_command": 1.0,
+    "maximum_thrust_n": 11.76798,
+    "status": "control-interface calibration required because PX4 PositionControl limits its hover state to 0.9; physical thrust endpoints are unchanged"
+  },
+  "actuator_input_model_status": "single-slope PX4 command-to-thrust map through the calculated 7.735 kg hover force, capped at rated thrust above rated_thrust_command; this preserves allocator linearity around every unequal hover motor while the measured 14.8 V table is used only for equivalent ESC throttle/current",
+  "takeoff_support_release": {
+    "enabled": true,
+    "model_name": "my_drone_bringup_landing_support",
+    "release_up_force_n": 72.0617158625,
+    "maximum_horizontal_force_n": 0.5,
+    "maximum_com_torque_nm": 0.05,
+    "hold_time_s": 0.15,
+    "restore_on_land": true,
+    "restore_clearance_m": 0.45,
+    "restore_sdf_filename": "../worlds/landing_support.sdf",
+    "status": "Gazebo-only simultaneous release after 95 percent of vehicle weight and a near-balanced COM wrench are held continuously; after an explicit LAND request the same fixture is respawned under the current aircraft XY position only when the aircraft descends near its recorded supported height"
+  }
 }

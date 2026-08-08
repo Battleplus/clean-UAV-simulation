@@ -1,0 +1,43 @@
+{
+  "feedforward_off": {
+    "log": "/tmp/arm_flight_micro2.log",
+    "horizontal_drift_m": 0.202,
+    "altitude_span_m": 1.32,
+    "samples": 68,
+    "pass_marker": true,
+    "failsafe_seen": false,
+    "safety_abort": false,
+    "preset_max_error_rad": {
+      "flight_micro_a": 0.00396,
+      "flight_micro_b": 0.003981,
+      "retracted": 0.002972
+    },
+    "all_required_presets_reached": true,
+    "within_current_gate": true
+  },
+  "feedforward_on": {
+    "log": "/tmp/arm_flight_micro_ff2.log",
+    "horizontal_drift_m": 0.314,
+    "altitude_span_m": 1.521,
+    "samples": 68,
+    "pass_marker": false,
+    "failsafe_seen": false,
+    "safety_abort": false,
+    "preset_max_error_rad": {
+      "flight_micro_a": 0.003971,
+      "flight_micro_b": 0.003972,
+      "retracted": 0.002986
+    },
+    "all_required_presets_reached": true,
+    "within_current_gate": false
+  },
+  "delta_on_minus_off": {
+    "horizontal_drift_m": 0.11199999999999999,
+    "altitude_span_m": 0.20099999999999985
+  },
+  "comparison": {
+    "same_gate_pass": false,
+    "feedforward_run_accepted": false,
+    "interpretation": "feed-forward did not reduce both measured windows"
+  }
+}

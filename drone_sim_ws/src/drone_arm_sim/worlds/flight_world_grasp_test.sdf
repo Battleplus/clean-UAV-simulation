@@ -1,0 +1,113 @@
+<?xml version="1.0"?>
+<sdf version="1.9">
+  <!-- Validation-only world.  The box is a generic 0.25 kg test object, not
+       the user's final payload; its pose is aligned with formal work_a. -->
+  <world name="flight_world">
+    <gravity>0 0 -9.81</gravity>
+    <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
+    <atmosphere type="adiabatic"/>
+    <physics name="flight_step" type="ignored">
+      <max_step_size>0.004</max_step_size>
+      <real_time_factor>1.0</real_time_factor>
+    </physics>
+    <plugin filename="gz-sim-physics-system" name="gz::sim::systems::Physics"/>
+    <plugin filename="gz-sim-user-commands-system" name="gz::sim::systems::UserCommands"/>
+    <plugin filename="gz-sim-scene-broadcaster-system" name="gz::sim::systems::SceneBroadcaster"/>
+    <plugin filename="gz-sim-contact-system" name="gz::sim::systems::Contact"/>
+    <plugin filename="gz-sim-apply-link-wrench-system" name="gz::sim::systems::ApplyLinkWrench"/>
+    <plugin filename="gz-sim-sensors-system" name="gz::sim::systems::Sensors">
+      <render_engine>ogre2</render_engine>
+    </plugin>
+    <plugin filename="gz-sim-imu-system" name="gz::sim::systems::Imu"/>
+    <plugin filename="gz-sim-magnetometer-system" name="gz::sim::systems::Magnetometer"/>
+    <plugin filename="gz-sim-air-pressure-system" name="gz::sim::systems::AirPressure"/>
+    <plugin filename="gz-sim-navsat-system" name="gz::sim::systems::NavSat"/>
+    <spherical_coordinates>
+      <surface_model>EARTH_WGS84</surface_model>
+      <world_frame_orientation>ENU</world_frame_orientation>
+      <latitude_deg>47.3979710577</latitude_deg>
+      <longitude_deg>8.5461637398</longitude_deg>
+      <elevation>0</elevation>
+      <heading_deg>0</heading_deg>
+    </spherical_coordinates>
+    <light type="directional" name="sun">
+      <cast_shadows>true</cast_shadows>
+      <pose>0 0 10 0 0 0</pose>
+      <diffuse>0.8 0.8 0.8 1</diffuse>
+      <specular>0.2 0.2 0.2 1</specular>
+      <direction>-0.5 0.1 -0.9</direction>
+    </light>
+    <model name="ground_plane">
+      <static>true</static>
+      <link name="link">
+        <collision name="collision"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry></collision>
+        <visual name="visual"><geometry><plane><normal>0 0 1</normal><size>100 100</size></plane></geometry></visual>
+      </link>
+    </model>
+    <!-- Four corner supports hold the dynamic CAD airframe at its 1 m spawn
+         pose without freezing the SO101 links or applying flight thrust. -->
+    <model name="aircraft_contact_fixture">
+      <static>true</static>
+      <link name="front_left_support">
+        <pose>0.17 0.17 0.4085 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.05 0.05 0.817</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.05 0.05 0.817</size></box></geometry></visual>
+      </link>
+      <link name="front_right_support">
+        <pose>0.17 -0.17 0.4085 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.05 0.05 0.817</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.05 0.05 0.817</size></box></geometry></visual>
+      </link>
+      <link name="rear_left_support">
+        <pose>-0.17 0.17 0.4085 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.05 0.05 0.817</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.05 0.05 0.817</size></box></geometry></visual>
+      </link>
+      <link name="rear_right_support">
+        <pose>-0.17 -0.17 0.4085 0 0 0</pose>
+        <collision name="collision"><geometry><box><size>0.05 0.05 0.817</size></box></geometry></collision>
+        <visual name="visual"><geometry><box><size>0.05 0.05 0.817</size></box></geometry></visual>
+      </link>
+    </model>
+    <!-- A narrow static pedestal keeps the dynamic object at the formal
+         work_a height while the aircraft is held at its 1 m test hover. -->
+    <model name="grasp_test_pedestal">
+      <static>true</static>
+      <pose>0.12704 -0.06047 0.325 0 0 0</pose>
+      <link name="link">
+        <collision name="collision">
+          <geometry><box><size>0.08 0.08 0.65</size></box></geometry>
+          <surface><friction><ode><mu>0.9</mu><mu2>0.9</mu2></ode></friction></surface>
+        </collision>
+        <visual name="visual">
+          <geometry><box><size>0.08 0.08 0.65</size></box></geometry>
+          <material><ambient>0.35 0.35 0.35 1</ambient><diffuse>0.35 0.35 0.35 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+    <model name="grasp_test_object">
+      <pose>0.12704 -0.06047 0.6750 0 0 0</pose>
+      <link name="link">
+        <inertial>
+          <mass>0.25</mass>
+          <inertia><ixx>0.0000667</ixx><iyy>0.0000667</iyy><izz>0.0000667</izz></inertia>
+        </inertial>
+        <collision name="collision">
+          <geometry><box><size>0.05 0.05 0.05</size></box></geometry>
+          <surface><friction><ode><mu>0.8</mu><mu2>0.8</mu2></ode></friction></surface>
+        </collision>
+        <sensor name="contact_sensor" type="contact">
+          <always_on>true</always_on>
+          <update_rate>250</update_rate>
+          <contact>
+            <collision>collision</collision>
+          </contact>
+        </sensor>
+        <visual name="visual">
+          <geometry><box><size>0.05 0.05 0.05</size></box></geometry>
+          <material><ambient>0.1 0.4 0.9 1</ambient><diffuse>0.1 0.4 0.9 1</diffuse></material>
+        </visual>
+      </link>
+    </model>
+  </world>
+</sdf>

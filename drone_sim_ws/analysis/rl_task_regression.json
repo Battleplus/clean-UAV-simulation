@@ -1,0 +1,85 @@
+{
+  "schema": 1,
+  "reports": [
+    {
+      "task": "hover",
+      "steps": 200,
+      "terminated": false,
+      "truncated": false,
+      "max_position_norm_m": 3.999712124991671e-15,
+      "max_attitude_norm_rad": 2.7722301279573886e-14,
+      "final_joint_error_rad": 0.0,
+      "max_ee_error_m": 0.0879376018074834,
+      "final_ee_error_m": 0.0879376018074834,
+      "mass_kg": 7.735,
+      "px4_in_the_loop": false
+    },
+    {
+      "task": "wind_hover",
+      "steps": 200,
+      "terminated": false,
+      "truncated": false,
+      "max_position_norm_m": 0.16523106893961567,
+      "max_attitude_norm_rad": 0.2906539269018904,
+      "final_joint_error_rad": 0.0,
+      "max_ee_error_m": 0.0879376018074834,
+      "final_ee_error_m": 0.0879376018074834,
+      "mass_kg": 7.735,
+      "px4_in_the_loop": false
+    },
+    {
+      "task": "arm_pose",
+      "steps": 200,
+      "terminated": false,
+      "truncated": false,
+      "max_position_norm_m": 0.13923063066591476,
+      "max_attitude_norm_rad": 0.19340002363632486,
+      "final_joint_error_rad": 0.045642297553562416,
+      "max_ee_error_m": 0.019509999749281255,
+      "final_ee_error_m": 0.0063280046190178265,
+      "mass_kg": 7.735,
+      "px4_in_the_loop": false
+    },
+    {
+      "task": "joint_trajectory",
+      "steps": 200,
+      "terminated": false,
+      "truncated": false,
+      "max_position_norm_m": 0.06069209905923053,
+      "max_attitude_norm_rad": 0.09851045634603077,
+      "final_joint_error_rad": 0.1828082310341083,
+      "max_ee_error_m": 0.011357570506125205,
+      "final_ee_error_m": 0.01093861235459187,
+      "mass_kg": 7.735,
+      "px4_in_the_loop": false
+    },
+    {
+      "task": "ee_trajectory",
+      "steps": 200,
+      "terminated": false,
+      "truncated": false,
+      "max_position_norm_m": 4.215244225678814e-05,
+      "max_attitude_norm_rad": 0.0003194648836527671,
+      "final_joint_error_rad": 0.0,
+      "max_ee_error_m": 0.016084167716505317,
+      "final_ee_error_m": 0.016084167716505317,
+      "mass_kg": 7.735,
+      "px4_in_the_loop": false
+    }
+  ],
+  "acceptance_gates": {
+    "no_safety_termination": true,
+    "hover_position_m": true,
+    "wind_position_m": true,
+    "wind_attitude_rad": true,
+    "arm_pose_error_rad": true,
+    "arm_pose_position_m": true,
+    "arm_pose_attitude_rad": true,
+    "joint_trajectory_error_rad": true,
+    "joint_trajectory_position_m": true,
+    "joint_trajectory_attitude_rad": true,
+    "ee_trajectory_error_m": true,
+    "ee_trajectory_position_m": true,
+    "ee_trajectory_attitude_rad": true
+  }
+}

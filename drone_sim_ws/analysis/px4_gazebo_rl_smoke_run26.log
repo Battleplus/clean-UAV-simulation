@@ -1,0 +1,2 @@
+PX4_GAZEBO_RL_METRICS {"commanded_shoulder_delta_rad": 5.256542475059155e-16, "failsafe_seen": false, "gazebo_in_the_loop": true, "normal_disarm": true, "observations": 203, "px4_in_the_loop": true, "reached_height": true, "reached_offboard": true, "uncommanded_joint_delta_norm_rad": 3.1580616230364502e-12}
+PX4_GAZEBO_RL_FAIL

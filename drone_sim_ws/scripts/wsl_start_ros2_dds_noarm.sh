@@ -5,6 +5,18 @@ workspace_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 px4_dir="${PX4_DIR:-/home/asus/PX4-Autopilot}"
 runtime_dir="/tmp/my_drone_ros2_dds"
 mkdir -p "${runtime_dir}"
+model_settle_s="${MODEL_SETTLE_S:-8}"
+px4_ready_settle_s="${PX4_READY_SETTLE_S:-5}"
+
+# Keep the PX4 SITL build's generated airframe in sync with the authoritative
+# project copy.  PX4 executes the file under build/.../etc at runtime; merely
+# editing drone_sim_ws/px4/airframes would otherwise leave an older parameter
+# set active until a full PX4 rebuild.
+project_airframe="${PROJECT_AIRFRAME_FILE:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../px4/airframes" && pwd)/4026_gz_my_drone_octorotor_7p735}"
+px4_build_airframe="${px4_dir}/build/px4_sitl_default/etc/init.d-posix/airframes/4026_gz_my_drone_octorotor_7p735"
+if [[ -f "${project_airframe}" && -d "$(dirname "${px4_build_airframe}")" ]]; then
+  cp "${project_airframe}" "${px4_build_airframe}"
+fi
 
 # A second launch would create another direct-wrench node subscribing to the
 # same actuator topic and apply thrust twice to one Gazebo entity.
@@ -13,11 +25,13 @@ if [[ "${CLEAN_STALE_RUNTIME:-1}" == "1" ]]; then
   pkill -x gazebo_sensor_d 2>/dev/null || true
   pkill -x parameter_bridg 2>/dev/null || true
   pkill -x robot_state_pub 2>/dev/null || true
+  pkill -f '/arm_coupling_monitor' 2>/dev/null || true
   pkill -x px4 2>/dev/null || true
   pkill -x MicroXRCEAgent 2>/dev/null || true
   pkill -x ruby 2>/dev/null || true
   # ROS launch and the DDS keyboard controller both have process name ros2.
   pkill -x ros2 2>/dev/null || true
+  pkill -f '/arm_coupling_monitor' 2>/dev/null || true
   # A PTY test may leave the installed Python entry point behind if the
   # parent shell is interrupted; never allow two DDS Offboard publishers.
   pkill -f '/px4_ros2_control/dds_wasd_control' 2>/dev/null || true
@@ -39,10 +53,12 @@ agent_log="${runtime_dir}/agent.log"
 gazebo_log="${runtime_dir}/gazebo.log"
 px4_log="${runtime_dir}/px4.log"
 arm_init_log="${runtime_dir}/arm_init.log"
+settle_log="${runtime_dir}/settle.log"
 : >"${agent_log}"
 : >"${gazebo_log}"
 : >"${px4_log}"
 : >"${arm_init_log}"
+: >"${settle_log}"
 
 setsid /home/asus/.local/bin/MicroXRCEAgent udp4 -p 8888 -v 4 \
   >"${agent_log}" 2>&1 &
@@ -64,6 +80,10 @@ setsid ros2 launch drone_arm_sim cad_direct_thrust.launch.py \
   battery_empty_voltage_v:="${BATTERY_EMPTY_VOLTAGE_V:-nan}" \
   battery_minimum_loaded_voltage_v:="${BATTERY_MINIMUM_LOADED_VOLTAGE_V:-nan}" \
   battery_thrust_voltage_exponent:="${BATTERY_THRUST_VOLTAGE_EXPONENT:-nan}" \
+  arm_torque_feedforward_enabled:="${ARM_TORQUE_FEEDFORWARD_ENABLED:-false}" \
+  arm_torque_feedforward_max_delta_n:="${ARM_TORQUE_FEEDFORWARD_MAX_DELTA_N:-2.0}" \
+  arm_coupling_target_mass_kg:="${ARM_COUPLING_TARGET_MASS_KG:-7.735}" \
+  arm_payload_mass_kg:="${ARM_PAYLOAD_MASS_KG:-0.0}" \
   config_file:="${CONFIG_FILE:-${default_config_file}}" \
   >"${gazebo_log}" 2>&1 &
 echo $! >"${runtime_dir}/gazebo.pid"
@@ -74,6 +94,26 @@ for _ in $(seq 1 60); do
   fi
   sleep 1
 done
+# The CAD assembly is spawned above the ground and can bounce while the
+# sensors first come online.  Let the rigid body settle before PX4 chooses its
+# local-position origin; otherwise the first takeoff target contains the fall
+# distance and the safety gate correctly aborts it.
+echo "Waiting ${model_settle_s}s for the spawned CAD model to settle" >>"${gazebo_log}"
+sleep "${model_settle_s}"
+if ! python3 "${workspace_dir}/scripts/wait_model_settled.py" \
+  --timeout "${MODEL_SETTLE_TIMEOUT_S:-45}" \
+  --hold "${MODEL_SETTLE_HOLD_S:-2}" \
+  --linear-limit "${MODEL_SETTLE_LINEAR_LIMIT_M_S:-0.08}" \
+  --angular-limit "${MODEL_SETTLE_ANGULAR_LIMIT_RAD_S:-0.08}" \
+  >"${settle_log}" 2>&1; then
+  echo "Gazebo CAD model did not settle; refusing to start PX4" >&2
+  cat "${settle_log}" >&2 || true
+  tail -n 80 "${gazebo_log}" >&2 || true
+  if [[ -f "${runtime_dir}/gazebo.pid" ]]; then
+    kill -- "-$(cat "${runtime_dir}/gazebo.pid")" 2>/dev/null || true
+  fi
+  exit 1
+fi
 
 cd "${px4_dir}"
 setsid env PX4_GZ_STANDALONE=1 PX4_GZ_WORLD=flight_world \
@@ -91,6 +131,10 @@ for _ in $(seq 1 90); do
         --preset retracted --duration 8 --wait --tolerance 0.08 \
         >"${arm_init_log}" 2>&1
     fi
+    # PX4 needs a short interval after DDS topics appear to finish estimator
+    # and preflight checks.  Returning READY immediately makes an automated
+    # keyboard test press T while preflight_checks_pass is still false.
+    sleep "${px4_ready_settle_s}"
     echo "ROS2_DDS_NOARM_READY"
     echo "ROS2_DDS_READY arm_control=${ENABLE_ARM_CONTROL:-false}"
     echo "logs=${runtime_dir}"

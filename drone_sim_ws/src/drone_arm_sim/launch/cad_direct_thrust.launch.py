@@ -13,7 +13,12 @@ from launch_ros.actions import Node
 def generate_launch_description():
     package_share = Path(get_package_share_directory("drone_arm_sim"))
     ros_gz_share = Path(get_package_share_directory("ros_gz_sim"))
-    world = package_share / "worlds" / "flight_world_250hz.sdf"
+    # Keep the normal flight world as the default, while allowing a separate
+    # contact/grasp world to be selected without changing the formal model.
+    world = Path(os.environ.get(
+        "MY_DRONE_WORLD",
+        str(package_share / "worlds" / "flight_world_250hz.sdf"),
+    ))
     robot = Path(os.environ.get(
         "MY_DRONE_URDF",
         str(package_share / "urdf" / "my_drone_v2" / "my_drone_cad_dynamic.urdf"),
@@ -21,6 +26,17 @@ def generate_launch_description():
     robot_xml = robot.read_text(encoding="utf-8").replace(
         "$(find drone_arm_sim)", str(package_share)
     )
+    # Contact-only fixture: pin the CAD base kinematically while leaving all
+    # SO101 joints under ros2_control.  This is selected explicitly by the
+    # grasp regression and is never enabled by the PX4 / WASD startup path.
+    if os.environ.get("MY_DRONE_KINEMATIC_BASE", "false").lower() in {
+        "1", "true", "yes", "on"
+    }:
+        robot_xml = robot_xml.replace(
+            "</robot>",
+            "\n  <gazebo reference=\"base_link\">"
+            "<kinematic>true</kinematic></gazebo>\n</robot>",
+        )
     config = LaunchConfiguration("config_file")
     common_args = f"-r -v 3 --physics-engine gz-physics-dartsim-plugin {world}"
     gazebo = IncludeLaunchDescription(
@@ -77,6 +93,7 @@ def generate_launch_description():
                 arguments=[
                     "--config", config,
                     "--entity-name", "base_link",
+                    "--command-topic", LaunchConfiguration("motor_command_topic"),
                     "--reaction-moment-ratio-m",
                     LaunchConfiguration("reaction_moment_ratio_m"),
                     "--wind-enu",
@@ -97,6 +114,10 @@ def generate_launch_description():
                     LaunchConfiguration("battery_minimum_loaded_voltage_v"),
                     "--battery-thrust-voltage-exponent",
                     LaunchConfiguration("battery_thrust_voltage_exponent"),
+                    "--arm-torque-feedforward-enabled",
+                    LaunchConfiguration("arm_torque_feedforward_enabled"),
+                    "--arm-torque-feedforward-max-delta-n",
+                    LaunchConfiguration("arm_torque_feedforward_max_delta_n"),
                 ],
             )
         ],
@@ -188,6 +209,14 @@ def generate_launch_description():
             DeclareLaunchArgument("headless", default_value="false"),
             DeclareLaunchArgument("enable_controller", default_value="true"),
             DeclareLaunchArgument("enable_arm_control", default_value="false"),
+            # PX4 publishes on /my_drone/command/motor_speed.  The optional
+            # built-in hover controller publishes on /model/my_drone/...;
+            # contact fixtures can select that topic without changing the
+            # normal PX4 / WASD startup path.
+            DeclareLaunchArgument(
+                "motor_command_topic",
+                default_value="/my_drone/command/motor_speed",
+            ),
             DeclareLaunchArgument("reaction_moment_ratio_m", default_value="-1"),
             DeclareLaunchArgument("wind_enu_x", default_value="nan"),
             DeclareLaunchArgument("wind_enu_y", default_value="nan"),
@@ -203,6 +232,12 @@ def generate_launch_description():
             DeclareLaunchArgument("battery_empty_voltage_v", default_value="nan"),
             DeclareLaunchArgument("battery_minimum_loaded_voltage_v", default_value="nan"),
             DeclareLaunchArgument("battery_thrust_voltage_exponent", default_value="nan"),
+            DeclareLaunchArgument(
+                "arm_torque_feedforward_enabled", default_value="false"
+            ),
+            DeclareLaunchArgument(
+                "arm_torque_feedforward_max_delta_n", default_value="2.0"
+            ),
             DeclareLaunchArgument("arm_coupling_rate_hz", default_value="3.0"),
             DeclareLaunchArgument("arm_coupling_target_mass_kg", default_value="7.735"),
             DeclareLaunchArgument("arm_payload_mass_kg", default_value="0.0"),

@@ -64,5 +64,43 @@
         </visual>
       </link>
     </model>
+    <!-- Bring-up landing supports.  The formal CAD retracted gripper extends
+         below the body collision; these four small static feet keep the
+         spawned aircraft level until PX4 takes off, without altering the CAD
+         model or the in-flight free-body dynamics. -->
+    <model name="my_drone_bringup_landing_support">
+      <static>true</static>
+      <link name="front_left_support">
+        <pose>0.17 0.17 0.4085 0 0 0</pose>
+        <collision name="collision">
+          <geometry><box><size>0.05 0.05 0.817</size></box></geometry>
+          <!-- The supports are a bring-up fixture, not landing gear.  Low
+               tangential friction prevents a canted rotor takeoff from
+               unloading one corner first and storing a lateral impulse. -->
+          <surface><friction><ode><mu>0.02</mu><mu2>0.02</mu2></ode></friction></surface>
+        </collision>
+      </link>
+      <link name="front_right_support">
+        <pose>0.17 -0.17 0.4085 0 0 0</pose>
+        <collision name="collision">
+          <geometry><box><size>0.05 0.05 0.817</size></box></geometry>
+          <surface><friction><ode><mu>0.02</mu><mu2>0.02</mu2></ode></friction></surface>
+        </collision>
+      </link>
+      <link name="rear_left_support">
+        <pose>-0.17 0.17 0.4085 0 0 0</pose>
+        <collision name="collision">
+          <geometry><box><size>0.05 0.05 0.817</size></box></geometry>
+          <surface><friction><ode><mu>0.02</mu><mu2>0.02</mu2></ode></friction></surface>
+        </collision>
+      </link>
+      <link name="rear_right_support">
+        <pose>-0.17 -0.17 0.4085 0 0 0</pose>
+        <collision name="collision">
+          <geometry><box><size>0.05 0.05 0.817</size></box></geometry>
+          <surface><friction><ode><mu>0.02</mu><mu2>0.02</mu2></ode></friction></surface>
+        </collision>
+      </link>
+    </model>
   </world>
 </sdf>

@@ -1,0 +1,32 @@
+DDS WASD: T takeoff | W/S/A/D move | R/F up/down | Q/E yaw | L land | O exit Offboard | X twice emergency disarm | Z safe exit
+[0m[INFO] [1786143958.435989037] [my_drone_dds_wasd_control]: NED target initialized: N=0.007 E=-0.026 D=-0.095 yaw=94.9 deg[0m
+[0m[INFO] [1786143958.494519357] [my_drone_dds_wasd_control]: local vertical target sign=-1 (target = current + sign * height)[0m
+[0m[INFO] [1786143958.561286696] [my_drone_dds_wasd_control]: STATE arm=1 nav=4 NED=(0.005,-0.025,-0.590) vel=(0.001,-0.002,-1.798) yaw_deg=94.9 failsafe=False age_s=(0.02,0.01) arm_torque_nm=0.000 motors=[0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00][0m
+[0m[INFO] [1786143959.655335328] [my_drone_dds_wasd_control]: STATE arm=1 nav=4 NED=(0.004,-0.013,-1.722) vel=(0.008,0.007,-1.816) yaw_deg=94.9 failsafe=False age_s=(0.31,0.02) arm_torque_nm=0.000 motors=[0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00][0m
+[0m[INFO] [1786143960.614239370] [my_drone_dds_wasd_control]: STATE arm=1 nav=4 NED=(0.012,-0.012,-1.781) vel=(0.010,0.002,-1.256) yaw_deg=94.9 failsafe=False age_s=(0.15,0.02) arm_torque_nm=0.000 motors=[0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00][0m
+[0m[INFO] [1786143960.658966596] [my_drone_dds_wasd_control]: target NED=(0.01, -0.01, -2.98) yaw=94.9 deg[0m
+[0m[INFO] [1786143960.708191603] [my_drone_dds_wasd_control]: Prestreaming Offboard setpoints for 2 seconds[0m
+[0m[INFO] [1786143961.613275065] [my_drone_dds_wasd_control]: STATE arm=1 nav=4 NED=(0.003,-0.012,-1.658) vel=(0.011,-0.001,-0.829) yaw_deg=94.9 failsafe=False age_s=(0.35,0.02) arm_torque_nm=0.000 motors=[0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00][0m
+[0m[INFO] [1786143962.663553016] [my_drone_dds_wasd_control]: STATE arm=1 nav=4 NED=(-0.002,-0.005,-1.443) vel=(0.006,0.002,-0.493) yaw_deg=94.9 failsafe=False age_s=(0.39,0.01) arm_torque_nm=0.000 motors=[0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00][0m
+[0m[INFO] [1786143962.702145439] [my_drone_dds_wasd_control]: OFFBOARD mode and ARM commands sent[0m
+[0m[INFO] [1786143962.741518796] [my_drone_dds_wasd_control]: PX4 command ack: command=400 result=0[0m
+[0m[INFO] [1786143963.669875154] [my_drone_dds_wasd_control]: STATE arm=2 nav=14 NED=(-0.020,-0.004,-1.202) vel=(-0.007,0.000,-0.262) yaw_deg=94.9 failsafe=False age_s=(0.43,0.01) arm_torque_nm=0.000 motors=[3.72,0.00,3.72,1.08,0.85,0.00,0.85,1.08][0m
+[31m[ERROR] [1786143964.559504256] [my_drone_dds_wasd_control]: Position safety gate exceeded; requesting LAND horizontal=0.02 m vertical=2.01 m[0m
+[33m[WARN] [1786143964.593214649] [my_drone_dds_wasd_control]: LAND requested; Offboard setpoint stream stopped[0m
+[0m[INFO] [1786143964.633907056] [my_drone_dds_wasd_control]: PX4 command ack: command=21 result=0[0m
+[0m[INFO] [1786143964.685092971] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(-0.009,-0.004,-0.954) vel=(-0.003,0.001,-0.093) yaw_deg=94.9 failsafe=False age_s=(0.04,0.04) arm_torque_nm=0.000 motors=[212.89,216.83,212.89,222.33,207.64,216.83,207.64,222.33][0m
+[0m[INFO] [1786143965.706409645] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(-0.010,0.011,-0.700) vel=(-0.004,0.010,0.033) yaw_deg=94.8 failsafe=False age_s=(0.32,0.02) arm_torque_nm=0.000 motors=[516.06,534.26,516.06,542.91,507.21,534.26,507.21,542.91][0m
+[0m[INFO] [1786143966.706124168] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(0.002,0.018,-0.499) vel=(0.003,0.013,0.100) yaw_deg=94.8 failsafe=False age_s=(0.31,0.02) arm_torque_nm=0.050 motors=[666.30,684.07,666.30,695.71,654.67,684.07,654.67,695.71][0m
+[0m[INFO] [1786143967.752801173] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(-0.011,-0.002,-0.292) vel=(-0.020,-0.053,0.215) yaw_deg=94.8 failsafe=False age_s=(0.35,0.00) arm_torque_nm=0.000 motors=[680.15,690.24,680.16,713.91,656.24,690.25,656.24,713.90][0m
+[0m[INFO] [1786143968.798433365] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(-0.021,-0.006,-0.158) vel=(0.011,0.017,0.047) yaw_deg=94.8 failsafe=False age_s=(0.34,0.00) arm_torque_nm=0.000 motors=[649.16,652.43,649.16,671.05,630.11,652.43,630.11,671.05][0m
+[0m[INFO] [1786143969.803112318] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(-0.006,0.013,-0.190) vel=(0.003,0.026,-0.018) yaw_deg=94.7 failsafe=False age_s=(0.38,0.01) arm_torque_nm=0.015 motors=[628.33,617.99,628.33,639.28,606.95,617.99,606.95,639.28][0m
+[0m[INFO] [1786143970.823766441] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(-0.005,0.057,-0.171) vel=(-0.001,0.096,0.013) yaw_deg=94.7 failsafe=False age_s=(0.37,0.01) arm_torque_nm=0.000 motors=[638.04,599.11,638.05,622.34,614.48,599.12,614.47,622.33][0m
+[0m[INFO] [1786143971.863117462] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(0.005,0.043,-0.111) vel=(0.004,0.017,0.050) yaw_deg=94.5 failsafe=False age_s=(0.41,0.02) arm_torque_nm=0.000 motors=[637.07,589.95,637.07,614.78,611.75,589.96,611.75,614.78][0m
+[0m[INFO] [1786143972.909200034] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(0.022,-0.001,-0.046) vel=(0.003,-0.001,0.095) yaw_deg=94.5 failsafe=False age_s=(0.45,0.01) arm_torque_nm=0.000 motors=[636.40,586.92,636.41,613.83,608.93,586.92,608.92,613.82][0m
+[0m[INFO] [1786143973.959784364] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(0.005,0.011,0.020) vel=(-0.011,0.034,0.115) yaw_deg=94.5 failsafe=False age_s=(0.50,0.01) arm_torque_nm=0.000 motors=[533.66,466.62,533.67,498.39,501.33,466.62,501.32,498.39][0m
+[0m[INFO] [1786143975.021168855] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(0.006,-0.014,0.045) vel=(-0.005,-0.011,0.121) yaw_deg=94.5 failsafe=False age_s=(0.03,0.00) arm_torque_nm=0.000 motors=[47.29,0.00,47.30,0.00,19.31,0.00,19.31,0.00][0m
+[0m[INFO] [1786143976.057839209] [my_drone_dds_wasd_control]: STATE arm=2 nav=18 NED=(0.021,-0.015,0.064) vel=(0.006,-0.018,0.122) yaw_deg=94.6 failsafe=False age_s=(0.07,0.01) arm_torque_nm=0.000 motors=[46.87,0.00,46.87,0.00,19.86,0.00,19.86,0.00][0m
+[0m[INFO] [1786143976.491004584] [my_drone_dds_wasd_control]: LANDING_DISARMED_CONFIRMED[0m
+DDS_ARM_FLIGHT_FAIL missing=['arm:flight_micro_a', 'arm:flight_micro_b', 'arm:retracted'] climbed=True no_failsafe=True stable=True internal_land=True
+ARM_FLIGHT_METRICS horizontal_drift_m=0.015 altitude_span_m=0.019 samples=2
+ARM_FLIGHT_INTERNAL_LAND_DETECTED

@@ -6,6 +6,7 @@ import json
 from collections import deque
 from pathlib import Path
 import re
+import sys
 import unittest
 import xml.etree.ElementTree as ET
 
@@ -15,13 +16,18 @@ from drone_arm_sim.allocation_analysis import allocation_matrix, allocate_bounde
 from drone_arm_sim.flight_control_demo import simulate
 from drone_arm_sim.floating_base_reaction import reaction_twist
 from drone_arm_sim.coupled_dynamics import CoupledArmDynamics, JOINT_NAMES, Payload
-from drone_arm_sim.arm_coupling_monitor import bounded_compensation_ned
+from drone_arm_sim.arm_coupling_monitor import (
+    bounded_compensation_ned,
+    filtered_joint_acceleration_step,
+)
 from drone_arm_sim.gazebo_wrench_controller import compute_wrench_enu
 from drone_arm_sim.gazebo_direct_motor_model import (
     FRD_TO_FLU,
     battery_step,
     command_to_current_a,
     command_to_thrust_n,
+    actuator_command_to_thrust_n,
+    thrust_to_actuator_command,
     direct_wrench_flu,
     delayed_command_step,
     environment_wrench_world,
@@ -29,16 +35,24 @@ from drone_arm_sim.gazebo_direct_motor_model import (
     ground_effect_thrust_scale,
     motor_wrench_frd,
     per_motor_wrench_frd,
+    landing_support_restore_ready,
+    takeoff_support_release_ready,
+    thrust_to_command,
+    torque_feedforward_command_delta,
 )
 from drone_arm_sim.inverse_kinematics import solve_ik
 from drone_arm_sim.gazebo_sensor_delay import message_stamp_seconds
 from drone_arm_sim.model_analysis import UrdfModel, _rpy_matrix
 from drone_arm_sim.rl_env import make_default_env
-from scripts.generate_cad_px4_airframe import _thrust_to_command
 
 
 PACKAGE = Path(__file__).resolve().parents[1]
 WORKSPACE = PACKAGE.parents[1]
+# The airframe generator is a source-side helper, not an installed ROS module.
+# Add its directory explicitly so tests work from a clean colcon environment
+# (and do not accidentally import an unrelated ``scripts`` package).
+sys.path.insert(0, str(PACKAGE / "scripts"))
+from generate_cad_px4_airframe import _thrust_to_command
 CONTROLLED_URDF = PACKAGE / "urdf" / "drone_with_arm_controlled.urdf"
 OCTOROTOR_URDF = PACKAGE / "urdf" / "my_drone_octorotor_example.urdf"
 CONFIG_PATH = PACKAGE / "config" / "octorotor_example.json"
@@ -61,6 +75,9 @@ CAD_V3_AIRFRAME_PATH = (
     WORKSPACE / "px4" / "airframes" / "4026_gz_my_drone_octorotor_7p735"
 )
 SO101_MOTION_REFERENCE_PATH = PACKAGE / "config" / "so101_motion_reference.json"
+GRASP_WORLD_PATH = PACKAGE / "worlds" / "flight_world_grasp_test.sdf"
+FLIGHT_WORLD_PATH = PACKAGE / "worlds" / "flight_world_250hz.sdf"
+LANDING_SUPPORT_PATH = PACKAGE / "worlds" / "landing_support.sdf"
 CAD_MANIFEST_PATH = WORKSPACE / "analysis" / "cad_direct" / "assembly_manifest.json"
 EXTRACTED_MOUNTS_PATH = (
     WORKSPACE / "analysis" / "motor_geometry" / "extracted_mounts.json"
@@ -89,6 +106,25 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertAlmostEqual(command_to_thrust_n(config, 0.90), 11.76798)
         midpoint = 0.5 * (5.34462425 + 5.5113373)
         self.assertAlmostEqual(command_to_thrust_n(config, 0.525), midpoint)
+        self.assertAlmostEqual(thrust_to_command(config, 5.34462425), 0.50)
+        self.assertAlmostEqual(thrust_to_command(config, 11.76798), 0.90)
+
+    def test_arm_torque_feedforward_uses_formal_allocation_and_is_bounded(self):
+        config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
+        commands = np.full(8, 0.874)
+        reaction_frd = np.array([0.10, -0.08, 0.05])
+        compensated, delta = torque_feedforward_command_delta(
+            config, commands, reaction_frd, max_delta_n=2.0
+        )
+        self.assertEqual(compensated.shape, (8,))
+        self.assertTrue(np.all((compensated >= 0.0) & (compensated <= 1.0)))
+        # A trim is deliberately small in normalized command space and must
+        # not replace the PX4 hover command.
+        self.assertLess(float(np.max(np.abs(delta))), 0.25)
+        base_force, base_torque = direct_wrench_flu(config, commands)
+        trim_force, trim_torque = direct_wrench_flu(config, compensated)
+        self.assertGreater(float(np.linalg.norm(trim_torque - base_torque)), 1e-4)
+        self.assertLess(float(np.linalg.norm(trim_force - base_force)), 1.0)
 
     def test_cad_flight_reaction_torque_signs_match_cw_ccw(self):
         config = json.loads(
@@ -524,20 +560,52 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertLess(config["bounded_hover_residual_norm"], 1e-10)
         self.assertFalse(config["battery_dynamics"]["enabled"])
 
-    def test_7p735_px4_hover_uses_static_thrust_inverse(self):
+    def test_7p735_px4_hover_uses_linear_scaled_thrust_boundary(self):
         config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
         mean_hover_thrust = float(np.mean(config["bounded_hover_thrust_n"]))
-        hover_command = _thrust_to_command(config, mean_hover_thrust)
-        self.assertAlmostEqual(hover_command, 0.873727, places=6)
-        self.assertNotAlmostEqual(
-            hover_command,
-            mean_hover_thrust / config["maximum_thrust_n"],
-            places=2,
+        hover_command = config["actuator_normalization"]["px4_hover_command"]
+        self.assertEqual(
+            config["actuator_input_model"],
+            "hover_scaled_linear_thrust_with_rated_cap",
+        )
+        self.assertAlmostEqual(hover_command, 0.85, places=6)
+        self.assertAlmostEqual(
+            actuator_command_to_thrust_n(config, hover_command), mean_hover_thrust
+        )
+        self.assertAlmostEqual(
+            thrust_to_actuator_command(config, mean_hover_thrust), hover_command
+        )
+        self.assertAlmostEqual(actuator_command_to_thrust_n(config, 0.0), 0.0)
+        self.assertAlmostEqual(
+            actuator_command_to_thrust_n(config, 1.0), config["maximum_thrust_n"]
+        )
+        rated_command = config["actuator_normalization"]["rated_thrust_command"]
+        self.assertGreater(rated_command, hover_command)
+        self.assertLess(rated_command, 1.0)
+        self.assertAlmostEqual(
+            thrust_to_actuator_command(config, config["maximum_thrust_n"]),
+            rated_command,
+        )
+        hover_commands = np.asarray([
+            thrust_to_actuator_command(config, value)
+            for value in config["bounded_hover_thrust_n"]
+        ])
+        reconstructed = np.asarray([
+            actuator_command_to_thrust_n(config, value) for value in hover_commands
+        ])
+        np.testing.assert_allclose(
+            allocation_matrix(config) @ reconstructed,
+            [0.0, 0.0, -7.735 * 9.80665, 0.0, 0.0, 0.0],
+            atol=1e-9,
         )
         airframe = CAD_V3_AIRFRAME_PATH.read_text(encoding="utf-8")
         match = re.search(r"MPC_THR_HOVER\s+([-+0-9.eE]+)", airframe)
         self.assertIsNotNone(match)
         self.assertAlmostEqual(float(match.group(1)), hover_command, places=4)
+        self.assertRegex(airframe, r"HTE_THR_RANGE\s+0\.01")
+        self.assertRegex(airframe, r"HTE_HT_ERR_INIT\s+0\.00")
+        self.assertRegex(airframe, r"MPC_TKO_RAMP_T\s+0\.80")
+        self.assertRegex(airframe, r"MPC_Z_VEL_I_ACC\s+0\.80")
 
     def test_7p735_allocation_and_wrench_reference_points_are_distinct(self):
         config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
@@ -556,11 +624,28 @@ class CoreRegressionTest(unittest.TestCase):
             atol=1e-9,
         )
 
+    def test_7p735_origin_wrench_transforms_exactly_to_com_allocation(self):
+        config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
+        com_offsets = np.asarray([
+            np.asarray(rotor["wrench_position_m"], dtype=float)
+            - np.asarray(rotor["position_m"], dtype=float)
+            for rotor in config["rotors"]
+        ])
+        np.testing.assert_allclose(
+            com_offsets, np.tile(com_offsets[0], (len(com_offsets), 1)), atol=2e-5
+        )
+        com_frd = np.mean(com_offsets, axis=0)
+        origin_matrix = allocation_matrix(config, position_key="wrench_position_m")
+        transformed = origin_matrix.copy()
+        for column in range(transformed.shape[1]):
+            transformed[3:, column] -= np.cross(com_frd, transformed[:3, column])
+        np.testing.assert_allclose(transformed, allocation_matrix(config), atol=2e-5)
+
     def test_7p735_motor_dynamics_table_is_explicit_and_rpm_honest(self):
         config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
         table = config["motor_dynamics_table"]
         self.assertEqual(len(table["motors"]), 8)
-        self.assertEqual(table["input"], "normalized_command in [0,1]; no RPM telemetry is available")
+        self.assertEqual(table["input"], "PX4 normalized_thrust in [0,1]; no RPM telemetry is available")
         self.assertIsNone(table["motors"][0]["thrust_coefficient_kf"])
         self.assertIsNone(table["motors"][0]["reaction_torque_coefficient_kq"])
         for item in table["motors"]:
@@ -568,6 +653,59 @@ class CoreRegressionTest(unittest.TestCase):
             self.assertAlmostEqual(item["max_thrust_n"], 11.76798)
             self.assertAlmostEqual(item["rise_time_constant_s"], 0.035)
             self.assertAlmostEqual(item["fall_time_constant_s"], 0.035)
+
+    def test_7p735_takeoff_fixture_releases_below_hover_force(self):
+        config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
+        release = config["takeoff_support_release"]
+        self.assertTrue(release["enabled"])
+        self.assertEqual(
+            release["model_name"], "my_drone_bringup_landing_support"
+        )
+        self.assertGreaterEqual(release["release_up_force_n"], 0.95 * 7.735 * 9.80665)
+        hover_vertical_force = -allocation_matrix(config)[:3] @ np.asarray(
+            config["bounded_hover_thrust_n"]
+        )
+        self.assertLess(release["release_up_force_n"], hover_vertical_force[2])
+        self.assertLessEqual(release["maximum_horizontal_force_n"], 0.50)
+        self.assertLessEqual(release["maximum_com_torque_nm"], 0.05)
+        self.assertGreaterEqual(release["hold_time_s"], 0.15)
+        self.assertTrue(release["restore_on_land"])
+        self.assertGreaterEqual(release["restore_clearance_m"], 0.30)
+        self.assertLessEqual(release["restore_clearance_m"], 0.60)
+        restore_path = (CAD_V3_FLIGHT_CONFIG_PATH.parent / release["restore_sdf_filename"]).resolve()
+        self.assertEqual(restore_path, LANDING_SUPPORT_PATH.resolve())
+        self.assertTrue(restore_path.is_file())
+
+        hover_wrench = allocation_matrix(config) @ np.asarray(
+            config["bounded_hover_thrust_n"]
+        )
+        self.assertTrue(takeoff_support_release_ready(
+            hover_wrench,
+            release["release_up_force_n"],
+            release["maximum_horizontal_force_n"],
+            release["maximum_com_torque_nm"],
+        ))
+        excessive_lateral = hover_wrench.copy()
+        excessive_lateral[0] = release["maximum_horizontal_force_n"] + 0.01
+        self.assertFalse(takeoff_support_release_ready(
+            excessive_lateral,
+            release["release_up_force_n"],
+            release["maximum_horizontal_force_n"],
+            release["maximum_com_torque_nm"],
+        ))
+        excessive_torque = hover_wrench.copy()
+        excessive_torque[4] = release["maximum_com_torque_nm"] + 0.01
+        self.assertFalse(takeoff_support_release_ready(
+            excessive_torque,
+            release["release_up_force_n"],
+            release["maximum_horizontal_force_n"],
+            release["maximum_com_torque_nm"],
+        ))
+
+        clearance = release["restore_clearance_m"]
+        self.assertFalse(landing_support_restore_ready(1.5, 0.8, clearance))
+        self.assertTrue(landing_support_restore_ready(1.2, 0.8, clearance))
+        self.assertFalse(landing_support_restore_ready(1.2, None, clearance))
 
     def test_each_motor_command_produces_force_and_torque(self):
         config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
@@ -618,6 +756,17 @@ class CoreRegressionTest(unittest.TestCase):
                 self.assertLessEqual(target[index], limit["upper_rad"])
                 self.assertLessEqual(abs(target[index] - retracted[index]), 0.04)
 
+    def test_formal_arm_position_hold_gain_is_nonoscillatory_and_not_weak(self):
+        root = ET.parse(CAD_V3_FORMAL_URDF).getroot()
+        gain = float(
+            root.findtext(
+                "./gazebo/plugin[@name='gz_ros2_control::GazeboSimROS2ControlPlugin']"
+                "/position_proportional_gain"
+            )
+        )
+        self.assertGreaterEqual(gain, 0.5)
+        self.assertLessEqual(gain, 1.0)
+
     def test_coupled_arm_mass_properties_reaction_and_payload(self):
         reference = json.loads(SO101_MOTION_REFERENCE_PATH.read_text(encoding="utf-8"))
         dynamics = CoupledArmDynamics(CAD_V3_FORMAL_URDF, reference, target_mass_kg=7.735)
@@ -639,6 +788,64 @@ class CoreRegressionTest(unittest.TestCase):
         impulse_twist = dynamics.contact_delta_twist(work, np.array([0.0, 0.0, -1.0]), Payload(0.25))
         self.assertGreater(float(np.linalg.norm(impulse_twist)), 1.0e-4)
 
+    def test_formal_gripper_has_cad_collision_geometry_for_contact_bringup(self):
+        root = ET.parse(CAD_V3_FORMAL_URDF).getroot()
+        for link_name in ("gripper_link", "moving_jaw_link"):
+            link = root.find(f"./link[@name='{link_name}']")
+            self.assertIsNotNone(link)
+            collisions = link.findall("collision")
+            self.assertEqual(len(collisions), 1)
+            mesh = collisions[0].find("./geometry/mesh")
+            self.assertIsNotNone(mesh)
+            self.assertIn("so101_", mesh.attrib["filename"])
+
+    def test_grasp_world_has_controlled_pose_and_contact_sensor(self):
+        root = ET.parse(GRASP_WORLD_PATH).getroot()
+        world = root.find("./world[@name='flight_world']")
+        self.assertIsNotNone(world)
+        object_model = world.find("./model[@name='grasp_test_object']")
+        self.assertIsNotNone(object_model)
+        self.assertNotIn("pose", object_model.attrib)
+        pose = object_model.find("./pose")
+        self.assertIsNotNone(pose)
+        np.testing.assert_allclose(
+            [float(value) for value in pose.text.split()[:3]],
+            [0.12704, -0.06047, 0.6750],
+            atol=1e-8,
+        )
+        sensor = object_model.find(
+            "./link[@name='link']/sensor[@name='contact_sensor']"
+        )
+        self.assertIsNotNone(sensor)
+        self.assertEqual(sensor.attrib.get("type"), "contact")
+        self.assertEqual(sensor.findtext("./contact/collision"), "collision")
+        self.assertIsNotNone(world.find("./model[@name='grasp_test_pedestal']"))
+        self.assertIsNotNone(world.find("./model[@name='aircraft_contact_fixture']"))
+
+    def test_flight_world_has_marked_landing_support_for_retracted_cad_arm(self):
+        root = ET.parse(FLIGHT_WORLD_PATH).getroot()
+        world = root.find("./world[@name='flight_world']")
+        self.assertIsNotNone(world)
+        fixture = world.find(
+            "./model[@name='my_drone_bringup_landing_support']"
+        )
+        self.assertIsNotNone(fixture)
+        self.assertEqual(fixture.findtext("./static"), "true")
+        supports = fixture.findall("./link")
+        self.assertEqual(len(supports), 4)
+        for link in supports:
+            self.assertIsNotNone(link.find("./collision/geometry/box"))
+            friction = link.findtext("./collision/surface/friction/ode/mu")
+            self.assertIsNotNone(friction)
+            self.assertLessEqual(float(friction), 0.05)
+
+        standalone = ET.parse(LANDING_SUPPORT_PATH).getroot().find(
+            "./model[@name='my_drone_bringup_landing_support']"
+        )
+        self.assertIsNotNone(standalone)
+        self.assertEqual(standalone.findtext("./static"), "true")
+        self.assertEqual(len(standalone.findall("./link")), 4)
+
     def test_arm_feedforward_is_bounded_and_frame_converted(self):
         result = bounded_compensation_ned(
             np.array([0.0, 0.0, 7.735]), 7.735, np.eye(3), 0.6
@@ -648,6 +855,15 @@ class CoreRegressionTest(unittest.TestCase):
             np.array([7.735, 0.0, 0.0]), 7.735, np.eye(3), 0.6
         )
         np.testing.assert_allclose(lateral, [0.0, -0.6, 0.0])
+
+    def test_joint_acceleration_filter_is_rate_independent_and_bounded(self):
+        slow = filtered_joint_acceleration_step(0.0, 20.0, 0.01, 0.20, 4.0)
+        expected = 20.0 * (1.0 - np.exp(-0.01 / 0.20))
+        self.assertAlmostEqual(slow, expected)
+        clipped = filtered_joint_acceleration_step(0.0, 200.0, 0.10, 0.20, 4.0)
+        self.assertEqual(clipped, 4.0)
+        unchanged = filtered_joint_acceleration_step(1.25, float("nan"), 0.01, 0.20, 4.0)
+        self.assertEqual(unchanged, 1.25)
 
     def test_offline_rl_env_shapes_bounds_and_arm_coupling(self):
         env = make_default_env("arm_pose")
@@ -668,6 +884,20 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertAlmostEqual(info["mass_kg"], 7.735, places=8)
         self.assertTrue(np.all(np.isfinite(info["reaction_force_body_n"])))
         self.assertTrue(np.all(np.isfinite(info["reaction_torque_body_nm"])))
+
+    def test_offline_rl_supports_joint_and_end_effector_trajectories(self):
+        for task in ("joint_trajectory", "ee_trajectory"):
+            env = make_default_env(task)
+            reset = env.reset(seed=19)
+            observation = reset[0] if isinstance(reset, tuple) else reset
+            self.assertEqual(observation.shape, (25,))
+            action = env.hover_action()
+            observation, reward, terminated, truncated, info = env.step(action)
+            self.assertFalse(terminated)
+            self.assertFalse(truncated)
+            self.assertEqual(info["end_effector_position_m"].shape, (3,))
+            self.assertEqual(info["end_effector_target_m"].shape, (3,))
+            self.assertTrue(np.isfinite(info["end_effector_error_norm_m"]))
 
 
 if __name__ == "__main__":

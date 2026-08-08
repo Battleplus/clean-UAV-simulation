@@ -34,6 +34,8 @@ def main() -> None:
         "opposite-pitch propellers because pitch sign is unresolved in the flat CAD."
     )
     config["scenario"] = "temporary_7p735kg_opposite_pitch_ideal_14p8v_supply"
+    config["rl_work_pose_rad"] = [0.4, -0.6, 0.8, -0.5, 0.3, 0.8]
+    config["rl_trajectory_duration_s"] = 2.0
     config["estimated_all_up_mass_kg"] = float(physical["estimated_mass_kg"])
     config["temporary_fixed_mass_kg"] = float(physical["estimated_mass_kg"])
     config["mass_override_source"] = physical["mass_override_source"]
@@ -57,7 +59,7 @@ def main() -> None:
     first_effective = positive_points[0]
     config["motor_dynamics_table"] = {
         "schema": 1,
-        "input": "normalized_command in [0,1]; no RPM telemetry is available",
+        "input": "PX4 normalized_thrust in [0,1]; no RPM telemetry is available",
         "model_status": (
             "normalized static thrust and first-order actuator model; real k_f, "
             "C_T, C_Q and RPM response remain uncalibrated"
@@ -113,6 +115,53 @@ def main() -> None:
     config["bounded_hover_thrust_n"] = bounded.x.tolist()
     config["bounded_hover_residual"] = residual.tolist()
     config["bounded_hover_residual_norm"] = float(np.linalg.norm(residual))
+    # PX4 PositionControl clamps its internal hover-thrust state to <=0.9,
+    # while this canted 7.735 kg geometry physically needs 0.9304 of rated
+    # rotor thrust.  Keep the physical endpoints exact and introduce a
+    # piecewise-linear control normalization with a documented hover anchor.
+    # This changes control resolution, not mass, geometry, or maximum thrust.
+    px4_hover_command = 0.85
+    physical_hover_thrust = float(np.mean(bounded.x))
+    linear_thrust_per_command = physical_hover_thrust / px4_hover_command
+    rated_command = float(config["maximum_thrust_n"]) / linear_thrust_per_command
+    config["actuator_input_model"] = "hover_scaled_linear_thrust_with_rated_cap"
+    config["actuator_normalization"] = {
+        "px4_hover_command": px4_hover_command,
+        "physical_hover_thrust_n": physical_hover_thrust,
+        "physical_hover_fraction": physical_hover_thrust / float(config["maximum_thrust_n"]),
+        "linear_thrust_per_command_n": linear_thrust_per_command,
+        "rated_thrust_command": rated_command,
+        "maximum_command": 1.0,
+        "maximum_thrust_n": float(config["maximum_thrust_n"]),
+        "status": (
+            "control-interface calibration required because PX4 PositionControl "
+            "limits its hover state to 0.9; physical thrust endpoints are unchanged"
+        ),
+    }
+    config["actuator_input_model_status"] = (
+        "single-slope PX4 command-to-thrust map through the calculated 7.735 kg "
+        "hover force, capped at rated thrust above rated_thrust_command; this "
+        "preserves allocator linearity around every unequal hover motor while the "
+        "measured 14.8 V table is used only for equivalent ESC throttle/current"
+    )
+    config["takeoff_support_release"] = {
+        "enabled": True,
+        "model_name": "my_drone_bringup_landing_support",
+        "release_up_force_n": float(config["estimated_all_up_mass_kg"]) * 9.80665 * 0.95,
+        "maximum_horizontal_force_n": 0.50,
+        "maximum_com_torque_nm": 0.05,
+        "hold_time_s": 0.15,
+        "restore_on_land": True,
+        "restore_clearance_m": 0.45,
+        "restore_sdf_filename": "../worlds/landing_support.sdf",
+        "status": (
+            "Gazebo-only simultaneous release after 95 percent of vehicle weight "
+            "and a near-balanced COM wrench are held continuously; after an "
+            "explicit LAND request the same fixture is respawned under the "
+            "current aircraft XY position only when the aircraft descends near "
+            "its recorded supported height"
+        ),
+    }
     config["flight_feasibility_nonreversible"] = "FEASIBLE_WITH_OPPOSITE_PITCH_HYPOTHESIS"
     config["battery_dynamics"] = dict(prototype["battery_dynamics"])
     config["battery_dynamics"]["enabled"] = False

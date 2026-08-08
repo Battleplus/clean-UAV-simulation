@@ -1,0 +1,7 @@
+Traceback (most recent call last):
+  File "/mnt/e/清洁无人机/drone_sim_ws/scripts/test_px4_gazebo_rl_env.py", line 121, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/mnt/e/清洁无人机/drone_sim_ws/scripts/test_px4_gazebo_rl_env.py", line 70, in main
+    raise RuntimeError(f"live RL environment safety termination: {step_info}")
+RuntimeError: live RL environment safety termination: {'px4_in_the_loop': True, 'gazebo_in_the_loop': True, 'status': array([ 2., 18.,  0.,  1.], dtype=float32), 'failsafe': False}

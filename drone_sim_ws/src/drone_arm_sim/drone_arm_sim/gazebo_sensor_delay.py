@@ -78,6 +78,8 @@ class SensorDelayRelay(Node):
 
     def _make_callback(self, spec: RelaySpec):
         def receive(message):
+            if rclpy is None or not rclpy.ok():
+                return
             copied = spec.message_type()
             copied.CopyFrom(message)
             with self.lock:
@@ -86,6 +88,8 @@ class SensorDelayRelay(Node):
         return receive
 
     def on_clock(self, message) -> None:
+        if rclpy is None or not rclpy.ok():
+            return
         now = float(message.clock.sec) + 1e-9 * float(message.clock.nanosec)
         due = []
         with self.lock:
@@ -96,7 +100,14 @@ class SensorDelayRelay(Node):
                     _, sensor_message = queue.popleft()
                     due.append((spec.name, sensor_message))
         for name, sensor_message in due:
-            self.gz_publishers[name].publish(sensor_message)
+            if rclpy is None or not rclpy.ok():
+                return
+            try:
+                self.gz_publishers[name].publish(sensor_message)
+            except Exception as exc:  # Gazebo callbacks can race ROS shutdown.
+                if rclpy is None or not rclpy.ok() or "context is invalid" in str(exc).lower():
+                    return
+                raise
 
 
 def main() -> None:
@@ -118,9 +129,15 @@ def main() -> None:
     node = SensorDelayRelay(delays)
     try:
         rclpy.spin(node)
+    except Exception as exc:
+        # Normal launch shutdown raises ExternalShutdownException on some
+        # Jazzy/rclpy combinations and returns normally on others.
+        if "shutdown" not in str(exc).lower() and "context is invalid" not in str(exc).lower():
+            raise
     finally:
-        node.destroy_node()
-        rclpy.shutdown()
+        if rclpy.ok():
+            node.destroy_node()
+            rclpy.shutdown()
 
 
 if __name__ == "__main__":

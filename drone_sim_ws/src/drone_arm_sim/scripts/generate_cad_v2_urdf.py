@@ -640,7 +640,12 @@ def generate(package: Path) -> None:
         "$(find drone_arm_sim)/config/so101_ros2_control.yaml",
     )
     element(arm_controller, "hold_joints", "true")
-    element(arm_controller, "position_proportional_gain", "0.15")
+    # gz_ros2_control maps position error to a joint velocity command.  The
+    # former 0.15 gain allowed the gravity-loaded arm to sag under aircraft
+    # acceleration even after the retracted trajectory had completed.  0.5
+    # remains below the documented non-oscillatory limit of 1.0 while giving
+    # the 250 Hz controller a substantially stiffer pose hold.
+    element(arm_controller, "position_proportional_gain", "0.5")
     state_publisher = element(
         gazebo,
         "plugin",

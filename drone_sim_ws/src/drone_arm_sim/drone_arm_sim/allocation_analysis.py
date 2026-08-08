@@ -42,7 +42,14 @@ def rotor_wrench_frd(
     position = np.asarray(
         rotor.get(position_key, rotor.get("position_m")), dtype=float
     )
-    axis = np.asarray(rotor["axis_body"], dtype=float)
+    # ``axis_body`` is the CAD shaft/hub axis.  A pitch-accurate propeller can
+    # have a thrust direction opposite to that shaft axis, so formal configs
+    # may provide an explicit signed ``thrust_axis_body``.  Falling back to
+    # the shaft axis preserves the current normalized, opposite-pitch
+    # hypothesis while making the unresolved sign impossible to miss.
+    axis = np.asarray(
+        rotor.get("thrust_axis_body", rotor["axis_body"]), dtype=float
+    )
     axis /= np.linalg.norm(axis)
     force = float(thrust_n) * axis
     moment_ratio = float(config.get("reaction_moment_ratio_m") or 0.0)
@@ -113,14 +120,39 @@ def main() -> None:
     matrix = allocation_matrix(config)
     singular_values = np.linalg.svd(matrix, compute_uv=False)
     rank = int(np.linalg.matrix_rank(matrix))
-    mass = float(config["example_mass_kg"])
+    # Keep the legacy example config usable while allowing the formal CAD
+    # config to be inspected by the same command.  The formal model freezes
+    # 7.735 kg under ``estimated_all_up_mass_kg`` rather than the old example
+    # field name.
+    mass_value = config.get(
+        "example_mass_kg",
+        config.get("estimated_all_up_mass_kg", config.get("temporary_fixed_mass_kg")),
+    )
+    if mass_value is None:
+        raise SystemExit(
+            "Config must define example_mass_kg, estimated_all_up_mass_kg, "
+            "or temporary_fixed_mass_kg."
+        )
+    mass = float(mass_value)
     gravity = float(config.get("gravity_m_s2", 9.81))
     hover_wrench = np.array([0.0, 0.0, -mass * gravity, 0.0, 0.0, 0.0])
     hover_thrust = np.linalg.pinv(matrix) @ hover_wrench
     residual = matrix @ hover_thrust - hover_wrench
 
     np.set_printoptions(precision=6, suppress=True)
-    print("WARNING: this geometry is an example, not measured aircraft data.")
+    if "example_mass_kg" in config:
+        print("WARNING: this geometry is an example, not measured aircraft data.")
+    else:
+        print("Formal CAD rotor geometry and provisional thrust coefficients:")
+        for rotor in config["rotors"]:
+            print(
+                f"motor={rotor['motor']} max_thrust_n="
+                f"{config.get('maximum_thrust_n', float('nan')):.6f} "
+                f"position_m={np.asarray(rotor['position_m']).tolist()} "
+                f"axis_frd={np.asarray(rotor.get('thrust_axis_body', rotor['axis_body'])).tolist()} "
+                f"turning={rotor.get('turning_direction')} "
+                f"direction_sign={rotor.get('direction')}"
+            )
     print("allocation matrix Gamma (6 x 8):")
     print(matrix)
     print("singular values:", singular_values)

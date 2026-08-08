@@ -1,0 +1,2 @@
+PX4_GAZEBO_RL_METRICS {"failsafe_seen": false, "gazebo_in_the_loop": true, "joint_delta_norm_rad": 0.5157294869422913, "normal_disarm": true, "observations": 56, "px4_in_the_loop": true, "reached_height": true, "reached_offboard": true}
+PX4_GAZEBO_RL_PASS

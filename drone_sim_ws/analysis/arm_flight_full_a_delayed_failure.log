@@ -1,0 +1,12 @@
+Diagnostic only; not an acceptance result.
+Profile: ARM_FLIGHT_PROFILE=full_a
+Trajectory: work_a over 30 s, then retracted over 30 s
+Run A: work_a reached max_error=0.059911 rad; retracted reached
+       max_error=0.076885 rad; no PX4 failsafe; safety abort reported
+       drift=0.154 m, altitude_delta=1.832 m; final metric
+       horizontal_drift=0.873 m, altitude_span=2.855 m.
+Run B (work starts after a 30 s takeoff settling delay): work_a reached
+       max_error=0.059911 rad; retracted reached max_error=0.059918 rad;
+       no PX4 failsafe; safety abort reported drift=2.064 m,
+       altitude_delta=0.692 m; controller timed out during the safety LAND
+       sequence.  Neither run is a full coupled-flight pass.

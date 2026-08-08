@@ -118,6 +118,14 @@
         <color rgba="0.95 0.45 0.05 1" />
       </material>
     </visual>
+    <!-- CAD collision geometry is kept separate from visual geometry so the
+         gripper can participate in contact tests without changing inertia. -->
+    <collision name="gripper_cad_collision">
+      <origin xyz="0.141749995 0.260410266 -0.0387828617" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_gripper.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
   </link>
   <link name="moving_jaw_link">
     <inertial>
@@ -134,6 +142,12 @@
         <color rgba="0.95 0.45 0.05 1" />
       </material>
     </visual>
+    <collision name="moving_jaw_cad_collision">
+      <origin xyz="0.114821133 0.276113344 -0.0188083329" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_moving_jaw.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
   </link>
   <joint name="arm_mount" type="fixed">
     <origin xyz="0 0 0" rpy="0 0 0" />
@@ -705,7 +719,7 @@
     <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
       <parameters>$(find drone_arm_sim)/config/so101_ros2_control.yaml</parameters>
       <hold_joints>true</hold_joints>
-      <position_proportional_gain>0.15</position_proportional_gain>
+      <position_proportional_gain>0.5</position_proportional_gain>
     </plugin>
     <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
       <joint_name>shoulder_pan</joint_name>

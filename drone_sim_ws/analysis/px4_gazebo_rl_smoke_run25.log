@@ -1,0 +1,13 @@
+Traceback (most recent call last):
+  File "/mnt/e/清洁无人机/drone_sim_ws/scripts/test_px4_gazebo_rl_env.py", line 121, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/mnt/e/清洁无人机/drone_sim_ws/scripts/test_px4_gazebo_rl_env.py", line 41, in main
+    observation, info = env.reset(options={"takeoff": True})
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/清洁无人机/drone_sim_ws/build/drone_arm_sim/drone_arm_sim/px4_gazebo_rl_env.py", line 108, in reset
+    observation = self._wait_observation()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/清洁无人机/drone_sim_ws/build/drone_arm_sim/drone_arm_sim/px4_gazebo_rl_env.py", line 95, in _wait_observation
+    raise TimeoutError("live PX4/Gazebo observation timed out")
+TimeoutError: live PX4/Gazebo observation timed out

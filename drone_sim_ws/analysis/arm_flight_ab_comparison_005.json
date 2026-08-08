@@ -1,0 +1,47 @@
+{
+  "feedforward_off": {
+    "log": "drone_sim_ws\\analysis\\arm_flight_micro_noff_landing_timeout.log",
+    "horizontal_drift_m": 0.09100549433962765,
+    "altitude_span_m": 0.08999999999999986,
+    "samples": 66,
+    "metrics_source": "recovered_state_window",
+    "pass_marker": false,
+    "failsafe_seen": false,
+    "safety_abort": false,
+    "preset_max_error_rad": {
+      "flight_micro_a": 0.003792,
+      "flight_micro_b": 0.003974,
+      "retracted": 0.002983
+    },
+    "all_required_presets_reached": true,
+    "within_current_gate": true
+  },
+  "feedforward_on": {
+    "log": "drone_sim_ws\\analysis\\arm_flight_micro_ff005_retry.log",
+    "horizontal_drift_m": 0.104,
+    "altitude_span_m": 0.139,
+    "samples": 65,
+    "metrics_source": "summary_marker",
+    "pass_marker": true,
+    "failsafe_seen": false,
+    "safety_abort": false,
+    "preset_max_error_rad": {
+      "flight_micro_a": 0.003972,
+      "flight_micro_b": 0.003979,
+      "retracted": 0.002975
+    },
+    "all_required_presets_reached": true,
+    "within_current_gate": true
+  },
+  "delta_on_minus_off": {
+    "horizontal_drift_m": 0.012994505660372344,
+    "altitude_span_m": 0.049000000000000155
+  },
+  "comparison": {
+    "same_gate_pass": true,
+    "feedforward_run_accepted": true,
+    "baseline_run_accepted": false,
+    "paired_runs_accepted": false,
+    "interpretation": "feed-forward did not reduce both measured windows"
+  }
+}

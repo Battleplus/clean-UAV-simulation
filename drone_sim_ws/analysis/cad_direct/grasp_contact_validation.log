@@ -1,0 +1,9 @@
+GRASP_FIXTURE_SUPPORT_STAND=true
+[INFO] [1786140739.903145312] [my_drone_hover_acceptance]: hover acceptance: {'position_enu_m': [-0.0, 0.0, 1.0], 'position_error_m': 1.1856874839591996e-10, 'attitude_error_deg': 0.0, 'velocity_body_m_s': [0.0, 0.0, 0.0], 'speed_m_s': 0.0, 'angular_velocity_body_rad_s': [0.0, 0.0, 0.0], 'angular_speed_rad_s': 0.0}, passed=True
+[INFO] [1786140747.766772033] [arm_preset_control]: Sent preset retracted over /arm_controller/joint_trajectory
+[INFO] [1786140748.598049996] [arm_preset_control]: ARM_PRESET_REACHED preset=retracted max_error=0.061683 rad
+[INFO] [1786140754.806790007] [arm_preset_control]: Sent preset work_a over /arm_controller/joint_trajectory
+[ERROR] [1786140767.975408895] [arm_preset_control]: preset work_a was not reached; max_error=0.25930941219461145 rad
+[ros2run]: Process exited with failure 1
+GRASP_CONTACT_METRICS object_contact_messages=8770 moving_jaw_mentions=5318 fixed_gripper_mentions=1667 max_positive_depth_m=0.00118107602 work_a_action_rc=1
+GRASP_CONTACT_PASS generic_fixture_only=true

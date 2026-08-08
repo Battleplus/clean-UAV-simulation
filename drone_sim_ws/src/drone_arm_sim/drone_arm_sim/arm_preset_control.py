@@ -13,6 +13,7 @@ from builtin_interfaces.msg import Duration
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
+from std_msgs.msg import Bool
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
 
 
@@ -33,6 +34,9 @@ class ArmPresetCommander(Node):
             JointTrajectory, "/arm_controller/joint_trajectory", 10
         )
         self.latest_positions: dict[str, float] = {}
+        self.motion_publisher = self.create_publisher(
+            Bool, "/my_drone/arm_motion_active", 10
+        )
         self.create_subscription(JointState, "/joint_states", self.on_state, 10)
 
     def on_state(self, message: JointState) -> None:
@@ -41,14 +45,54 @@ class ArmPresetCommander(Node):
     def send(self, positions: list[float], duration_s: float) -> None:
         message = JointTrajectory()
         message.joint_names = JOINT_NAMES
-        point = JointTrajectoryPoint()
-        point.positions = positions
-        seconds = int(duration_s)
-        point.time_from_start = Duration(
-            sec=seconds, nanosec=int((duration_s - seconds) * 1_000_000_000)
-        )
-        message.points = [point]
+        # A single far-away endpoint leaves the Gazebo joint controller to
+        # choose its own interpolation/initial velocity.  During flight that
+        # can create a large first acceleration even when the endpoint time is
+        # long.  Publish a sampled quintic (smoothstep) trajectory instead:
+        # position, velocity and acceleration are all continuous and zero at
+        # both ends, while the requested preset and total duration are kept
+        # unchanged.  The first sample is the measured current pose whenever
+        # available, so an interrupted command cannot inject a position jump.
+        start = [
+            float(self.latest_positions.get(name, 0.0))
+            for name in JOINT_NAMES
+        ]
+        segment_count = max(4, int(round(float(duration_s))))
+        points = []
+        for index in range(segment_count + 1):
+            tau = index / segment_count
+            smooth = 10.0 * tau**3 - 15.0 * tau**4 + 6.0 * tau**5
+            smooth_rate = (30.0 * tau**2 - 60.0 * tau**3 + 30.0 * tau**4) / duration_s
+            smooth_accel = (
+                60.0 * tau - 180.0 * tau**2 + 120.0 * tau**3
+            ) / (duration_s * duration_s)
+            point = JointTrajectoryPoint()
+            point.positions = [
+                current + smooth * (target - current)
+                for current, target in zip(start, positions)
+            ]
+            point.velocities = [
+                smooth_rate * (target - current)
+                for current, target in zip(start, positions)
+            ]
+            point.accelerations = [
+                smooth_accel * (target - current)
+                for current, target in zip(start, positions)
+            ]
+            elapsed = float(duration_s) * tau
+            seconds = int(elapsed)
+            point.time_from_start = Duration(
+                sec=seconds,
+                nanosec=int(round((elapsed - seconds) * 1_000_000_000)),
+            )
+            points.append(point)
+        message.points = points
         self.publisher.publish(message)
+
+    def publish_motion_active(self, active: bool) -> None:
+        message = Bool()
+        message.data = bool(active)
+        self.motion_publisher.publish(message)
 
     def maximum_error(self, target: list[float]) -> float | None:
         if any(name not in self.latest_positions for name in JOINT_NAMES):
@@ -127,6 +171,7 @@ def main(args=None) -> None:
             if time.monotonic() >= connection_deadline:
                 raise RuntimeError("arm_controller trajectory subscriber not found")
             rclpy.spin_once(node, timeout_sec=0.1)
+        node.publish_motion_active(True)
         node.send(target, parsed.duration)
         node.get_logger().info(
             f"Sent preset {parsed.preset} over /arm_controller/joint_trajectory"
@@ -134,8 +179,12 @@ def main(args=None) -> None:
         if not parsed.wait:
             return
         deadline = time.monotonic() + parsed.duration + 5.0
+        last_motion_heartbeat = 0.0
         while time.monotonic() < deadline:
             rclpy.spin_once(node, timeout_sec=0.05)
+            if time.monotonic() - last_motion_heartbeat >= 0.25:
+                node.publish_motion_active(True)
+                last_motion_heartbeat = time.monotonic()
             error = node.maximum_error(target)
             if error is not None and error <= parsed.tolerance:
                 node.get_logger().info(
@@ -150,6 +199,8 @@ def main(args=None) -> None:
         node.get_logger().error(str(error))
         sys.exit(1)
     finally:
+        node.publish_motion_active(False)
+        rclpy.spin_once(node, timeout_sec=0.1)
         node.destroy_node()
         rclpy.shutdown()
 

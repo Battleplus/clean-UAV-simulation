@@ -1,0 +1,14 @@
+Clean WSL/Gazebo/PX4 run after adding the marked four-point landing supports
+to flight_world_250hz.sdf and after clearing stale gz/PX4/DDS processes.
+
+ROS2_DDS_NOARM_READY
+ROS2_DDS_READY arm_control=false
+sequence = T -> W -> D -> S -> A -> Q -> E -> L
+failsafe_seen = false
+max_height_error_m = 1.228
+max_horizontal_position_error_m = 0.2375078946
+max_motor_output = 1000.0
+motor_saturation_fraction = 0.01953125
+yaw_range_deg = 22.7
+LANDING_DISARMED_CONFIRMED
+DDS_WASD_PTY_PASS

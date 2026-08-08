@@ -27,6 +27,25 @@ except ModuleNotFoundError:  # Pure numerical tests do not require ROS.
 ENU_TO_NED = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
 
 
+def filtered_joint_acceleration_step(
+    previous_filtered_rad_s2: float,
+    raw_rad_s2: float,
+    dt_s: float,
+    time_constant_s: float,
+    maximum_rad_s2: float,
+) -> float:
+    """Apply a sample-rate-independent first-order acceleration filter."""
+    if not np.isfinite(raw_rad_s2) or not np.isfinite(dt_s) or dt_s <= 0.0:
+        return float(previous_filtered_rad_s2)
+    tau = max(0.0, float(time_constant_s))
+    alpha = 1.0 if tau <= 0.0 else 1.0 - np.exp(-float(dt_s) / tau)
+    value = float(previous_filtered_rad_s2) + float(alpha) * (
+        float(raw_rad_s2) - float(previous_filtered_rad_s2)
+    )
+    limit = max(0.0, float(maximum_rad_s2))
+    return float(np.clip(value, -limit, limit)) if limit > 0.0 else value
+
+
 def bounded_compensation_ned(
     reaction_force_body_flu_n: np.ndarray,
     mass_kg: float,
@@ -54,6 +73,8 @@ class ArmCouplingMonitor(Node):
         target_mass_kg: float,
         payload: Payload | None,
         feedforward_limit_m_s2: float,
+        acceleration_filter_time_constant_s: float,
+        maximum_joint_acceleration_rad_s2: float,
     ) -> None:
         super().__init__("my_drone_arm_coupling_monitor")
         self.dynamics = CoupledArmDynamics(
@@ -67,6 +88,13 @@ class ArmCouplingMonitor(Node):
         self.rotation = np.eye(3)
         self.payload = payload
         self.feedforward_limit_m_s2 = float(feedforward_limit_m_s2)
+        self.acceleration_filter_time_constant_s = max(
+            0.0, float(acceleration_filter_time_constant_s)
+        )
+        self.maximum_joint_acceleration_rad_s2 = max(
+            0.0, float(maximum_joint_acceleration_rad_s2)
+        )
+        self.raw_joint_acceleration_peak_rad_s2 = 0.0
         self.last_log_time = 0.0
         self.wrench_publisher = self.create_publisher(
             WrenchStamped, "/my_drone/arm_reaction_wrench_body", 10
@@ -106,8 +134,17 @@ class ArmCouplingMonitor(Node):
             self.velocities[name] = velocity
             if dt is not None and 1.0e-4 <= dt <= 0.5:
                 raw_acceleration = (velocity - previous_velocity) / dt
-                filtered = 0.2 * raw_acceleration + 0.8 * self.accelerations.get(name, 0.0)
-                self.accelerations[name] = float(np.clip(filtered, -8.0, 8.0))
+                self.raw_joint_acceleration_peak_rad_s2 = max(
+                    self.raw_joint_acceleration_peak_rad_s2,
+                    abs(float(raw_acceleration)),
+                )
+                self.accelerations[name] = filtered_joint_acceleration_step(
+                    self.accelerations.get(name, 0.0),
+                    raw_acceleration,
+                    dt,
+                    self.acceleration_filter_time_constant_s,
+                    self.maximum_joint_acceleration_rad_s2,
+                )
         self.previous_velocities = dict(self.velocities)
         self.previous_joint_time = now
 
@@ -161,9 +198,14 @@ class ArmCouplingMonitor(Node):
                 "inertia_diag_kg_m2": np.diag(state.inertia_at_com_kg_m2).tolist(),
                 "reaction_force_body_n": state.reaction_force_body_n.tolist(),
                 "reaction_torque_body_nm": state.reaction_torque_body_nm.tolist(),
+                "raw_joint_acceleration_peak_rad_s2": self.raw_joint_acceleration_peak_rad_s2,
+                "filtered_joint_acceleration_peak_rad_s2": max(
+                    (abs(value) for value in self.accelerations.values()), default=0.0
+                ),
                 "feedforward_acceleration_ned_m_s2": acceleration.tolist(),
             }
             self.get_logger().info("ARM_COUPLING_STATE " + json.dumps(report, sort_keys=True))
+            self.raw_joint_acceleration_peak_rad_s2 = 0.0
 
 
 def main() -> None:
@@ -184,6 +226,12 @@ def main() -> None:
     parser.add_argument("--payload-mass-kg", type=float, default=0.0)
     parser.add_argument("--payload-offset", nargs=3, type=float, default=(0.08, 0.0, 0.0))
     parser.add_argument("--feedforward-limit-m-s2", type=float, default=0.6)
+    parser.add_argument(
+        "--acceleration-filter-time-constant-s", type=float, default=0.20
+    )
+    parser.add_argument(
+        "--maximum-joint-acceleration-rad-s2", type=float, default=4.0
+    )
     parsed, ros_arguments = parser.parse_known_args()
     if rclpy is None:
         raise SystemExit("ROS 2 Python packages are not available")
@@ -200,6 +248,8 @@ def main() -> None:
         parsed.target_mass_kg,
         payload,
         parsed.feedforward_limit_m_s2,
+        parsed.acceleration_filter_time_constant_s,
+        parsed.maximum_joint_acceleration_rad_s2,
     )
     try:
         rclpy.spin(node)
