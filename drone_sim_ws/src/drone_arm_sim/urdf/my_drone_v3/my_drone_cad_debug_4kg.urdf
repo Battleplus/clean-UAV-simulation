@@ -22,7 +22,7 @@
       </geometry>
     </collision>
     <collision name="retracted_arm_ground_support_collision">
-      <origin xyz="0 0 -0.277158" rpy="0 0 0" />
+      <origin xyz="0 0 -0.275141" rpy="0 0 0" />
       <geometry>
         <box size="0.32 0.28 0.02" />
       </geometry>
@@ -745,7 +745,7 @@
         <param name="max">2.84121</param>
       </command_interface>
       <state_interface name="position">
-        <param name="initial_value">0.0</param>
+        <param name="initial_value">-1.57079632679</param>
       </state_interface>
       <state_interface name="velocity" />
     </joint>

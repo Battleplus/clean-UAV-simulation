@@ -2,7 +2,7 @@
   "schema": 1,
   "purpose": "Motion and controller reference reused from the previously validated SO101 simulation",
   "geometry_policy": "Do not reuse old joint origins or axes; use analysis/cad_direct/so101_joint_evidence.json",
-  "zero_configuration": "Current CAD retracted pose",
+  "zero_configuration": "Current CAD retracted pose with wrist_roll rotated -90 degrees so the gripper lies flat on the table",
   "joints": [
     {
       "name": "shoulder_pan",
@@ -66,14 +66,14 @@
     }
   ],
   "presets": {
-    "retracted": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-    "work_a": [0.4, -0.6, 0.8, -0.5, 0.3, 0.8],
-    "work_b": [-0.4, -0.3, 0.5, 0.2, -0.3, 0.3],
-    "flight_work_a": [0.08, -0.12, 0.16, -0.10, 0.06, 0.16],
-    "flight_work_b": [-0.08, -0.06, 0.10, 0.04, -0.06, 0.06],
-    "demo_extended": [0.0, -0.8, 1.65, 0.0, 0.0, 1.2],
-    "flight_micro_a": [0.002, -0.003, 0.004, -0.002, 0.002, 0.004],
-    "flight_micro_b": [-0.002, -0.002, 0.003, 0.001, -0.002, 0.002]
+    "retracted": [0.0, 0.0, 0.0, 0.0, -1.57079632679, 0.0],
+    "work_a": [0.4, -0.6, 0.8, -0.5, -1.27079632679, 0.8],
+    "work_b": [-0.4, -0.3, 0.5, 0.2, -1.87079632679, 0.3],
+    "flight_work_a": [0.08, -0.12, 0.16, -0.10, -1.51079632679, 0.16],
+    "flight_work_b": [-0.08, -0.06, 0.10, 0.04, -1.63079632679, 0.06],
+    "demo_extended": [0.0, -0.8, 1.65, 0.0, -1.57079632679, 1.2],
+    "flight_micro_a": [0.002, -0.003, 0.004, -0.002, -1.56879632679, 0.004],
+    "flight_micro_b": [-0.002, -0.002, 0.003, 0.001, -1.57279632679, 0.002]
   },
   "validation_trajectory": [
     {"time_s": 1.0, "preset": "retracted"},
