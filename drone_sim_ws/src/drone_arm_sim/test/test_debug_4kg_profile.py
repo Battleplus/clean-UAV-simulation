@@ -68,21 +68,22 @@ class Debug4kgProfileTest(unittest.TestCase):
                 thrust_to_actuator_command(config, thrust), command, places=9
             )
 
-    def test_isolated_world_uses_stable_bench_contacts(self):
+    def test_isolated_world_starts_on_ground_level_contacts(self):
         root = ET.parse(WORLD).getroot()
         support = root.find("./world/model[@name='my_drone_bringup_landing_support']")
         self.assertIsNotNone(support)
         for link in support.findall("link"):
             size = [float(v) for v in link.find("collision/geometry/box/size").text.split()]
             pose = [float(v) for v in link.find("pose").text.split()]
-            self.assertAlmostEqual(size[2], 0.817)
-            self.assertAlmostEqual(pose[2] + size[2] / 2.0, 0.817)
+            self.assertAlmostEqual(size[2], 0.02)
+            self.assertAlmostEqual(pose[2] + size[2] / 2.0, 0.0)
 
     def test_debug_launcher_uses_gentle_manual_vertical_speed(self):
         launcher = (
             WORKSPACE / "scripts/wsl_start_ros2_dds_debug_4kg.sh"
         ).read_text(encoding="utf-8")
         self.assertIn('PX4_WASD_VERTICAL_SPEED_M_S:-0.15', launcher)
+        self.assertIn('SPAWN_Z="${SPAWN_Z:-0.183}"', launcher)
 
 
 if __name__ == "__main__":

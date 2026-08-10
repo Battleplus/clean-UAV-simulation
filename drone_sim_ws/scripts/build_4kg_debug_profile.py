@@ -219,24 +219,8 @@ def build_debug_world(source: Path, output: Path) -> None:
     """Create an isolated stable bench-contact world for flight-logic tests."""
     text = source.read_text(encoding="utf-8")
     text = text.replace(
-        "<pose>0.17 0.17 -0.01 0 0 0</pose>",
-        "<pose>0.17 0.17 0.4085 0 0 0</pose>",
-    ).replace(
-        "<pose>0.17 -0.17 -0.01 0 0 0</pose>",
-        "<pose>0.17 -0.17 0.4085 0 0 0</pose>",
-    ).replace(
-        "<pose>-0.17 0.17 -0.01 0 0 0</pose>",
-        "<pose>-0.17 0.17 0.4085 0 0 0</pose>",
-    ).replace(
-        "<pose>-0.17 -0.17 -0.01 0 0 0</pose>",
-        "<pose>-0.17 -0.17 0.4085 0 0 0</pose>",
-    ).replace(
-        "<box><size>0.05 0.05 0.02</size></box>",
-        "<box><size>0.05 0.05 0.817</size></box>",
-    )
-    text = text.replace(
         "Ground-level bring-up contacts.",
-        "Isolated 4 kg flight-logic bench contacts.",
+        "Isolated 4 kg ground-level bring-up contacts.",
     )
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(text, encoding="utf-8", newline="\n")
