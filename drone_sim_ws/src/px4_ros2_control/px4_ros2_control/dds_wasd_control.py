@@ -125,6 +125,15 @@ class DdsWasdControl(Node):
     YAW_ACCEL_LIMIT_RAD_S2 = math.radians(
         float(os.environ.get("PX4_WASD_YAW_ACCEL_DEG_S2", "30.0"))
     )
+    RELEASE_HORIZONTAL_SPEED_M_S = float(
+        os.environ.get("PX4_WASD_RELEASE_HORIZONTAL_SPEED_M_S", "0.08")
+    )
+    RELEASE_VERTICAL_SPEED_M_S = float(
+        os.environ.get("PX4_WASD_RELEASE_VERTICAL_SPEED_M_S", "0.05")
+    )
+    RELEASE_YAW_RATE_RAD_S = math.radians(
+        float(os.environ.get("PX4_WASD_RELEASE_YAW_RATE_DEG_S", "5.0"))
+    )
     VELOCITY_ZERO_EPS = 1.0e-3
     # Keep the formal/default flight at 1.2 m.  Diagnostics can request a
     # lower hold height while tuning a near-limit thrust configuration without
@@ -803,6 +812,7 @@ class DdsWasdControl(Node):
             not key_active
             and float(np.linalg.norm(self.velocity_command_ned)) <= self.VELOCITY_ZERO_EPS
             and abs(self.yaw_rate_command) <= self.VELOCITY_ZERO_EPS
+            and self._measured_motion_settled()
         )
         if stopped and self.local is not None:
             released_key = self.active_velocity_key
@@ -827,6 +837,25 @@ class DdsWasdControl(Node):
                 f"NED=({self.target.north:.2f}, {self.target.east:.2f}, "
                 f"{self.target.down:.2f}) yaw={math.degrees(self.target.yaw):.1f} deg"
             )
+
+    def _measured_motion_settled(self) -> bool:
+        """Wait for physical braking before latching a position setpoint."""
+        if self.local is not None:
+            vx = float(getattr(self.local, "vx", float("nan")))
+            vy = float(getattr(self.local, "vy", float("nan")))
+            vz = float(getattr(self.local, "vz", float("nan")))
+            if math.isfinite(vx) and math.isfinite(vy):
+                if math.hypot(vx, vy) > self.RELEASE_HORIZONTAL_SPEED_M_S:
+                    return False
+            if math.isfinite(vz) and abs(vz) > self.RELEASE_VERTICAL_SPEED_M_S:
+                return False
+        odometry = getattr(self, "odometry", None)
+        if odometry is not None:
+            angular = np.asarray(odometry.angular_velocity, dtype=float)
+            if angular.shape == (3,) and np.all(np.isfinite(angular)):
+                if abs(float(angular[2])) > self.RELEASE_YAW_RATE_RAD_S:
+                    return False
+        return True
 
     def hold_current_position(self) -> None:
         """Brake horizontal motion without ratcheting a disturbed altitude.

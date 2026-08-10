@@ -142,6 +142,24 @@ def test_vertical_velocity_release_holds_new_measured_altitude(monkeypatch):
     assert controller.target.down == pytest.approx(-1.5)
 
 
+def test_release_waits_for_measured_velocity_before_position_hold(monkeypatch):
+    quiet_logger(monkeypatch)
+    controller = make_controller(-1.2)
+    controller.target = TargetNed(0.0, 0.0, -1.2, 0.4)
+    controller.set_velocity_key("w", now=10.0)
+    controller.velocity_command_ned[:] = 0.0
+    controller.local.vx = 0.20
+    controller.local.vy = 0.0
+    controller.local.vz = 0.0
+
+    controller.update_velocity_control(now=10.31, dt=0.0)
+    assert controller.control_state == FlightControlState.VELOCITY_CONTROL
+
+    controller.local.vx = 0.04
+    controller.update_velocity_control(now=10.36, dt=0.0)
+    assert controller.control_state == FlightControlState.POSITION_HOLD
+
+
 def test_horizontal_velocity_uses_current_heading(monkeypatch):
     quiet_logger(monkeypatch)
     controller = make_controller(-1.2)

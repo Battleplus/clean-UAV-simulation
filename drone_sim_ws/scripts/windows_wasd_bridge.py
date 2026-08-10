@@ -53,7 +53,8 @@ def main() -> int:
     print("my_drone true key-state WASD controller")
     print("W/S forward/back: 0.40 m/s | A/D left/right: 0.40 m/s")
     print("R up: 0.15 m/s | F down: 0.15 m/s | Q/E yaw: 15 deg/s")
-    print("Release a motion key -> immediate position hold | H -> immediate hold")
+    print("Release a motion key -> smooth deceleration, then position hold")
+    print("H -> immediate position hold (manual brake)")
     print("T takeoff | L land | keep this window focused while flying")
     child = subprocess.Popen(command, stdin=subprocess.PIPE)
     user32 = ctypes.windll.user32
@@ -81,9 +82,12 @@ def main() -> int:
                     last_heartbeat = now
                 active_motion = selected
             elif active_motion is not None:
-                # A terminal cannot report key-up.  This Windows-side bridge
-                # can, so freeze the measured current position immediately.
-                send(child, "H")
+                # Stop refreshing the key heartbeat.  The ROS 2 controller
+                # detects expiry, ramps the commanded velocity to zero, and
+                # only then captures a position-hold target.  Sending H here
+                # used to switch modes while the aircraft still had momentum,
+                # producing horizontal overshoot; it also bypassed the R/F
+                # path that adopts the newly reached altitude.
                 active_motion = None
                 last_heartbeat = 0.0
             previous = current
