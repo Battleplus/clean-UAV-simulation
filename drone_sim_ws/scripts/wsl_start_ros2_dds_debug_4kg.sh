@@ -36,6 +36,6 @@ export PX4_WASD_VERTICAL_SPEED_M_S="${PX4_WASD_VERTICAL_SPEED_M_S:-0.15}"
 export PX4_TOUCHDOWN_DISARM_ENABLED=true
 export PX4_TOUCHDOWN_DISARM_HEIGHT_M=0.05
 export PX4_TOUCHDOWN_DISARM_HOLD_S=0.5
-export SPAWN_Z="${SPAWN_Z:-0.183}"
+export SPAWN_Z="${SPAWN_Z:-0.817}"
 
 exec "${workspace_dir}/scripts/wsl_start_ros2_dds_noarm.sh"

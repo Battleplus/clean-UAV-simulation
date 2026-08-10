@@ -83,7 +83,16 @@ class Debug4kgProfileTest(unittest.TestCase):
             WORKSPACE / "scripts/wsl_start_ros2_dds_debug_4kg.sh"
         ).read_text(encoding="utf-8")
         self.assertIn('PX4_WASD_VERTICAL_SPEED_M_S:-0.15', launcher)
-        self.assertIn('SPAWN_Z="${SPAWN_Z:-0.183}"', launcher)
+        self.assertIn('SPAWN_Z="${SPAWN_Z:-0.817}"', launcher)
+
+    def test_vehicle_has_visible_landing_gear(self):
+        root = ET.parse(URDF).getroot()
+        base = root.find("./link[@name='base_link']")
+        self.assertIsNotNone(base)
+        visuals = [v.get("name", "") for v in base.findall("visual")]
+        collisions = [c.get("name", "") for c in base.findall("collision")]
+        self.assertEqual(sum("landing_leg" in name for name in visuals), 4)
+        self.assertEqual(sum("landing_leg" in name for name in collisions), 4)
 
 
 if __name__ == "__main__":

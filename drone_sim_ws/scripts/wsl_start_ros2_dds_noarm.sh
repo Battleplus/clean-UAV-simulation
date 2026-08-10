@@ -76,7 +76,7 @@ export MY_DRONE_URDF="${ROBOT_FILE:-${default_robot_file}}"
 setsid ros2 launch drone_arm_sim cad_direct_thrust.launch.py \
   headless:="${HEADLESS:-false}" enable_controller:=false \
   enable_arm_control:="${ENABLE_ARM_CONTROL:-false}" \
-  spawn_z:="${SPAWN_Z:-0.183}" \
+  spawn_z:="${SPAWN_Z:-0.817}" \
   reaction_moment_ratio_m:="${REACTION_MOMENT_RATIO_M:--1}" \
   wind_enu_x:="${WIND_ENU_X:-nan}" wind_enu_y:="${WIND_ENU_Y:-nan}" \
   wind_enu_z:="${WIND_ENU_Z:-nan}" \
@@ -108,8 +108,8 @@ for _ in $(seq 1 60); do
   fi
   sleep 1
 done
-# The CAD assembly is spawned above the ground and can bounce while the
-# sensors first come online.  Let the rigid body settle before PX4 chooses its
+# The CAD assembly rests on its vehicle-mounted landing gear and can bounce
+# while the sensors first come online.  Let the rigid body settle before PX4 chooses its
 # local-position origin; otherwise the first takeoff target contains the fall
 # distance and the safety gate correctly aborts it.
 echo "Waiting ${model_settle_s}s for the spawned CAD model to settle" >>"${gazebo_log}"

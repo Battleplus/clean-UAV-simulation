@@ -22,6 +22,46 @@
         <box size="0.409830891 0.409830906 0.291000023" />
       </geometry>
     </collision>
+    <!-- Visible vehicle-mounted landing gear.  The SO101 hangs below the
+         fuselage, so the fuselage collision box itself must not be placed on
+         the ground.  These four legs move with base_link and provide 0.817 m
+         clearance for the retracted arm. -->
+    <visual name="front_left_landing_leg_visual">
+      <origin xyz="0.17 0.17 -0.4085" rpy="0 0 0" />
+      <geometry><box size="0.035 0.035 0.817" /></geometry>
+      <material name="landing_gear_material"><color rgba="0.12 0.12 0.14 1" /></material>
+    </visual>
+    <collision name="front_left_landing_leg_collision">
+      <origin xyz="0.17 0.17 -0.4085" rpy="0 0 0" />
+      <geometry><box size="0.035 0.035 0.817" /></geometry>
+    </collision>
+    <visual name="front_right_landing_leg_visual">
+      <origin xyz="0.17 -0.17 -0.4085" rpy="0 0 0" />
+      <geometry><box size="0.035 0.035 0.817" /></geometry>
+      <material name="landing_gear_material" />
+    </visual>
+    <collision name="front_right_landing_leg_collision">
+      <origin xyz="0.17 -0.17 -0.4085" rpy="0 0 0" />
+      <geometry><box size="0.035 0.035 0.817" /></geometry>
+    </collision>
+    <visual name="rear_left_landing_leg_visual">
+      <origin xyz="-0.17 0.17 -0.4085" rpy="0 0 0" />
+      <geometry><box size="0.035 0.035 0.817" /></geometry>
+      <material name="landing_gear_material" />
+    </visual>
+    <collision name="rear_left_landing_leg_collision">
+      <origin xyz="-0.17 0.17 -0.4085" rpy="0 0 0" />
+      <geometry><box size="0.035 0.035 0.817" /></geometry>
+    </collision>
+    <visual name="rear_right_landing_leg_visual">
+      <origin xyz="-0.17 -0.17 -0.4085" rpy="0 0 0" />
+      <geometry><box size="0.035 0.035 0.817" /></geometry>
+      <material name="landing_gear_material" />
+    </visual>
+    <collision name="rear_right_landing_leg_collision">
+      <origin xyz="-0.17 -0.17 -0.4085" rpy="0 0 0" />
+      <geometry><box size="0.035 0.035 0.817" /></geometry>
+    </collision>
   </link>
   <link name="arm_base_link">
     <inertial>

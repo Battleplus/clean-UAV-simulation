@@ -121,10 +121,9 @@ def build_config(source: Path, output: Path) -> tuple[dict, float]:
             "hold_time_s": 0.15,
             "restore_on_land": True,
             "status": (
-                "the tall debug spawn fixture is removed after 102 percent of "
-                "weight and a balanced wrench are held, avoiding a release-induced "
-                "free-fall transient; an equivalent-height four-pad "
-                "fixture is restored below the aircraft for landing"
+                "ground-level contact pads are removed after 102 percent of weight "
+                "and a balanced wrench are held; visible landing gear is attached "
+                "to base_link and moves with the aircraft"
             ),
         }
     )

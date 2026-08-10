@@ -67,7 +67,7 @@
         </visual>
       </link>
     </model>
-    <!-- Isolated 4 kg flight-logic bench contacts.  The original fixture top was at
+    <!-- Isolated 4 kg ground-level bring-up contacts.  The original fixture top was at
          z=0.817 m and forced base_link to spawn at z=1.0 m, which looked like
          an already-airborne vehicle.  The same proven contact geometry is
          replaced by 2 cm contact pads whose tops are coplanar with the

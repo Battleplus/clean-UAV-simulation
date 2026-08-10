@@ -888,8 +888,8 @@
     "maximum_com_torque_nm": 0.05,
     "hold_time_s": 0.15,
     "restore_on_land": true,
-    "restore_clearance_m": 0.45,
+    "restore_clearance_m": 0.05,
     "restore_sdf_filename": "../worlds/landing_support.sdf",
-    "status": "the tall debug spawn fixture is removed after 102 percent of weight and a balanced wrench are held, avoiding a release-induced free-fall transient; an equivalent-height four-pad fixture is restored below the aircraft for landing"
+    "status": "ground-level contact pads are removed after 102 percent of weight and a balanced wrench are held; visible landing gear is attached to base_link and moves with the aircraft"
   }
 }
