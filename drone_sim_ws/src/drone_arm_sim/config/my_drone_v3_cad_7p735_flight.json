@@ -889,7 +889,7 @@
     "maximum_com_torque_nm": 0.05,
     "hold_time_s": 0.15,
     "restore_on_land": true,
-    "restore_clearance_m": 0.45,
+    "restore_clearance_m": 0.05,
     "restore_sdf_filename": "../worlds/landing_support.sdf",
     "status": "Gazebo-only simultaneous release after 95 percent of vehicle weight and a near-balanced COM wrench are held continuously; after an explicit LAND request the same fixture is respawned under the current aircraft XY position only when the aircraft descends near its recorded supported height"
   }

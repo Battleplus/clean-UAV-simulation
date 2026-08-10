@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "source_mesh": "/mnt/e/\u6e05\u6d01\u65e0\u4eba\u673a/drone_sim_ws/src/drone_arm_sim/meshes/my_drone_v2/visual/so101_gripper.stl",
+  "method": "area-unweighted STL vertex PCA, sign selected toward gripper CAD center of mass",
+  "principal_axis_ros_flu": [
+    -0.05080374322172149,
+    -0.7118674698799747,
+    0.7004739002998932
+  ],
+  "gripper_com_direction_local": [
+    0.9424775663406724,
+    -0.016080594503143985,
+    0.33388239160666905
+  ],
+  "wrist_to_gripper_joint_direction_ros_flu": [
+    0.7273471254854714,
+    -0.4241392829906759,
+    -0.5395109152484102
+  ],
+  "agreement_deg": {
+    "pca_vs_com": 78.6125998696799,
+    "pca_vs_joint": 96.48449370418018
+  },
+  "note": "PCA is geometric evidence, not a CAD datum axis; retain the source vectors for audit."
+}

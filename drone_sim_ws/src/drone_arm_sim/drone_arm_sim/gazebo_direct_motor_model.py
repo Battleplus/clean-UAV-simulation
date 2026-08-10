@@ -24,7 +24,6 @@ try:
     from actuator_msgs.msg import Actuators
     from geometry_msgs.msg import WrenchStamped
     from nav_msgs.msg import Odometry
-    from geometry_msgs.msg import WrenchStamped
     import rclpy
     from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
@@ -32,7 +31,6 @@ try:
     from std_msgs.msg import Bool
 except ModuleNotFoundError:
     Actuators = None
-    WrenchStamped = None
     Odometry = None
     WrenchStamped = None
     rclpy = None
@@ -47,6 +45,21 @@ from drone_arm_sim.allocation_analysis import allocation_matrix, rotor_wrench_fr
 
 
 FRD_TO_FLU = np.diag([1.0, -1.0, -1.0])
+
+
+def first_order_vector_step(
+    current: np.ndarray, target: np.ndarray, dt_s: float, time_constant_s: float
+) -> np.ndarray:
+    """Advance a bounded first-order vector filter without overshoot."""
+    current_array = np.asarray(current, dtype=float)
+    target_array = np.asarray(target, dtype=float)
+    if current_array.shape != target_array.shape:
+        raise ValueError("current and target must have the same shape")
+    if dt_s <= 0.0:
+        return current_array.copy()
+    tau = max(0.0, float(time_constant_s))
+    alpha = 1.0 if tau == 0.0 else 1.0 - np.exp(-float(dt_s) / tau)
+    return current_array + alpha * (target_array - current_array)
 
 
 def command_to_thrust_n(config: dict, normalized_command: float) -> float:
@@ -116,7 +129,7 @@ def actuator_command_to_thrust_n(config: dict, normalized_command: float) -> flo
         return float(np.interp(
             command, [0.0, hover_command, 1.0], [0.0, hover_thrust, maximum]
         ))
-    if input_model == "normalized_thrust":
+    if input_model in {"normalized_thrust", "ideal_linear_thrust"}:
         maximum_value = config.get("maximum_thrust_n")
         if maximum_value is None:
             maximum_value = config["maximum_rated_thrust_per_motor_n"]
@@ -144,7 +157,7 @@ def thrust_to_actuator_command(config: dict, thrust_n: float) -> float:
         return float(np.clip(np.interp(
             requested, [0.0, hover_thrust, maximum], [0.0, hover_command, 1.0]
         ), 0.0, 1.0))
-    if input_model == "normalized_thrust":
+    if input_model in {"normalized_thrust", "ideal_linear_thrust"}:
         maximum_value = config.get("maximum_thrust_n")
         if maximum_value is None:
             maximum_value = config["maximum_rated_thrust_per_motor_n"]
@@ -389,7 +402,8 @@ def battery_step(
     # Current measurements are indexed by ESC throttle.  Convert the PX4
     # normalized-thrust request back through the measured static curve first.
     if config.get("actuator_input_model") in {
-        "normalized_thrust", "hover_anchored_normalized_thrust",
+        "normalized_thrust", "ideal_linear_thrust",
+        "hover_anchored_normalized_thrust",
         "hover_scaled_linear_thrust_with_rated_cap"
     }:
         equivalent_throttle = [
@@ -485,6 +499,8 @@ class DirectMotorModel(Node):
         battery_overrides: dict[str, float] | None = None,
         arm_torque_feedforward_enabled: bool = False,
         arm_torque_feedforward_max_delta_n: float = 2.0,
+        arm_static_com_feedforward_gain: float = 0.0,
+        arm_static_com_feedforward_time_constant_s: float = 5.0,
     ):
         super().__init__("my_drone_gazebo_direct_motor_model")
         self.config = json.loads(config_path.read_text(encoding="utf-8"))
@@ -541,6 +557,16 @@ class DirectMotorModel(Node):
         )
         self.arm_reaction_torque_flu = np.zeros(3)
         self.arm_reaction_torque_stamp_s: float | None = None
+        self.arm_gravity_shift_torque_flu = np.zeros(3)
+        self.arm_gravity_shift_torque_stamp_s: float | None = None
+        self.arm_gravity_shift_torque_filtered_flu = np.zeros(3)
+        self.arm_static_com_filter_stamp_s: float | None = None
+        self.arm_static_com_feedforward_gain = float(
+            np.clip(arm_static_com_feedforward_gain, 0.0, 1.0)
+        )
+        self.arm_static_com_feedforward_time_constant_s = max(
+            0.0, float(arm_static_com_feedforward_time_constant_s)
+        )
         self.arm_motion_active_stamp_s: float | None = None
         self.arm_torque_matrix_pinv = np.linalg.pinv(
             allocation_matrix(self.config, position_key="wrench_position_m")
@@ -610,6 +636,12 @@ class DirectMotorModel(Node):
             10,
         )
         self.create_subscription(
+            WrenchStamped,
+            "/my_drone/arm_gravity_shift_wrench_body",
+            self.on_arm_gravity_shift_wrench,
+            10,
+        )
+        self.create_subscription(
             Bool,
             "/my_drone/arm_motion_active",
             self.on_arm_motion_active,
@@ -624,7 +656,10 @@ class DirectMotorModel(Node):
         if self.arm_torque_feedforward_enabled:
             self.get_logger().info(
                 "arm torque feed-forward enabled: "
-                f"max_delta={self.arm_torque_feedforward_max_delta_n:.3f} N"
+                f"max_delta={self.arm_torque_feedforward_max_delta_n:.3f} N, "
+                f"static_com_gain={self.arm_static_com_feedforward_gain:.3f}, "
+                "static_com_tau="
+                f"{self.arm_static_com_feedforward_time_constant_s:.3f} s"
             )
 
     def on_odometry(self, message) -> None:
@@ -923,6 +958,16 @@ class DirectMotorModel(Node):
         """Accept only fresh motion heartbeats; false clears immediately."""
         self.arm_motion_active_stamp_s = time.monotonic() if bool(message.data) else None
 
+    def on_arm_gravity_shift_wrench(self, message) -> None:
+        """Cache the gravity moment caused by arm COM shift in base_link FLU."""
+        values = np.asarray(
+            [message.wrench.torque.x, message.wrench.torque.y, message.wrench.torque.z],
+            dtype=float,
+        )
+        if values.shape == (3,) and np.all(np.isfinite(values)):
+            self.arm_gravity_shift_torque_flu = values
+            self.arm_gravity_shift_torque_stamp_s = time.monotonic()
+
     def publish_wrench(self) -> None:
         if rclpy is None or not rclpy.ok() or self.rotation_flu_to_world is None:
             return
@@ -940,7 +985,30 @@ class DirectMotorModel(Node):
         ):
             # FRD/FLU share x and invert y/z.  The rotor allocator is in FRD,
             # while the coupled-dynamics monitor publishes base_link FLU.
-            reaction_frd = FRD_TO_FLU @ self.arm_reaction_torque_flu
+            now_s = time.monotonic()
+            combined_torque_flu = self.arm_reaction_torque_flu.copy()
+            if (
+                self.arm_static_com_feedforward_gain > 0.0
+                and self.arm_gravity_shift_torque_stamp_s is not None
+                and now_s - self.arm_gravity_shift_torque_stamp_s < 0.6
+            ):
+                dt_s = (
+                    0.0
+                    if self.arm_static_com_filter_stamp_s is None
+                    else min(max(now_s - self.arm_static_com_filter_stamp_s, 0.0), 0.1)
+                )
+                self.arm_static_com_filter_stamp_s = now_s
+                self.arm_gravity_shift_torque_filtered_flu = first_order_vector_step(
+                    self.arm_gravity_shift_torque_filtered_flu,
+                    self.arm_gravity_shift_torque_flu,
+                    dt_s,
+                    self.arm_static_com_feedforward_time_constant_s,
+                )
+                combined_torque_flu += (
+                    self.arm_static_com_feedforward_gain
+                    * self.arm_gravity_shift_torque_filtered_flu
+                )
+            reaction_frd = FRD_TO_FLU @ combined_torque_flu
             commands_for_wrench, _ = torque_feedforward_command_delta(
                 self.config,
                 self.filtered_commands,
@@ -1017,6 +1085,10 @@ def main() -> None:
     parser.add_argument(
         "--arm-torque-feedforward-max-delta-n", type=float, default=2.0
     )
+    parser.add_argument("--arm-static-com-feedforward-gain", type=float, default=0.0)
+    parser.add_argument(
+        "--arm-static-com-feedforward-time-constant-s", type=float, default=5.0
+    )
     parsed, ros_arguments = parser.parse_known_args()
     if rclpy is None:
         raise SystemExit("ROS 2 Python packages are not available")
@@ -1039,6 +1111,8 @@ def main() -> None:
         },
         parsed.arm_torque_feedforward_enabled == "true",
         parsed.arm_torque_feedforward_max_delta_n,
+        parsed.arm_static_com_feedforward_gain,
+        parsed.arm_static_com_feedforward_time_constant_s,
     )
     try:
         rclpy.spin(node)

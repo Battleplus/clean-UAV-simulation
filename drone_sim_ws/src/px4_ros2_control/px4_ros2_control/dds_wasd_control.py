@@ -14,11 +14,13 @@ import termios
 import time
 import tty
 from dataclasses import dataclass
+from enum import Enum
 from typing import Optional
 
 import numpy as np
 import rclpy
 from geometry_msgs.msg import AccelStamped, WrenchStamped
+from nav_msgs.msg import Odometry as GazeboOdometry
 from rclpy.node import Node
 from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPolicy
 from sensor_msgs.msg import JointState
@@ -68,6 +70,13 @@ class TargetNed:
     yaw: float = 0.0
 
 
+class FlightControlState(str, Enum):
+    DISARMED = "DISARMED"
+    POSITION_HOLD = "POSITION_HOLD"
+    VELOCITY_CONTROL = "VELOCITY_CONTROL"
+    LANDING = "LANDING"
+
+
 class RawTerminal:
     def __init__(self) -> None:
         self.fd: Optional[int] = None
@@ -94,15 +103,29 @@ class DdsWasdControl(Node):
     RATE_HZ = 20.0
     STATUS_TIMEOUT_S = 1.0
     PRESTREAM_S = 2.0
-    # Small, repeatable increments leave control allocation headroom for the
-    # canted X8.  Holding a key repeats the same increment, so WASD remains
-    # continuous while a single key press cannot demand a near-saturation jump.
-    # Identification-safe increments for the canted CAD X8.  A single
-    # command must not demand a large lateral attitude transient while the
-    # PX4 allocator and thrust margin are still being calibrated.
+    # RL actions still use bounded position increments.  Interactive keyboard
+    # flight below is velocity controlled and never accumulates these steps.
     MOVE_STEP_M = 0.08
     ALT_STEP_M = 0.12
     YAW_STEP_RAD = math.radians(3.0)
+    HORIZONTAL_SPEED_M_S = float(os.environ.get("PX4_WASD_HORIZONTAL_SPEED_M_S", "0.4"))
+    VERTICAL_SPEED_M_S = float(os.environ.get("PX4_WASD_VERTICAL_SPEED_M_S", "0.25"))
+    YAW_RATE_RAD_S = math.radians(
+        float(os.environ.get("PX4_WASD_YAW_RATE_DEG_S", "15.0"))
+    )
+    KEY_RELEASE_TIMEOUT_S = float(
+        os.environ.get("PX4_KEY_RELEASE_TIMEOUT_S", "0.20")
+    )
+    HORIZONTAL_ACCEL_LIMIT_M_S2 = float(
+        os.environ.get("PX4_WASD_HORIZONTAL_ACCEL_M_S2", "0.5")
+    )
+    VERTICAL_ACCEL_LIMIT_M_S2 = float(
+        os.environ.get("PX4_WASD_VERTICAL_ACCEL_M_S2", "0.3")
+    )
+    YAW_ACCEL_LIMIT_RAD_S2 = math.radians(
+        float(os.environ.get("PX4_WASD_YAW_ACCEL_DEG_S2", "30.0"))
+    )
+    VELOCITY_ZERO_EPS = 1.0e-3
     # Keep the formal/default flight at 1.2 m.  Diagnostics can request a
     # lower hold height while tuning a near-limit thrust configuration without
     # changing the documented baseline.
@@ -118,6 +141,15 @@ class DdsWasdControl(Node):
     OFFBOARD_LAND_MAX_VERTICAL_SPEED_M_S = float(
         os.environ.get("PX4_OFFBOARD_LAND_MAX_VERTICAL_SPEED_M_S", "0.25")
     )
+    TOUCHDOWN_DISARM_ENABLED = os.environ.get(
+        "PX4_TOUCHDOWN_DISARM_ENABLED", "false"
+    ).lower() in {"1", "true", "yes", "on"}
+    TOUCHDOWN_DISARM_HEIGHT_M = float(
+        os.environ.get("PX4_TOUCHDOWN_DISARM_HEIGHT_M", "0.05")
+    )
+    TOUCHDOWN_DISARM_HOLD_S = float(
+        os.environ.get("PX4_TOUCHDOWN_DISARM_HOLD_S", "0.5")
+    )
 
     def __init__(self, arm_only: bool = False) -> None:
         super().__init__("my_drone_dds_wasd_control")
@@ -125,17 +157,31 @@ class DdsWasdControl(Node):
         self.status: Optional[VehicleStatus] = None
         self.local: Optional[VehicleLocalPosition] = None
         self.odometry: Optional[VehicleOdometry] = None
+        self.gazebo_truth_enu: Optional[np.ndarray] = None
+        self.gazebo_truth_velocity_enu: Optional[np.ndarray] = None
         self.actuator_outputs: Optional[ActuatorOutputs] = None
         self.last_actuator_monotonic = 0.0
         self.last_status_monotonic = 0.0
         self.last_local_monotonic = 0.0
         self.target = TargetNed()
         self.target_initialized = False
+        self.xy_reset_counter: Optional[int] = None
+        self.z_reset_counter: Optional[int] = None
+        self.heading_reset_counter: Optional[int] = None
+        self.control_state = FlightControlState.DISARMED
+        self.active_velocity_key: Optional[str] = None
+        self.last_velocity_key_monotonic = 0.0
+        self.velocity_command_ned = np.zeros(3)
+        self.yaw_rate_command = 0.0
+        self.last_control_tick_monotonic = time.monotonic()
         self.pending_takeoff = False
         self.offboard_requested = False
         self.landing_requested = False
         self.offboard_landing_active = False
         self.offboard_landing_started = 0.0
+        self.touchdown_stable_since: Optional[float] = None
+        self.touchdown_land_command_sent = 0.0
+        self.touchdown_disarm_sent = False
         self.takeoff_ground_down: Optional[float] = None
         self.prestream_started = 0.0
         self.arm_only_started = 0.0
@@ -218,6 +264,12 @@ class DdsWasdControl(Node):
             VehicleOdometry, "/fmu/out/vehicle_odometry", self._odometry_cb, px4_qos
         )
         self.create_subscription(
+            GazeboOdometry,
+            "/model/my_drone/odometry",
+            self._gazebo_truth_cb,
+            10,
+        )
+        self.create_subscription(
             VehicleCommandAck,
             "/fmu/out/vehicle_command_ack_v1",
             self._ack_cb,
@@ -253,6 +305,12 @@ class DdsWasdControl(Node):
             self._arm_motion_active_cb,
             10,
         )
+        self.create_subscription(
+            Bool,
+            "/my_drone/hover_request",
+            self._hover_request_cb,
+            10,
+        )
         self.timer = self.create_timer(1.0 / self.RATE_HZ, self._tick)
         if self.arm_feedforward_enabled:
             self.get_logger().info(
@@ -266,7 +324,63 @@ class DdsWasdControl(Node):
         self.status = msg
         self.last_status_monotonic = time.monotonic()
 
+    def _gazebo_truth_cb(self, msg: GazeboOdometry) -> None:
+        self.gazebo_truth_enu = np.array(
+            [
+                float(msg.pose.pose.position.x),
+                float(msg.pose.pose.position.y),
+                float(msg.pose.pose.position.z),
+            ]
+        )
+        self.gazebo_truth_velocity_enu = np.array(
+            [
+                float(msg.twist.twist.linear.x),
+                float(msg.twist.twist.linear.y),
+                float(msg.twist.twist.linear.z),
+            ]
+        )
+
     def _local_cb(self, msg: VehicleLocalPosition) -> None:
+        if self.target_initialized:
+            if (
+                self.xy_reset_counter is not None
+                and int(msg.xy_reset_counter) != self.xy_reset_counter
+            ):
+                self.target.north += float(msg.delta_xy[0])
+                self.target.east += float(msg.delta_xy[1])
+                self.get_logger().warning(
+                    "LOCAL_XY_RESET_APPLIED "
+                    f"counter={int(msg.xy_reset_counter)} "
+                    f"delta=({float(msg.delta_xy[0]):.3f},"
+                    f"{float(msg.delta_xy[1]):.3f})"
+                )
+            if (
+                self.z_reset_counter is not None
+                and int(msg.z_reset_counter) != self.z_reset_counter
+            ):
+                delta_z = float(msg.delta_z)
+                self.target.down += delta_z
+                if self.takeoff_ground_down is not None:
+                    self.takeoff_ground_down += delta_z
+                self.get_logger().warning(
+                    "LOCAL_Z_RESET_APPLIED "
+                    f"counter={int(msg.z_reset_counter)} delta={delta_z:.3f}"
+                )
+            if (
+                self.heading_reset_counter is not None
+                and int(msg.heading_reset_counter) != self.heading_reset_counter
+            ):
+                delta_heading = float(msg.delta_heading)
+                self.target.yaw = wrap_pi(self.target.yaw + delta_heading)
+                self.get_logger().warning(
+                    "LOCAL_HEADING_RESET_APPLIED "
+                    f"counter={int(msg.heading_reset_counter)} "
+                    f"delta_deg={math.degrees(delta_heading):.2f}"
+                )
+
+        self.xy_reset_counter = int(msg.xy_reset_counter)
+        self.z_reset_counter = int(msg.z_reset_counter)
+        self.heading_reset_counter = int(msg.heading_reset_counter)
         self.local = msg
         self.last_local_monotonic = time.monotonic()
         if not self.target_initialized and msg.xy_valid and msg.z_valid:
@@ -416,6 +530,11 @@ class DdsWasdControl(Node):
         self.arm_motion_active = bool(msg.data)
         self.last_arm_motion_monotonic = time.monotonic()
 
+    def _hover_request_cb(self, msg: Bool) -> None:
+        """Apply the same hover transition as the operator's H key."""
+        if msg.data:
+            self.hold_current_position()
+
     def arm_motion_is_active(self, now: float | None = None) -> bool:
         """Return true only inside a fresh, explicitly announced arm motion."""
         current = time.monotonic() if now is None else float(now)
@@ -471,6 +590,24 @@ class DdsWasdControl(Node):
         sp.yawspeed = nan
         self.setpoint_pub.publish(sp)
 
+    def publish_velocity(self) -> None:
+        """Publish a velocity-only setpoint; no position field is valid."""
+        mode = OffboardControlMode()
+        mode.timestamp = self.now_us()
+        mode.velocity = True
+        self.mode_pub.publish(mode)
+
+        nan = float("nan")
+        sp = TrajectorySetpoint()
+        sp.timestamp = mode.timestamp
+        sp.position = [nan, nan, nan]
+        sp.velocity = self.velocity_command_ned.tolist()
+        sp.acceleration = [nan, nan, nan]
+        sp.jerk = [nan, nan, nan]
+        sp.yaw = nan
+        sp.yawspeed = float(self.yaw_rate_command)
+        self.setpoint_pub.publish(sp)
+
     def begin_takeoff(self) -> bool:
         if not self.state_fresh() or not self.target_initialized:
             self.get_logger().error("Cannot start: PX4 state/position is absent or stale")
@@ -478,13 +615,9 @@ class DdsWasdControl(Node):
         if self.status.failsafe or not self.status.pre_flight_checks_pass:
             self.get_logger().error("Cannot start: PX4 preflight checks/failsafe state is unsafe")
             return False
-        self.takeoff_ground_down = float(self.local.z)
-        self.target = TargetNed(
-            self.local.x,
-            self.local.y,
-            self.local.z + self.local_z_sign * self.TAKEOFF_HEIGHT_M,
-            self.local.heading,
-        )
+        self._refresh_disarmed_takeoff_target()
+        self.control_state = FlightControlState.POSITION_HOLD
+        self._clear_velocity_command()
         self.get_logger().info(
             f"target NED=({self.target.north:.2f}, {self.target.east:.2f}, "
             f"{self.target.down:.2f}) yaw={math.degrees(self.target.yaw):.1f} deg"
@@ -493,6 +626,23 @@ class DdsWasdControl(Node):
         self.offboard_requested = True
         self.get_logger().info("Prestreaming Offboard setpoints for 2 seconds")
         return True
+
+    def _refresh_disarmed_takeoff_target(self) -> None:
+        """Track a falling/unsettled vehicle throughout Offboard prestream.
+
+        Gazebo can still move the unpowered model while PX4 receives the
+        required two seconds of Offboard setpoints.  Locking the target at the
+        first key press turns that motion into a large position error exactly
+        when PX4 arms.  Refreshing from the latest local position keeps the
+        commanded takeoff step equal to ``TAKEOFF_HEIGHT_M`` until arming.
+        """
+        self.takeoff_ground_down = float(self.local.z)
+        self.target = TargetNed(
+            float(self.local.x),
+            float(self.local.y),
+            float(self.local.z) + self.local_z_sign * self.TAKEOFF_HEIGHT_M,
+            float(self.local.heading),
+        )
 
     def begin_arm_only(self) -> bool:
         if not self.state_fresh() or self.status.failsafe or not self.status.pre_flight_checks_pass:
@@ -507,6 +657,8 @@ class DdsWasdControl(Node):
         if self.landing_requested:
             return
         self.pending_takeoff = False
+        self.control_state = FlightControlState.LANDING
+        self._clear_velocity_command()
         self.landing_pub.publish(Bool(data=True))
         self.landing_requested = True
         if (
@@ -541,6 +693,8 @@ class DdsWasdControl(Node):
             VehicleCommand.VEHICLE_CMD_DO_SET_MODE, param1=1.0, param2=3.0
         )
         self.offboard_requested = False
+        self.control_state = FlightControlState.POSITION_HOLD
+        self._clear_velocity_command()
         self.get_logger().warning("Requested POSCTL and stopped Offboard stream")
 
     def emergency_disarm(self) -> None:
@@ -550,43 +704,172 @@ class DdsWasdControl(Node):
             param2=21196.0,
         )
         self.offboard_requested = False
+        self.control_state = FlightControlState.DISARMED
+        self._clear_velocity_command()
         self.get_logger().error("EMERGENCY FORCE DISARM sent")
 
-    def move_key(self, key: str) -> None:
-        if not self.target_initialized:
+    def _clear_velocity_command(self) -> None:
+        self.active_velocity_key = None
+        self.last_velocity_key_monotonic = 0.0
+        self.velocity_command_ned = np.zeros(3)
+        self.yaw_rate_command = 0.0
+
+    @staticmethod
+    def _ramp_scalar(current: float, target: float, max_delta: float) -> float:
+        delta = float(target) - float(current)
+        if abs(delta) <= max_delta:
+            return float(target)
+        return float(current) + math.copysign(max_delta, delta)
+
+    @staticmethod
+    def _ramp_horizontal(
+        current: np.ndarray, target: np.ndarray, max_delta: float
+    ) -> np.ndarray:
+        current = np.asarray(current, dtype=float)
+        target = np.asarray(target, dtype=float)
+        delta = target - current
+        norm = float(np.linalg.norm(delta))
+        if norm <= max_delta or norm <= 1.0e-12:
+            return target.copy()
+        return current + delta * (max_delta / norm)
+
+    def set_velocity_key(self, key: str, now: float | None = None) -> None:
+        """Refresh a body-frame velocity command heartbeat."""
+        if key not in "wasdrfqe":
             return
-        yaw = self.target.yaw
-        forward_n, forward_e = math.cos(yaw), math.sin(yaw)
-        right_n, right_e = -math.sin(yaw), math.cos(yaw)
+        self.active_velocity_key = key
+        self.last_velocity_key_monotonic = time.monotonic() if now is None else float(now)
+        if self.control_state != FlightControlState.VELOCITY_CONTROL:
+            self.control_state = FlightControlState.VELOCITY_CONTROL
+            self.get_logger().info(f"VELOCITY_CONTROL_ENTER key={key.upper()}")
+
+    def _desired_velocity_ned(self, key_active: bool) -> tuple[np.ndarray, float]:
+        desired = np.zeros(3)
+        desired_yaw_rate = 0.0
+        if not key_active or self.active_velocity_key is None:
+            return desired, desired_yaw_rate
+        heading = (
+            float(self.local.heading)
+            if self.local is not None and math.isfinite(float(self.local.heading))
+            else float(self.target.yaw)
+        )
+        forward = np.array([math.cos(heading), math.sin(heading)])
+        right = np.array([-math.sin(heading), math.cos(heading)])
+        key = self.active_velocity_key
         if key == "w":
-            self.target.north += self.MOVE_STEP_M * forward_n
-            self.target.east += self.MOVE_STEP_M * forward_e
+            desired[:2] = self.HORIZONTAL_SPEED_M_S * forward
         elif key == "s":
-            self.target.north -= self.MOVE_STEP_M * forward_n
-            self.target.east -= self.MOVE_STEP_M * forward_e
+            desired[:2] = -self.HORIZONTAL_SPEED_M_S * forward
         elif key == "d":
-            self.target.north += self.MOVE_STEP_M * right_n
-            self.target.east += self.MOVE_STEP_M * right_e
+            desired[:2] = self.HORIZONTAL_SPEED_M_S * right
         elif key == "a":
-            self.target.north -= self.MOVE_STEP_M * right_n
-            self.target.east -= self.MOVE_STEP_M * right_e
+            desired[:2] = -self.HORIZONTAL_SPEED_M_S * right
         elif key == "r":
-            self.target.down -= self.local_z_sign * self.ALT_STEP_M
+            desired[2] = self.local_z_sign * self.VERTICAL_SPEED_M_S
         elif key == "f":
-            self.target.down += self.local_z_sign * self.ALT_STEP_M
+            desired[2] = -self.local_z_sign * self.VERTICAL_SPEED_M_S
         elif key == "q":
-            self.target.yaw = wrap_pi(self.target.yaw - self.YAW_STEP_RAD)
+            desired_yaw_rate = -self.YAW_RATE_RAD_S
         elif key == "e":
-            self.target.yaw = wrap_pi(self.target.yaw + self.YAW_STEP_RAD)
-        else:
+            desired_yaw_rate = self.YAW_RATE_RAD_S
+        return desired, desired_yaw_rate
+
+    def update_velocity_control(self, now: float, dt: float) -> None:
+        if self.control_state != FlightControlState.VELOCITY_CONTROL:
             return
+        key_active = (
+            self.active_velocity_key is not None
+            and 0.0 <= now - self.last_velocity_key_monotonic
+            <= self.KEY_RELEASE_TIMEOUT_S
+        )
+        desired, desired_yaw_rate = self._desired_velocity_ned(key_active)
+        dt = max(0.0, min(float(dt), 0.25))
+        self.velocity_command_ned[:2] = self._ramp_horizontal(
+            self.velocity_command_ned[:2],
+            desired[:2],
+            self.HORIZONTAL_ACCEL_LIMIT_M_S2 * dt,
+        )
+        self.velocity_command_ned[2] = self._ramp_scalar(
+            self.velocity_command_ned[2],
+            desired[2],
+            self.VERTICAL_ACCEL_LIMIT_M_S2 * dt,
+        )
+        self.yaw_rate_command = self._ramp_scalar(
+            self.yaw_rate_command,
+            desired_yaw_rate,
+            self.YAW_ACCEL_LIMIT_RAD_S2 * dt,
+        )
+        stopped = (
+            not key_active
+            and float(np.linalg.norm(self.velocity_command_ned)) <= self.VELOCITY_ZERO_EPS
+            and abs(self.yaw_rate_command) <= self.VELOCITY_ZERO_EPS
+        )
+        if stopped and self.local is not None:
+            released_key = self.active_velocity_key
+            # Horizontal/yaw motion must not ratchet the altitude target down
+            # when the airframe briefly sags.  Only an intentional R/F move
+            # adopts the newly reached altitude on release.
+            hold_down = (
+                float(self.local.z)
+                if released_key in {"r", "f"}
+                else float(self.target.down)
+            )
+            self.target = TargetNed(
+                float(self.local.x),
+                float(self.local.y),
+                hold_down,
+                float(self.local.heading),
+            )
+            self._clear_velocity_command()
+            self.control_state = FlightControlState.POSITION_HOLD
+            self.get_logger().info(
+                "VELOCITY_RELEASE_HOLD "
+                f"NED=({self.target.north:.2f}, {self.target.east:.2f}, "
+                f"{self.target.down:.2f}) yaw={math.degrees(self.target.yaw):.1f} deg"
+            )
+
+    def hold_current_position(self) -> None:
+        """Brake horizontal motion without ratcheting a disturbed altitude.
+
+        During an arm motion the vehicle can momentarily sag.  Copying the
+        measured Z into the target at that instant makes every H press accept
+        the sag as the new hover height.  Preserve the commanded altitude and
+        only reset horizontal position and heading to the measured pose.
+        """
+        if self.local is None:
+            self.get_logger().warning("Hover hold ignored: local position is absent")
+            return
+        hold_down = (
+            float(self.target.down)
+            if self.target_initialized and math.isfinite(float(self.target.down))
+            else float(self.local.z)
+        )
+        self.target = TargetNed(
+            float(self.local.x),
+            float(self.local.y),
+            hold_down,
+            float(self.local.heading),
+        )
+        self._clear_velocity_command()
+        self.control_state = FlightControlState.POSITION_HOLD
         self.get_logger().info(
-            f"target NED=({self.target.north:.2f}, {self.target.east:.2f}, "
-            f"{self.target.down:.2f}) yaw={math.degrees(self.target.yaw):.1f} deg"
+            f"HOVER_HOLD_CURRENT NED=({self.target.north:.2f}, "
+            f"{self.target.east:.2f}, {self.target.down:.2f}) "
+            f"yaw={math.degrees(self.target.yaw):.1f} deg "
+            f"measured_down={float(self.local.z):.2f}"
         )
 
     def handle_key(self, key: str) -> None:
         if key == "t":
+            if self.landing_requested or self.offboard_landing_active:
+                self.get_logger().warning("Takeoff ignored: landing is in progress")
+                return
+            if self.offboard_requested or (
+                self.status
+                and self.status.arming_state == VehicleStatus.ARMING_STATE_ARMED
+            ):
+                self.get_logger().warning("Takeoff ignored: vehicle is already active")
+                return
             if not self.begin_takeoff():
                 # Preflight can remain false for a short interval while the
                 # estimator receives its first valid heading.  Keep a single
@@ -596,9 +879,12 @@ class DdsWasdControl(Node):
                 self.get_logger().warning(
                     "Takeoff request queued until PX4 preflight is ready"
                 )
-        elif key in "wasdrfqe":
+        elif key in "wasdrfqeh":
             if self.status and self.status.nav_state == VehicleStatus.NAVIGATION_STATE_OFFBOARD:
-                self.move_key(key)
+                if key == "h":
+                    self.hold_current_position()
+                else:
+                    self.set_velocity_key(key)
             else:
                 self.get_logger().warning("Movement ignored: PX4 is not in Offboard")
         elif key == "l":
@@ -621,14 +907,32 @@ class DdsWasdControl(Node):
 
     def _tick(self) -> None:
         now = time.monotonic()
+        dt = now - self.last_control_tick_monotonic
+        self.last_control_tick_monotonic = now
         self.publish_rl_observation()
         if self.status and self.local and now - self.last_state_report >= 1.0:
             self.last_state_report = now
+            truth_report = (
+                "truth_enu=(nan,nan,nan)"
+                if self.gazebo_truth_enu is None
+                else "truth_enu=("
+                + ",".join(f"{value:.3f}" for value in self.gazebo_truth_enu)
+                + ")"
+            )
+            truth_velocity_report = (
+                "truth_vel_enu=(nan,nan,nan)"
+                if self.gazebo_truth_velocity_enu is None
+                else "truth_vel_enu=("
+                + ",".join(f"{value:.3f}" for value in self.gazebo_truth_velocity_enu)
+                + ")"
+            )
             self.get_logger().info(
                 "STATE "
                 f"arm={self.status.arming_state} nav={self.status.nav_state} "
                 f"NED=({self.local.x:.3f},{self.local.y:.3f},{self.local.z:.3f}) "
                 f"vel=({self.local.vx:.3f},{self.local.vy:.3f},{self.local.vz:.3f}) "
+                f"{truth_report} {truth_velocity_report} "
+                f"control={self.control_state.value} "
                 f"yaw_deg={math.degrees(self.local.heading):.1f} "
                 f"failsafe={self.status.failsafe} "
                 f"age_s=({now - self.last_status_monotonic:.2f},"
@@ -645,6 +949,8 @@ class DdsWasdControl(Node):
                 VehicleCommand.VEHICLE_CMD_DO_SET_MODE, param1=1.0, param2=3.0
             )
             self.get_logger().info("LANDING_DISARMED_CONFIRMED")
+            self.control_state = FlightControlState.DISARMED
+            self._clear_velocity_command()
             self.exit_requested = True
             return
 
@@ -671,6 +977,55 @@ class DdsWasdControl(Node):
                 self.exit_requested = True
             return
 
+        # The canted eight-rotor debug allocator can retain an asymmetric yaw
+        # command as soon as native AUTO LAND takes over at touchdown.  The
+        # small temporary pads then see a large yaw impulse before PX4's land
+        # detector reaches minimum thrust.  For the isolated debug profile
+        # only, finish the already active LAND sequence after the measured
+        # vehicle has stayed at the recorded ground height with low 3-D
+        # velocity.  The force token is intentionally behind this physical
+        # touchdown gate; formal flight keeps the entire workaround disabled.
+        if (
+            self.TOUCHDOWN_DISARM_ENABLED
+            and self.landing_requested
+            and not self.touchdown_disarm_sent
+            and self.status
+            and self.local
+            and self.status.arming_state == VehicleStatus.ARMING_STATE_ARMED
+            and self.takeoff_ground_down is not None
+        ):
+            touchdown_stable = (
+                abs(float(self.local.z) - self.takeoff_ground_down)
+                <= self.TOUCHDOWN_DISARM_HEIGHT_M
+                and math.hypot(float(self.local.vx), float(self.local.vy)) < 0.25
+                and abs(float(self.local.vz)) < 0.20
+            )
+            if touchdown_stable:
+                if self.touchdown_stable_since is None:
+                    self.touchdown_stable_since = now
+                elif now - self.touchdown_stable_since >= self.TOUCHDOWN_DISARM_HOLD_S:
+                    if not self.touchdown_land_command_sent:
+                        self.publish_command(VehicleCommand.VEHICLE_CMD_NAV_LAND)
+                        self.touchdown_land_command_sent = now
+                        self.get_logger().warning(
+                            "PX4_TOUCHDOWN_LAND_SENT after stable ground-height hold"
+                        )
+                    elif now - self.touchdown_land_command_sent >= 0.30:
+                        self.publish_command(
+                            VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM,
+                            param1=0.0,
+                            param2=21196.0,
+                        )
+                        self.touchdown_disarm_sent = True
+                        self.offboard_landing_active = False
+                        self.offboard_requested = False
+                        self.get_logger().warning(
+                            "PX4_TOUCHDOWN_FORCE_DISARM_SENT after stable "
+                            "ground-height hold"
+                        )
+            else:
+                self.touchdown_stable_since = None
+
         if self.pending_takeoff and not self.offboard_requested:
             if self.state_fresh() and self.status and self.status.pre_flight_checks_pass:
                 if not self.status.failsafe and self.begin_takeoff():
@@ -684,7 +1039,14 @@ class DdsWasdControl(Node):
             return
 
         if (
+            self.prestream_started
+            and self.status.arming_state == VehicleStatus.ARMING_STATE_DISARMED
+        ):
+            self._refresh_disarmed_takeoff_target()
+
+        if (
             self.offboard_landing_active
+            and not self.TOUCHDOWN_DISARM_ENABLED
             and self.takeoff_ground_down is not None
             and now - self.offboard_landing_started
             >= self.OFFBOARD_LAND_MIN_DURATION_S
@@ -704,17 +1066,25 @@ class DdsWasdControl(Node):
 
         torque_age = now - self.last_arm_reaction_monotonic
         torque_norm = float(np.linalg.norm(self.arm_reaction_torque_body_nm))
-        if self.arm_motion_is_active(now) and reaction_torque_safety_triggered(
-            self.arm_reaction_torque_body_nm,
-            torque_age,
-            self.arm_torque_abort_nm,
-            self.status.arming_state == VehicleStatus.ARMING_STATE_ARMED,
+        if (
+            not self.landing_requested
+            and self.arm_motion_is_active(now)
+            and reaction_torque_safety_triggered(
+                self.arm_reaction_torque_body_nm,
+                torque_age,
+                self.arm_torque_abort_nm,
+                self.status.arming_state == VehicleStatus.ARMING_STATE_ARMED,
+            )
         ):
             self.get_logger().error(
                 "Arm reaction-torque safety gate exceeded; requesting LAND "
                 f"norm={torque_norm:.3f} N m limit={self.arm_torque_abort_nm:.3f}"
             )
-            self.land(staged=False)
+            # Keep the still-controllable vehicle in Offboard while descending
+            # to the recorded ground height.  A direct high-altitude NAV_LAND
+            # handoff can excite the near-thrust-limit canted airframe and turn
+            # a bounded safety abort into a much larger horizontal excursion.
+            self.land(staged=True)
             return
 
         horizontal_error = math.hypot(
@@ -723,7 +1093,10 @@ class DdsWasdControl(Node):
         )
         vertical_error = abs(self.local.z - self.target.down)
         if (
-            self.status.arming_state == VehicleStatus.ARMING_STATE_ARMED
+            not self.landing_requested
+            and self.control_state != FlightControlState.LANDING
+            and self.status.arming_state == VehicleStatus.ARMING_STATE_ARMED
+            and self.control_state != FlightControlState.VELOCITY_CONTROL
             and (
                 horizontal_error > self.MAX_POSITION_ERROR_M
                 or vertical_error > self.MAX_VERTICAL_ERROR_M
@@ -733,10 +1106,14 @@ class DdsWasdControl(Node):
                 "Position safety gate exceeded; requesting LAND "
                 f"horizontal={horizontal_error:.2f} m vertical={vertical_error:.2f} m"
             )
-            self.land(staged=False)
+            self.land(staged=True)
             return
 
-        self.publish_hold()
+        self.update_velocity_control(now, dt)
+        if self.control_state == FlightControlState.VELOCITY_CONTROL:
+            self.publish_velocity()
+        else:
+            self.publish_hold()
         if self.prestream_started and now - self.prestream_started >= self.PRESTREAM_S:
             self.publish_command(
                 VehicleCommand.VEHICLE_CMD_DO_SET_MODE, param1=1.0, param2=6.0
@@ -773,7 +1150,7 @@ def main(args=None) -> None:
     rclpy.init(args=None)
     node = DdsWasdControl(arm_only=cli.arm_only)
     print(
-        "DDS WASD: T takeoff | W/S/A/D move | R/F up/down | Q/E yaw | "
+        "DDS WASD: T takeoff | W/S/A/D move | R/F up/down | Q/E yaw | H hover | "
         "L land | O exit Offboard | X twice emergency disarm | Z safe exit",
         flush=True,
     )

@@ -33,3 +33,9 @@ PX4-main.tar.gz
 # Runtime simulator logs
 *.ulg
 
+# Iterative runtime evidence is summarized in Markdown/JSON.  Curated logs
+# may still be added explicitly with `git add -f` when they prove an
+# acceptance result.
+drone_sim_ws/analysis/*.log
+drone_sim_ws/analysis/*.status
+drone_sim_ws/analysis/*.exit

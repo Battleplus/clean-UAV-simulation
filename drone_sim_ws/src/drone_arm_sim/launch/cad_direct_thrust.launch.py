@@ -118,6 +118,10 @@ def generate_launch_description():
                     LaunchConfiguration("arm_torque_feedforward_enabled"),
                     "--arm-torque-feedforward-max-delta-n",
                     LaunchConfiguration("arm_torque_feedforward_max_delta_n"),
+                    "--arm-static-com-feedforward-gain",
+                    LaunchConfiguration("arm_static_com_feedforward_gain"),
+                    "--arm-static-com-feedforward-time-constant-s",
+                    LaunchConfiguration("arm_static_com_feedforward_time_constant_s"),
                 ],
             )
         ],
@@ -126,6 +130,7 @@ def generate_launch_description():
         package="drone_arm_sim",
         executable="gazebo_sensor_delay",
         output="screen",
+        condition=IfCondition(LaunchConfiguration("enable_sensor_delay")),
         arguments=[
             "--imu-delay-ms", LaunchConfiguration("imu_delay_ms"),
             "--mag-delay-ms", LaunchConfiguration("mag_delay_ms"),
@@ -225,6 +230,7 @@ def generate_launch_description():
             DeclareLaunchArgument("mag_delay_ms", default_value="10"),
             DeclareLaunchArgument("baro_delay_ms", default_value="20"),
             DeclareLaunchArgument("navsat_delay_ms", default_value="50"),
+            DeclareLaunchArgument("enable_sensor_delay", default_value="true"),
             DeclareLaunchArgument("battery_dynamics_enabled", default_value="false"),
             DeclareLaunchArgument("battery_internal_resistance_ohm", default_value="nan"),
             DeclareLaunchArgument("battery_capacity_ah", default_value="nan"),
@@ -237,6 +243,12 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "arm_torque_feedforward_max_delta_n", default_value="2.0"
+            ),
+            DeclareLaunchArgument(
+                "arm_static_com_feedforward_gain", default_value="0.0"
+            ),
+            DeclareLaunchArgument(
+                "arm_static_com_feedforward_time_constant_s", default_value="5.0"
             ),
             DeclareLaunchArgument("arm_coupling_rate_hz", default_value="3.0"),
             DeclareLaunchArgument("arm_coupling_target_mass_kg", default_value="7.735"),

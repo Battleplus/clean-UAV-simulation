@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from collections import deque
 from dataclasses import dataclass
+import math
 import threading
 
 try:
@@ -61,6 +62,9 @@ class SensorDelayRelay(Node):
             for name, msg_type, raw, output in definitions
         ]
         self.queues = {spec.name: deque(maxlen=5000) for spec in self.specs}
+        self.zero_delay_pending = {spec.name: None for spec in self.specs}
+        self.last_published_source_time = {spec.name: -math.inf for spec in self.specs}
+        self.last_published_clock_time = {spec.name: -math.inf for spec in self.specs}
         self.gz_publishers = {
             spec.name: self.gz_node.advertise(spec.output_topic, spec.message_type)
             for spec in self.specs
@@ -82,6 +86,22 @@ class SensorDelayRelay(Node):
                 return
             copied = spec.message_type()
             copied.CopyFrom(message)
+            # PX4's Gazebo IMU bridge timestamps a sample with
+            # hrt_absolute_time() when this publication is received; it does
+            # not consume the protobuf header stamp.  Releasing multiple
+            # queued IMU messages from one /clock callback consequently gives
+            # them the same PX4 timestamp and vehicle_imu rejects the second
+            # sample.  For a zero-delay stream, retain only the newest source
+            # sample until the next /clock callback.  on_clock publishes at
+            # most one sample per simulation tick, preserving the 250 Hz
+            # source bandwidth without ever releasing a same-tick batch.
+            if spec.delay_s <= 0.0:
+                source_time = message_stamp_seconds(message, self.simulation_time_s)
+                with self.lock:
+                    pending = self.zero_delay_pending[spec.name]
+                    if pending is None or source_time > pending[0]:
+                        self.zero_delay_pending[spec.name] = (source_time, copied)
+                return
             with self.lock:
                 source_time = message_stamp_seconds(message, self.simulation_time_s)
                 self.queues[spec.name].append((source_time + spec.delay_s, copied))
@@ -95,10 +115,28 @@ class SensorDelayRelay(Node):
         with self.lock:
             self.simulation_time_s = now
             for spec in self.specs:
+                if spec.delay_s <= 0.0:
+                    pending = self.zero_delay_pending[spec.name]
+                    if (
+                        pending is not None
+                        and pending[0] > self.last_published_source_time[spec.name]
+                        and (
+                            spec.name != "imu"
+                            or now - self.last_published_clock_time[spec.name] >= 0.0035
+                        )
+                    ):
+                        source_time, sensor_message = pending
+                        due.append((spec.name, sensor_message))
+                        self.last_published_source_time[spec.name] = source_time
+                        self.last_published_clock_time[spec.name] = now
+                        self.zero_delay_pending[spec.name] = None
+                    continue
                 queue = self.queues[spec.name]
+                newest_due = None
                 while queue and queue[0][0] <= now:
-                    _, sensor_message = queue.popleft()
-                    due.append((spec.name, sensor_message))
+                    newest_due = queue.popleft()[1]
+                if newest_due is not None:
+                    due.append((spec.name, newest_due))
         for name, sensor_message in due:
             if rclpy is None or not rclpy.ok():
                 return

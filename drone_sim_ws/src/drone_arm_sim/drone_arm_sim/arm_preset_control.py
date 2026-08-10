@@ -131,6 +131,7 @@ def main(args=None) -> None:
             "work_b",
             "flight_work_a",
             "flight_work_b",
+            "demo_extended",
             "flight_micro_a",
             "flight_micro_b",
         ),
@@ -170,6 +171,24 @@ def main(args=None) -> None:
         while node.publisher.get_subscription_count() == 0:
             if time.monotonic() >= connection_deadline:
                 raise RuntimeError("arm_controller trajectory subscriber not found")
+            rclpy.spin_once(node, timeout_sec=0.1)
+        # Every preset invocation creates a fresh node.  Waiting only for the
+        # controller subscriber is insufficient: /joint_states may not have
+        # arrived yet, so send() would assume an all-zero start.  That is
+        # harmless for the first extension from home but turns a later retract
+        # into an instantaneous jump from the extended pose to zero.  Require
+        # the real six-joint start state before constructing the trajectory.
+        state_deadline = time.monotonic() + 5.0
+        while any(name not in node.latest_positions for name in JOINT_NAMES):
+            if time.monotonic() >= state_deadline:
+                missing = [
+                    name for name in JOINT_NAMES
+                    if name not in node.latest_positions
+                ]
+                raise RuntimeError(
+                    "joint state unavailable before trajectory start: "
+                    + ", ".join(missing)
+                )
             rclpy.spin_once(node, timeout_sec=0.1)
         node.publish_motion_active(True)
         node.send(target, parsed.duration)

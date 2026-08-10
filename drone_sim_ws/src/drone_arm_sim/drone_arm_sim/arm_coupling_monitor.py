@@ -99,6 +99,9 @@ class ArmCouplingMonitor(Node):
         self.wrench_publisher = self.create_publisher(
             WrenchStamped, "/my_drone/arm_reaction_wrench_body", 10
         )
+        self.gravity_shift_publisher = self.create_publisher(
+            WrenchStamped, "/my_drone/arm_gravity_shift_wrench_body", 10
+        )
         self.feedforward_publisher = self.create_publisher(
             AccelStamped, "/my_drone/arm_feedforward_acceleration_ned", 10
         )
@@ -173,6 +176,18 @@ class ArmCouplingMonitor(Node):
             float(value) for value in state.reaction_torque_body_nm
         )
         self.wrench_publisher.publish(wrench)
+
+        gravity_body_n = self.rotation.T @ np.array(
+            [0.0, 0.0, -state.mass_kg * 9.80665], dtype=float
+        )
+        gravity_shift = WrenchStamped()
+        gravity_shift.header.stamp = wrench.header.stamp
+        gravity_shift.header.frame_id = "base_link"
+        gravity_torque = np.cross(state.com_shift_m, gravity_body_n)
+        gravity_shift.wrench.torque.x, gravity_shift.wrench.torque.y, gravity_shift.wrench.torque.z = (
+            float(value) for value in gravity_torque
+        )
+        self.gravity_shift_publisher.publish(gravity_shift)
 
         acceleration = bounded_compensation_ned(
             state.reaction_force_body_n,

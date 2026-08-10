@@ -159,7 +159,7 @@ wsl.exe -d Ubuntu-24.04 -- bash -lc "cd '/mnt/e/清洁无人机/drone_sim_ws' &&
 保持上面的仿真终端运行，在第二个 PowerShell 窗口执行：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File "E:\清洁无人机\drone_sim_ws\scripts\start_ros2_dds_wasd.ps1"
+E:\清洁无人机\drone_sim_ws\scripts\start_wasd_control_windows.cmd
 ```
 
 控制终端必须保持焦点：
@@ -167,18 +167,29 @@ powershell -ExecutionPolicy Bypass -File "E:\清洁无人机\drone_sim_ws\script
 | 按键 | 动作 |
 |---|---|
 | `T` | 进入 Offboard、解锁并起飞到约 1.2 m |
-| `W` / `S` | 机头方向前进 / 后退 |
-| `A` / `D` | 机体左移 / 右移 |
-| `R` / `F` | 上升 / 下降 |
-| `Q` / `E` | 左偏航 / 右偏航 |
+| `W` / `S` | 按住时以 `0.40 m/s` 前进 / 后退 |
+| `A` / `D` | 按住时以 `0.40 m/s` 左移 / 右移 |
+| `R` / `F` | 按住时以 `0.15 m/s` 上升 / 下降 |
+| `Q` / `E` | 按住时以 `15 deg/s` 左偏航 / 右偏航 |
+| 松开方向键 / `H` | 立即停止速度指令，并锁定当前位置悬停 |
 | `L` | 自动降落并解除武装 |
 | `O` | 退出 Offboard，请求位置控制 |
 | `Z` | 未解锁时安全退出；已解锁时先请求降落 |
 | 连按两次 `X` | 失控时紧急解除武装（仅紧急使用） |
 
-不要同时启动旧版 `px4_wasd_control.py` 或其他 pymavlink Offboard 节点，以免多个控制器争抢同一 PX4 实例。
+新启动器直接读取 Windows 按键按下/松开状态；控制窗口失去焦点时也会自动发出悬停。启动前会终止遗留的 `dds_wasd_control`，确保同一 PX4 实例只有一个手动控制节点。不要同时启动旧版 `px4_wasd_control.py` 或其他 pymavlink Offboard 节点。
 
 ## 机械臂控制
+
+在第三个 PowerShell 窗口启动机械臂键盘：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File "E:\清洁无人机\drone_sim_ws\scripts\start_ros2_arm_keyboard.ps1"
+```
+
+空中优先使用 `1`、`2`、`3`（小幅工作姿态 A/B、收回）。`6` 是明显可见的完整演示：末端沿 CAD 工具轴直线伸出、保持、再沿原路径收回。地面使用 `0.12 m / 8 s`，检测到已解锁时自动切换为较安全的 `0.10 m / 30 s` 并在完成后留出 10 秒稳定时间。`4`、`5` 是完整诊断姿态，当前只建议地面使用。
+
+当前空中 `6` 已在独立 4 kg 调试机型完成一次全程与正常降落验证，但仍出现约 `0.822 m` 水平漂移和 `0.913 m` 高度跨度；这说明“按 6 立即掉地”的故障已被限速方案规避，但还不能宣称机械臂动作期间实现高精度悬停。正式 `7.735 kg` 版本推力余量更小，暂不接受该大动作。
 
 机械臂可在地面执行完整预设动作：
 
@@ -224,6 +235,28 @@ python3 scripts/rl_env_smoke_test.py --task hover --steps 200
 通过标志：`DDS_WASD_PTY_PASS`、`DDS_ARM_FLIGHT_PASS`、`ARM_COUPLING_ANALYSIS_PASS`。最近一次无机械臂 WASD 复测（`MOVE_STEP_M=0.08`、偏航步长 `3°`）的最大水平误差 `1.233 m`、高度误差 `1.197 m`、电机饱和率 `7.55%`，无 failsafe，并正常降落解除武装；`flight_micro_a/b` 机械臂安全飞行测试的水平漂移约 `0.357 m`、高度跨度约 `1.450 m`。
 
 ## 第 11 步：离线课程与 PX4/Gazebo 在线 RL 接口
+
+### 规则型监督智能体（第一阶段）
+
+`rule_supervisor` 在 PX4 外环观察水平/垂直漂移、机体倾角、机械臂反作用
+力矩和 8 路电机饱和率，并发布：
+
+- `/my_drone/supervisor/arm_speed_scale`：建议机械臂速度倍率；
+- `/my_drone/supervisor/action`：`NORMAL/SLOW/PAUSE/RETRACT/LAND`、触发原因
+  和当前指标的 JSON 状态。
+
+第一阶段默认仅提供建议，不直接修改电机、机械臂或 PX4 命令，因此不会改变
+当前可飞基线。正式仿真启动后可运行：
+
+```bash
+source /opt/ros/jazzy/setup.bash
+source /mnt/e/清洁无人机/drone_sim_ws/install/setup.bash
+ros2 run drone_arm_sim rule_supervisor
+```
+
+策略具有 2 秒恢复滞回：风险升级立即生效，恢复机械臂动作必须持续处于更安全
+区间。第二阶段再由经过安全门的命令网关消费这些建议，实现动态减速、暂停、
+自动收回以及 PX4 LAND 请求。
 
 `drone_sim_ws/src/drone_arm_sim/drone_arm_sim/rl_env.py` 提供一个与正式
 CAD 配置共享推力分配、电池模型和 SO101 质量/质心/惯量模型的离线

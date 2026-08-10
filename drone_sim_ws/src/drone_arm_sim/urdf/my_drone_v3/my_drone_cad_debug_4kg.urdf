@@ -1,0 +1,737 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="my_drone_v3_cad_debug_4kg">
+  <link name="base_link">
+    <inertial>
+      <origin xyz="-0.0192505958007 0.00346272297077 -0.435140979065" rpy="0 0 0" />
+      <mass value="1.29748866451" />
+      <inertia ixx="0.0376720501416" ixy="-0.000519185975628" ixz="0.00638882612551" iyy="0.030630011258" iyz="-0.000841070485259" izz="0.137802797854" />
+    </inertial>
+    <visual name="base_cad_visual">
+      <origin xyz="0.252707546 0.253348461 -0.2958022" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/base_body.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="base_cad_visual_material">
+        <color rgba="0.60 0.64 0.70 1" />
+      </material>
+    </visual>
+    <collision name="base_box_collision">
+      <origin xyz="5.24520874e-09 -2.14576721e-09 -0.0374999962" rpy="0 0 0" />
+      <geometry>
+        <box size="0.409830891 0.409830906 0.291000023" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="arm_base_link">
+    <inertial>
+      <origin xyz="-0.0565631223 -7.86781311e-09 -0.155794189" rpy="0 0 0" />
+      <mass value="0.383047771309" />
+      <inertia ixx="0.00261884383426" ixy="0" ixz="0" iyy="0.00285319213868" iyz="0" izz="0.0046770863178" />
+    </inertial>
+    <visual name="arm_base_cad_visual">
+      <origin xyz="0.252707546 0.253348461 -0.2958022" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_arm_base.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="arm_base_cad_visual_material">
+        <color rgba="0.95 0.45 0.05 1" />
+      </material>
+    </visual>
+  </link>
+  <link name="shoulder_link">
+    <inertial>
+      <origin xyz="0.0194014622 -0.00114022327 -0.0121820592" rpy="0 0 0" />
+      <mass value="0.156083908899" />
+      <inertia ixx="0.000198774958726" ixy="0" ixz="0" iyy="0.000211756911214" iyz="0" izz="9.19046197859e-05" />
+    </inertial>
+    <visual name="shoulder_cad_visual">
+      <origin xyz="0.25298225 0.253249028 -0.128435351" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_shoulder.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="shoulder_cad_visual_material">
+        <color rgba="0.95 0.45 0.05 1" />
+      </material>
+    </visual>
+  </link>
+  <link name="upper_arm_link">
+    <inertial>
+      <origin xyz="-0.0590927725 -0.0174425581 -0.0120885197" rpy="0 0 0" />
+      <mass value="0.200580297743" />
+      <inertia ixx="0.00012595829643" ixy="0" ixz="0" iyy="0.000390304012971" iyz="0" izz="0.000418823540067" />
+    </inertial>
+    <visual name="upper_arm_cad_visual">
+      <origin xyz="0.221665322 0.239694168 -0.0711075035" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_upper_arm.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="upper_arm_cad_visual_material">
+        <color rgba="0.95 0.45 0.05 1" />
+      </material>
+    </visual>
+  </link>
+  <link name="lower_arm_link">
+    <inertial>
+      <origin xyz="0.0660297412 -0.0179898161 -0.00268267124" rpy="0 0 0" />
+      <mass value="0.186434493672" />
+      <inertia ixx="8.7733024664e-05" ixy="0" ixz="0" iyy="0.000403012539773" iyz="0" izz="0.000447132092885" />
+    </inertial>
+    <visual name="lower_arm_cad_visual">
+      <origin xyz="0.33410647 0.241205466 -0.0423915164" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_lower_arm.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="lower_arm_cad_visual_material">
+        <color rgba="0.95 0.45 0.05 1" />
+      </material>
+    </visual>
+  </link>
+  <link name="wrist_link">
+    <inertial>
+      <origin xyz="0.0333907008 -0.0267256382 -0.00203293737" rpy="0 0 0" />
+      <mass value="0.0942784708308" />
+      <inertia ixx="5.64564750133e-05" ixy="0" ixz="0" iyy="8.28973316768e-05" iyz="0" izz="0.000119144385124" />
+    </inertial>
+    <visual name="wrist_cad_visual">
+      <origin xyz="0.19994836 0.243287629 -0.0385694221" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_wrist.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="wrist_cad_visual_material">
+        <color rgba="0.95 0.45 0.05 1" />
+      </material>
+    </visual>
+  </link>
+  <link name="gripper_link">
+    <inertial>
+      <origin xyz="0.0278397323 -0.000475002761 0.0098625121" rpy="0 0 0" />
+      <mass value="0.116922246063" />
+      <inertia ixx="9.43995729251e-05" ixy="0" ixz="0" iyy="9.86133615638e-05" iyz="0" izz="6.82885666793e-05" />
+    </inertial>
+    <visual name="gripper_cad_visual">
+      <origin xyz="0.141749995 0.260410266 -0.0387828617" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_gripper.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="gripper_cad_visual_material">
+        <color rgba="0.95 0.45 0.05 1" />
+      </material>
+    </visual>
+    <collision name="gripper_cad_collision">
+      <origin xyz="0.141749995 0.260410266 -0.0387828617" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_gripper.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="moving_jaw_link">
+    <inertial>
+      <origin xyz="0.036497826 -0.0174180508 0.0249397979" rpy="0 0 0" />
+      <mass value="0.0676600484287" />
+      <inertia ixx="0.00010322393807" ixy="0" ixz="0" iyy="7.71841205006e-05" iyz="0" izz="0.000125184627513" />
+    </inertial>
+    <visual name="moving_jaw_cad_visual">
+      <origin xyz="0.114821133 0.276113344 -0.0188083329" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_moving_jaw.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="moving_jaw_cad_visual_material">
+        <color rgba="0.95 0.45 0.05 1" />
+      </material>
+    </visual>
+    <collision name="moving_jaw_cad_collision">
+      <origin xyz="0.114821133 0.276113344 -0.0188083329" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_moving_jaw.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="arm_mount" type="fixed">
+    <origin xyz="0 0 0" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="arm_base_link" />
+  </joint>
+  <gazebo reference="arm_mount">
+    <preserveFixedJoint>true</preserveFixedJoint>
+  </gazebo>
+  <joint name="shoulder_pan" type="revolute">
+    <origin xyz="-0.000274704128 9.94324698e-05 -0.167366849" rpy="0 0 0" />
+    <parent link="arm_base_link" />
+    <child link="shoulder_link" />
+    <axis xyz="0.0087265355 4.71844785e-16 -0.999961923" />
+    <limit lower="-1.91986" upper="1.91986" effort="3.0" velocity="2.0" />
+    <dynamics damping="0.25" friction="0.05" />
+  </joint>
+  <joint name="shoulder_lift" type="revolute">
+    <origin xyz="0.0313169276 0.0135548602 -0.0573278478" rpy="0 0 0" />
+    <parent link="shoulder_link" />
+    <child link="upper_arm_link" />
+    <axis xyz="0.00872620322 0.999961923 7.61524218e-05" />
+    <limit lower="-1.74533" upper="1.74533" effort="3.0" velocity="2.0" />
+    <dynamics damping="0.25" friction="0.05" />
+  </joint>
+  <joint name="elbow_flex" type="revolute">
+    <origin xyz="-0.112441148 -0.0015112976 -0.0287159872" rpy="0 0 0" />
+    <parent link="upper_arm_link" />
+    <child link="lower_arm_link" />
+    <axis xyz="0.00864971853 0.999923848 0.00880235274" />
+    <limit lower="-1.69" upper="1.69" effort="3.0" velocity="2.0" />
+    <dynamics damping="0.25" friction="0.05" />
+  </joint>
+  <joint name="wrist_flex" type="revolute">
+    <origin xyz="0.13415811 -0.00208216344 -0.0038220943" rpy="0 0 0" />
+    <parent link="lower_arm_link" />
+    <child link="wrist_link" />
+    <axis xyz="-0.000152960666 0.999847701 0.0174514039" />
+    <limit lower="-1.65806" upper="1.65806" effort="2.0" velocity="2.0" />
+    <dynamics damping="0.2" friction="0.04" />
+  </joint>
+  <joint name="wrist_roll" type="revolute">
+    <origin xyz="0.0581983646 -0.0171226371 0.000213439633" rpy="0 0 0" />
+    <parent link="wrist_link" />
+    <child link="gripper_link" />
+    <axis xyz="0.999961256 -6.64521574e-07 0.0088026821" />
+    <limit lower="-2.74385" upper="2.84121" effort="2.0" velocity="2.0" />
+    <dynamics damping="0.15" friction="0.03" />
+  </joint>
+  <joint name="gripper" type="revolute">
+    <origin xyz="0.0269288623 -0.0157030777 -0.0199745288" rpy="0 0 0" />
+    <parent link="gripper_link" />
+    <child link="moving_jaw_link" />
+    <axis xyz="7.61495407e-05 -0.999961926 -0.00872587307" />
+    <limit lower="-0.174533" upper="1.74533" effort="1.0" velocity="2.0" />
+    <dynamics damping="0.15" friction="0.03" />
+  </joint>
+  <link name="motor_1_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0275300982222" />
+      <inertia ixx="7.70639341435e-06" ixy="0" ixz="0" iyy="7.70103582552e-06" iyz="0" izz="9.96238496222e-06" />
+    </inertial>
+    <visual name="motor_1_visual">
+      <origin xyz="0.0711016583 0.329954348 -0.287488356" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/motor_1.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="motor_1_visual_material">
+        <color rgba="0.18 0.20 0.23 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="motor_1_mount" type="fixed">
+    <origin xyz="0.181605887 -0.0766058875 -0.00831384388" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="motor_1_link" />
+  </joint>
+  <link name="rotor_1_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.159657886692" />
+      <inertia ixx="0.00040406480201" ixy="0" ixz="0" iyy="0.00040406480201" iyz="0" izz="0.00040406480201" />
+    </inertial>
+    <visual name="rotor_1_visual">
+      <origin xyz="0.20470417 0.196817983 -0.343490466" rpy="1.95839301 -0.361367124 -1.7141439" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/rotor_1.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="rotor_1_visual_material">
+        <color rgba="0.08 0.18 0.72 0.85" />
+      </material>
+    </visual>
+  </link>
+  <joint name="rotor_1_joint" type="continuous">
+    <origin xyz="0.00106066017 -0.00106066017 0.00259807621" rpy="0.411516846 0.333473172 0.141897055" />
+    <parent link="motor_1_link" />
+    <child link="rotor_1_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="0.0001" friction="0" />
+  </joint>
+  <link name="motor_2_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.027530105106" />
+      <inertia ixx="7.70897176259e-06" ixy="0" ixz="0" iyy="7.70551932411e-06" iyz="0" izz="9.96743863111e-06" />
+    </inertial>
+    <visual name="motor_2_visual">
+      <origin xyz="0.434313433 0.176742573 -0.287488356" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/motor_2.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="motor_2_visual_material">
+        <color rgba="0.18 0.20 0.23 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="motor_2_mount" type="fixed">
+    <origin xyz="-0.181605887 0.0766058875 -0.00831384388" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="motor_2_link" />
+  </joint>
+  <link name="rotor_2_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.159657942145" />
+      <inertia ixx="0.000404064942555" ixy="0" ixz="0" iyy="0.000404064942555" iyz="0" izz="0.000404064942555" />
+    </inertial>
+    <visual name="rotor_2_visual">
+      <origin xyz="0.335778582 0.272292212 -0.343037271" rpy="1.18319964 0.361367124 -1.7141439" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/rotor_2.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="rotor_2_visual_material">
+        <color rgba="0.08 0.18 0.72 0.85" />
+      </material>
+    </visual>
+  </link>
+  <joint name="rotor_2_joint" type="continuous">
+    <origin xyz="-0.00106066017 0.00106066017 0.00259807621" rpy="-0.411516846 -0.333473172 0.141897055" />
+    <parent link="motor_2_link" />
+    <child link="rotor_2_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="0.0001" friction="0" />
+  </joint>
+  <link name="motor_3_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0275301050104" />
+      <inertia ixx="7.70551929546e-06" ixy="0" ixz="0" iyy="7.70897173394e-06" iyz="0" izz="9.96743853549e-06" />
+    </inertial>
+    <visual name="motor_3_visual">
+      <origin xyz="0.176101658 0.434954348 -0.304116044" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/motor_3.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="motor_3_visual_material">
+        <color rgba="0.18 0.20 0.23 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="motor_3_mount" type="fixed">
+    <origin xyz="0.0766058875 -0.181605887 0.00831384388" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="motor_3_link" />
+  </joint>
+  <link name="rotor_3_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.159657892429" />
+      <inertia ixx="0.000404064816352" ixy="0" ixz="0" iyy="0.000404064816352" iyz="0" izz="0.000404064816352" />
+    </inertial>
+    <visual name="rotor_3_visual">
+      <origin xyz="0.123305895 0.517634539 -0.168853974" rpy="1.18319964 0.361367124 -1.7141439" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/rotor_3.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="rotor_3_visual_material">
+        <color rgba="0.08 0.18 0.72 0.85" />
+      </material>
+    </visual>
+  </link>
+  <joint name="rotor_3_joint" type="continuous">
+    <origin xyz="0.00106066017 -0.00106066017 -0.00259807621" rpy="-0.411516846 -0.333473172 0.141897055" />
+    <parent link="motor_3_link" />
+    <child link="rotor_3_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="0.0001" friction="0" />
+  </joint>
+  <link name="motor_4_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0275301035763" />
+      <inertia ixx="7.70273410798e-06" ixy="0" ixz="0" iyy="7.70741931165e-06" iyz="0" izz="9.96440382924e-06" />
+    </inertial>
+    <visual name="motor_4_visual">
+      <origin xyz="0.434313433 0.329954348 -0.287488356" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/motor_4.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="motor_4_visual_material">
+        <color rgba="0.18 0.20 0.23 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="motor_4_mount" type="fixed">
+    <origin xyz="-0.181605887 -0.0766058875 -0.00831384388" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="motor_4_link" />
+  </joint>
+  <link name="rotor_4_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.159657885736" />
+      <inertia ixx="0.00040405819547" ixy="0" ixz="0" iyy="0.00040405819547" iyz="0" izz="0.00040405819547" />
+    </inertial>
+    <visual name="rotor_4_visual">
+      <origin xyz="0.268068358 -0.196817983 0.522181685" rpy="-1.95839301 0.361367124 1.42744876" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/rotor_4.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="rotor_4_visual_material">
+        <color rgba="0.08 0.18 0.72 0.85" />
+      </material>
+    </visual>
+  </link>
+  <joint name="rotor_4_joint" type="continuous">
+    <origin xyz="-0.00106066017 -0.00106066017 0.00259807621" rpy="-2.73007581 -0.333473172 -0.141897055" />
+    <parent link="motor_4_link" />
+    <child link="rotor_4_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="0.0001" friction="0" />
+  </joint>
+  <link name="motor_5_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0275301065401" />
+      <inertia ixx="7.70909660804e-06" ixy="0" ixz="0" iyy="7.70594673189e-06" iyz="0" izz="9.96804851708e-06" />
+    </inertial>
+    <visual name="motor_5_visual">
+      <origin xyz="0.0711016583 0.176742573 -0.287488356" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/motor_5.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="motor_5_visual_material">
+        <color rgba="0.18 0.20 0.23 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="motor_5_mount" type="fixed">
+    <origin xyz="0.181605887 0.0766058875 -0.00831384388" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="motor_5_link" />
+  </joint>
+  <link name="rotor_5_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.159657920155" />
+      <inertia ixx="0.000404064886146" ixy="0" ixz="0" iyy="0.000404064886146" iyz="0" izz="0.000404064886146" />
+    </inertial>
+    <visual name="rotor_5_visual">
+      <origin xyz="0.136993945 -0.272292212 0.164346051" rpy="-1.18319964 -0.361367124 1.42744876" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/rotor_5.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="rotor_5_visual_material">
+        <color rgba="0.08 0.18 0.72 0.85" />
+      </material>
+    </visual>
+  </link>
+  <joint name="rotor_5_joint" type="continuous">
+    <origin xyz="0.00106066017 0.00106066017 0.00259807621" rpy="2.73007581 0.333473172 -0.141897055" />
+    <parent link="motor_5_link" />
+    <child link="rotor_5_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="0.0001" friction="0" />
+  </joint>
+  <link name="motor_6_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0275300962145" />
+      <inertia ixx="7.7010344392e-06" ixy="0" ixz="0" iyy="7.70638632021e-06" iyz="0" izz="9.96237693114e-06" />
+    </inertial>
+    <visual name="motor_6_visual">
+      <origin xyz="0.329313433 0.0717425735 -0.304116044" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/motor_6.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="motor_6_visual_material">
+        <color rgba="0.18 0.20 0.23 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="motor_6_mount" type="fixed">
+    <origin xyz="-0.0766058875 0.181605887 0.00831384388" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="motor_6_link" />
+  </joint>
+  <link name="rotor_6_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.159657926848" />
+      <inertia ixx="0.000404064903355" ixy="0" ixz="0" iyy="0.000404064903355" iyz="0" izz="0.000404064903355" />
+    </inertial>
+    <visual name="rotor_6_visual">
+      <origin xyz="0.417176857 -0.0485243439 -0.169307169" rpy="1.95839301 -0.361367124 -1.7141439" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/rotor_6.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="rotor_6_visual_material">
+        <color rgba="0.08 0.18 0.72 0.85" />
+      </material>
+    </visual>
+  </link>
+  <joint name="rotor_6_joint" type="continuous">
+    <origin xyz="-0.00106066017 0.00106066017 -0.00259807621" rpy="0.411516846 0.333473172 0.141897055" />
+    <parent link="motor_6_link" />
+    <child link="rotor_6_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="0.0001" friction="0" />
+  </joint>
+  <link name="motor_7_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.027530107305" />
+      <inertia ixx="7.70594695183e-06" ixy="0" ixz="0" iyy="7.70909681841e-06" iyz="0" izz="9.96804880393e-06" />
+    </inertial>
+    <visual name="motor_7_visual">
+      <origin xyz="0.176101658 0.0717425735 -0.304116044" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/motor_7.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="motor_7_visual_material">
+        <color rgba="0.18 0.20 0.23 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="motor_7_mount" type="fixed">
+    <origin xyz="0.0766058875 0.181605887 0.00831384388" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="motor_7_link" />
+  </joint>
+  <link name="rotor_7_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.159657919199" />
+      <inertia ixx="0.000404064883278" ixy="0" ixz="0" iyy="0.000404064883278" iyz="0" izz="0.000404064883278" />
+    </inertial>
+    <visual name="rotor_7_visual">
+      <origin xyz="0.0555956707 0.0485243439 0.347998388" rpy="-1.95839301 0.361367124 1.42744876" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/rotor_7.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="rotor_7_visual_material">
+        <color rgba="0.08 0.18 0.72 0.85" />
+      </material>
+    </visual>
+  </link>
+  <joint name="rotor_7_joint" type="continuous">
+    <origin xyz="0.00106066017 0.00106066017 -0.00259807621" rpy="-2.73007581 -0.333473172 -0.141897055" />
+    <parent link="motor_7_link" />
+    <child link="rotor_7_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="0.0001" friction="0" />
+  </joint>
+  <link name="motor_8_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.0275301023334" />
+      <inertia ixx="7.7074254975e-06" ixy="0" ixz="0" iyy="7.70273376378e-06" iyz="0" izz="9.96440985257e-06" />
+    </inertial>
+    <visual name="motor_8_visual">
+      <origin xyz="0.329313433 0.434954348 -0.304116044" rpy="1.57079633 0 -1.57079633" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/motor_8.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="motor_8_visual_material">
+        <color rgba="0.18 0.20 0.23 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="motor_8_mount" type="fixed">
+    <origin xyz="-0.0766058875 -0.181605887 0.00831384388" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="motor_8_link" />
+  </joint>
+  <link name="rotor_8_link">
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <mass value="0.159657901033" />
+      <inertia ixx="0.000404058432579" ixy="0" ixz="0" iyy="0.000404058432579" iyz="0" izz="0.000404058432579" />
+    </inertial>
+    <visual name="rotor_8_visual">
+      <origin xyz="0.349466633 -0.517634539 -0.00983724553" rpy="-1.18319964 -0.361367124 1.42744876" />
+      <geometry>
+        <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/rotor_8.stl" scale="0.001 0.001 0.001" />
+      </geometry>
+      <material name="rotor_8_visual_material">
+        <color rgba="0.08 0.18 0.72 0.85" />
+      </material>
+    </visual>
+  </link>
+  <joint name="rotor_8_joint" type="continuous">
+    <origin xyz="-0.00106066017 -0.00106066017 -0.00259807621" rpy="2.73007581 0.333473172 -0.141897055" />
+    <parent link="motor_8_link" />
+    <child link="rotor_8_link" />
+    <axis xyz="0 0 1" />
+    <dynamics damping="0.0001" friction="0" />
+  </joint>
+  <gazebo reference="base_link">
+    <sensor name="air_pressure_sensor" type="air_pressure">
+      <gz_frame_id>base_link</gz_frame_id>
+      <always_on>1</always_on>
+      <update_rate>50</update_rate>
+      <topic>/my_drone/raw/air_pressure</topic>
+      <air_pressure>
+        <pressure>
+          <noise type="gaussian">
+            <mean>0</mean>
+            <stddev>3</stddev>
+          </noise>
+        </pressure>
+      </air_pressure>
+    </sensor>
+    <sensor name="magnetometer_sensor" type="magnetometer">
+      <gz_frame_id>base_link</gz_frame_id>
+      <always_on>1</always_on>
+      <update_rate>100</update_rate>
+      <topic>/my_drone/raw/magnetometer</topic>
+      <magnetometer>
+        <x>
+          <noise type="gaussian">
+            <stddev>0.0001</stddev>
+          </noise>
+        </x>
+        <y>
+          <noise type="gaussian">
+            <stddev>0.0001</stddev>
+          </noise>
+        </y>
+        <z>
+          <noise type="gaussian">
+            <stddev>0.0001</stddev>
+          </noise>
+        </z>
+      </magnetometer>
+    </sensor>
+    <sensor name="imu_sensor" type="imu">
+      <gz_frame_id>base_link</gz_frame_id>
+      <always_on>1</always_on>
+      <update_rate>250</update_rate>
+      <topic>/my_drone/raw/imu</topic>
+      <imu>
+        <angular_velocity>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0008726646</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0008726646</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.0008726646</stddev>
+            </noise>
+          </z>
+        </angular_velocity>
+        <linear_acceleration>
+          <x>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.00637</stddev>
+            </noise>
+          </x>
+          <y>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.00637</stddev>
+            </noise>
+          </y>
+          <z>
+            <noise type="gaussian">
+              <mean>0.0</mean>
+              <stddev>0.00686</stddev>
+            </noise>
+          </z>
+        </linear_acceleration>
+      </imu>
+    </sensor>
+    <sensor name="navsat_sensor" type="navsat">
+      <gz_frame_id>base_link</gz_frame_id>
+      <always_on>1</always_on>
+      <update_rate>30</update_rate>
+      <topic>/my_drone/raw/navsat</topic>
+    </sensor>
+  </gazebo>
+  <ros2_control name="GazeboSimSystem" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <joint name="shoulder_pan">
+      <command_interface name="position">
+        <param name="min">-1.91986</param>
+        <param name="max">1.91986</param>
+      </command_interface>
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity" />
+    </joint>
+    <joint name="shoulder_lift">
+      <command_interface name="position">
+        <param name="min">-1.74533</param>
+        <param name="max">1.74533</param>
+      </command_interface>
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity" />
+    </joint>
+    <joint name="elbow_flex">
+      <command_interface name="position">
+        <param name="min">-1.69</param>
+        <param name="max">1.69</param>
+      </command_interface>
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity" />
+    </joint>
+    <joint name="wrist_flex">
+      <command_interface name="position">
+        <param name="min">-1.65806</param>
+        <param name="max">1.65806</param>
+      </command_interface>
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity" />
+    </joint>
+    <joint name="wrist_roll">
+      <command_interface name="position">
+        <param name="min">-2.74385</param>
+        <param name="max">2.84121</param>
+      </command_interface>
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity" />
+    </joint>
+    <joint name="gripper">
+      <command_interface name="position">
+        <param name="min">-0.174533</param>
+        <param name="max">1.74533</param>
+      </command_interface>
+      <state_interface name="position">
+        <param name="initial_value">0.0</param>
+      </state_interface>
+      <state_interface name="velocity" />
+    </joint>
+  </ros2_control>
+  <gazebo>
+    <plugin filename="libgz_ros2_control-system.so" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find drone_arm_sim)/config/so101_ros2_control.yaml</parameters>
+      <hold_joints>true</hold_joints>
+      <position_proportional_gain>0.5</position_proportional_gain>
+    </plugin>
+    <plugin filename="gz-sim-joint-state-publisher-system" name="gz::sim::systems::JointStatePublisher">
+      <joint_name>shoulder_pan</joint_name>
+      <joint_name>shoulder_lift</joint_name>
+      <joint_name>elbow_flex</joint_name>
+      <joint_name>wrist_flex</joint_name>
+      <joint_name>wrist_roll</joint_name>
+      <joint_name>gripper</joint_name>
+    </plugin>
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <dimensions>3</dimensions>
+      <odom_publish_frequency>250</odom_publish_frequency>
+      <odom_topic>/model/my_drone/odometry</odom_topic>
+      <odom_frame>world</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+    </plugin>
+  </gazebo>
+</robot>

@@ -93,7 +93,7 @@ def generate(config_path: Path, output: Path) -> None:
             "param set-default MPC_XY_VEL_MAX 0.20",
             "param set-default MPC_Z_P 0.15",
             "param set-default MPC_Z_VEL_P_ACC 2.00",
-            "param set-default MPC_Z_VEL_I_ACC 0.80",
+            "param set-default MPC_Z_VEL_I_ACC 0.35",
             "param set-default MPC_TKO_RAMP_T 0.80",
             "param set-default MPC_Z_VEL_MAX_UP 0.20",
             "param set-default MPC_Z_VEL_MAX_DN 0.30",

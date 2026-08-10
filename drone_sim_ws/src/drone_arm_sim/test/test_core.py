@@ -41,6 +41,11 @@ from drone_arm_sim.gazebo_direct_motor_model import (
     torque_feedforward_command_delta,
 )
 from drone_arm_sim.inverse_kinematics import solve_ik
+from drone_arm_sim.cartesian_arm_demo import (
+    TOOL_FORWARD_AXIS_LOCAL,
+    _trajectory_points,
+    plan_tool_forward_path,
+)
 from drone_arm_sim.gazebo_sensor_delay import message_stamp_seconds
 from drone_arm_sim.model_analysis import UrdfModel, _rpy_matrix
 from drone_arm_sim.rl_env import make_default_env
@@ -125,6 +130,18 @@ class CoreRegressionTest(unittest.TestCase):
         trim_force, trim_torque = direct_wrench_flu(config, compensated)
         self.assertGreater(float(np.linalg.norm(trim_torque - base_torque)), 1e-4)
         self.assertLess(float(np.linalg.norm(trim_force - base_force)), 1.0)
+
+    def test_static_com_low_pass_is_bounded_and_default_can_be_noop(self):
+        from drone_arm_sim.gazebo_direct_motor_model import first_order_vector_step
+
+        target = np.array([0.0, 0.624, 0.0])
+        unchanged = first_order_vector_step(np.zeros(3), target, 0.0, 5.0)
+        np.testing.assert_allclose(unchanged, np.zeros(3))
+        first = first_order_vector_step(np.zeros(3), target, 0.1, 5.0)
+        self.assertGreater(first[1], 0.0)
+        self.assertLess(first[1], target[1])
+        instant = first_order_vector_step(np.zeros(3), target, 0.1, 0.0)
+        np.testing.assert_allclose(instant, target)
 
     def test_cad_flight_reaction_torque_signs_match_cw_ccw(self):
         config = json.loads(
@@ -605,7 +622,7 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertRegex(airframe, r"HTE_THR_RANGE\s+0\.01")
         self.assertRegex(airframe, r"HTE_HT_ERR_INIT\s+0\.00")
         self.assertRegex(airframe, r"MPC_TKO_RAMP_T\s+0\.80")
-        self.assertRegex(airframe, r"MPC_Z_VEL_I_ACC\s+0\.80")
+        self.assertRegex(airframe, r"MPC_Z_VEL_I_ACC\s+0\.35")
 
     def test_7p735_allocation_and_wrench_reference_points_are_distinct(self):
         config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
@@ -654,7 +671,7 @@ class CoreRegressionTest(unittest.TestCase):
             self.assertAlmostEqual(item["rise_time_constant_s"], 0.035)
             self.assertAlmostEqual(item["fall_time_constant_s"], 0.035)
 
-    def test_7p735_takeoff_fixture_releases_below_hover_force(self):
+    def test_7p735_ground_contact_pads_release_for_takeoff(self):
         config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
         release = config["takeoff_support_release"]
         self.assertTrue(release["enabled"])
@@ -670,8 +687,8 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertLessEqual(release["maximum_com_torque_nm"], 0.05)
         self.assertGreaterEqual(release["hold_time_s"], 0.15)
         self.assertTrue(release["restore_on_land"])
-        self.assertGreaterEqual(release["restore_clearance_m"], 0.30)
-        self.assertLessEqual(release["restore_clearance_m"], 0.60)
+        self.assertGreaterEqual(release["restore_clearance_m"], 0.03)
+        self.assertLessEqual(release["restore_clearance_m"], 0.10)
         restore_path = (CAD_V3_FLIGHT_CONFIG_PATH.parent / release["restore_sdf_filename"]).resolve()
         self.assertEqual(restore_path, LANDING_SUPPORT_PATH.resolve())
         self.assertTrue(restore_path.is_file())
@@ -704,8 +721,8 @@ class CoreRegressionTest(unittest.TestCase):
 
         clearance = release["restore_clearance_m"]
         self.assertFalse(landing_support_restore_ready(1.5, 0.8, clearance))
-        self.assertTrue(landing_support_restore_ready(1.2, 0.8, clearance))
-        self.assertFalse(landing_support_restore_ready(1.2, None, clearance))
+        self.assertTrue(landing_support_restore_ready(0.84, 0.8, clearance))
+        self.assertFalse(landing_support_restore_ready(0.84, None, clearance))
 
     def test_each_motor_command_produces_force_and_torque(self):
         config = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
@@ -755,6 +772,64 @@ class CoreRegressionTest(unittest.TestCase):
                 self.assertGreaterEqual(target[index], limit["lower_rad"])
                 self.assertLessEqual(target[index], limit["upper_rad"])
                 self.assertLessEqual(abs(target[index] - retracted[index]), 0.04)
+
+    def test_visible_demo_preset_is_bounded_and_clearly_extends_arm(self):
+        reference = json.loads(SO101_MOTION_REFERENCE_PATH.read_text(encoding="utf-8"))
+        names = (
+            "shoulder_pan", "shoulder_lift", "elbow_flex",
+            "wrist_flex", "wrist_roll", "gripper",
+        )
+        joints = {item["name"]: item for item in reference["joints"]}
+        target = reference["presets"]["demo_extended"]
+        for name, value in zip(names, target):
+            self.assertGreaterEqual(value, joints[name]["lower_rad"])
+            self.assertLessEqual(value, joints[name]["upper_rad"])
+
+        model = UrdfModel(CAD_V3_FORMAL_URDF)
+        home_map = model.link_transforms(dict(zip(names, reference["presets"]["retracted"])))
+        demo_map = model.link_transforms(dict(zip(names, target)))
+        shoulder = home_map["shoulder_link"][:3, 3]
+        home_reach = float(np.linalg.norm(home_map["gripper_link"][:3, 3] - shoulder))
+        demo_reach = float(np.linalg.norm(demo_map["gripper_link"][:3, 3] - shoulder))
+        self.assertGreater(demo_reach - home_reach, 0.15)
+
+    def test_cartesian_demo_is_straight_bounded_and_returns_exact_path(self):
+        model = UrdfModel(CAD_V3_FORMAL_URDF)
+        start = {
+            name: 0.0 for name in (
+                "shoulder_pan", "shoulder_lift", "elbow_flex",
+                "wrist_flex", "wrist_roll", "gripper",
+            )
+        }
+        path, evidence = plan_tool_forward_path(model, start)
+        self.assertEqual(len(path), 25)
+        origin = np.asarray(evidence["start_position_m"])
+        axis = np.asarray(evidence["tool_forward_axis_base_at_start"])
+        for index, positions in enumerate(path):
+            transform, _ = model.forward_kinematics("gripper_link", positions)
+            displacement = transform[:3, 3] - origin
+            expected = 0.005 * index
+            self.assertLess(float(np.linalg.norm(np.cross(displacement, axis))), 2.0e-4)
+            self.assertAlmostEqual(float(displacement @ axis), expected, delta=2.0e-4)
+            for name in ("shoulder_pan", "shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll"):
+                lower, upper = model.joint_limits(name)
+                margin = np.deg2rad(5.0)
+                self.assertGreaterEqual(positions[name], lower + margin)
+                self.assertLessEqual(positions[name], upper - margin)
+        self.assertTrue(np.allclose(TOOL_FORWARD_AXIS_LOCAL, [0.999961256, -0.000000665, 0.008802682]))
+        points = _trajectory_points(path, 0.0, 8.0, 3.0)
+        outward_count = len(path)
+        returned = points[outward_count + 1:]
+        self.assertEqual(len(returned), outward_count - 1)
+        timestamps = [
+            point.time_from_start.sec + point.time_from_start.nanosec * 1.0e-9
+            for point in points
+        ]
+        self.assertTrue(all(right > left for left, right in zip(timestamps, timestamps[1:])))
+        for expected, actual in zip(reversed(path[:-1]), returned):
+            self.assertTrue(np.allclose(actual.positions[:5], [expected[name] for name in (
+                "shoulder_pan", "shoulder_lift", "elbow_flex", "wrist_flex", "wrist_roll",
+            )]))
 
     def test_formal_arm_position_hold_gain_is_nonoscillatory_and_not_weak(self):
         root = ET.parse(CAD_V3_FORMAL_URDF).getroot()
@@ -830,11 +905,19 @@ class CoreRegressionTest(unittest.TestCase):
             "./model[@name='my_drone_bringup_landing_support']"
         )
         self.assertIsNotNone(fixture)
+        catch = world.find(
+            "./model[@name='ground_plane']/link/collision[@name='emergency_catch_collision']"
+        )
+        self.assertIsNotNone(catch)
+        self.assertLess(float(catch.findtext("./pose").split()[2]), -1.0)
         self.assertEqual(fixture.findtext("./static"), "true")
         supports = fixture.findall("./link")
         self.assertEqual(len(supports), 4)
         for link in supports:
             self.assertIsNotNone(link.find("./collision/geometry/box"))
+            pose = [float(value) for value in link.findtext("./pose").split()]
+            height = float(link.findtext("./collision/geometry/box/size").split()[2])
+            self.assertAlmostEqual(pose[2] + height / 2.0, 0.0, places=6)
             friction = link.findtext("./collision/surface/friction/ode/mu")
             self.assertIsNotNone(friction)
             self.assertLessEqual(float(friction), 0.05)
@@ -844,7 +927,14 @@ class CoreRegressionTest(unittest.TestCase):
         )
         self.assertIsNotNone(standalone)
         self.assertEqual(standalone.findtext("./static"), "true")
-        self.assertEqual(len(standalone.findall("./link")), 4)
+        landing_links = standalone.findall("./link")
+        self.assertEqual(len(landing_links), 4)
+        for link in landing_links:
+            pose = [float(value) for value in link.findtext("./pose").split()]
+            height = float(link.findtext("./collision/geometry/box/size").split()[2])
+            # The landing fixture is deliberately 20 mm below the startup
+            # support so AUTO LAND still observes downward motion at contact.
+            self.assertAlmostEqual(pose[2] + height / 2.0, 0.797, places=6)
 
     def test_arm_feedforward_is_bounded_and_frame_converted(self):
         result = bounded_compensation_ned(

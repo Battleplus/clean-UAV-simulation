@@ -1,0 +1,31 @@
+diff --git a/ROMFS/px4fmu_common/init.d-posix/airframes/CMakeLists.txt b/ROMFS/px4fmu_common/init.d-posix/airframes/CMakeLists.txt
+index ce93573..6a97c72 100644
+--- a/ROMFS/px4fmu_common/init.d-posix/airframes/CMakeLists.txt
++++ b/ROMFS/px4fmu_common/init.d-posix/airframes/CMakeLists.txt
+@@ -82,6 +82,9 @@ px4_add_romfs_files(
+ 	4011_gz_lawnmower
+ 	4013_gz_x500_lidar_2d
+ 	4014_gz_x500_mono_cam_down
++	4026_gz_my_drone_octorotor_7p735
++	4025_gz_my_drone_octorotor_pitch_corrected
++	4015_gz_my_drone_octorotor
+ 	4016_gz_x500_lidar_down
+ 	4017_gz_x500_lidar_front
+ 	4018_gz_quadtailsitter
+diff --git a/src/modules/uxrce_dds_client/dds_topics.yaml b/src/modules/uxrce_dds_client/dds_topics.yaml
+index 40ab2b7..bdf328f 100644
+--- a/src/modules/uxrce_dds_client/dds_topics.yaml
++++ b/src/modules/uxrce_dds_client/dds_topics.yaml
+@@ -97,6 +97,12 @@ publications:
+     type: px4_msgs::msg::AirspeedValidated
+     rate_limit: 50.
+ 
++  # Actual post-mixer SITL actuator values.  Exposed read-only so the ROS 2
++  # controller can detect stale/saturated motors without commanding them.
++  - topic: /fmu/out/actuator_outputs
++    type: px4_msgs::msg::ActuatorOutputs
++    rate_limit: 50.
++
+   - topic: /fmu/out/vtol_vehicle_status
+     type: px4_msgs::msg::VtolVehicleStatus
+ 

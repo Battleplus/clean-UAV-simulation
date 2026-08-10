@@ -152,14 +152,12 @@ def main() -> None:
         "maximum_com_torque_nm": 0.05,
         "hold_time_s": 0.15,
         "restore_on_land": True,
-        "restore_clearance_m": 0.45,
+        "restore_clearance_m": 0.05,
         "restore_sdf_filename": "../worlds/landing_support.sdf",
         "status": (
-            "Gazebo-only simultaneous release after 95 percent of vehicle weight "
-            "and a near-balanced COM wrench are held continuously; after an "
-            "explicit LAND request the same fixture is respawned under the "
-            "current aircraft XY position only when the aircraft descends near "
-            "its recorded supported height"
+            "Four thin ground-level pads are released together after 95 percent "
+            "of vehicle weight and a near-balanced COM wrench are held; the "
+            "pads are restored near the recorded ground height for landing."
         ),
     }
     config["flight_feasibility_nonreversible"] = "FEASIBLE_WITH_OPPOSITE_PITCH_HYPOTHESIS"

@@ -1,0 +1,62 @@
+diff --git a/src/modules/simulation/gz_bridge/GZBridge.cpp b/src/modules/simulation/gz_bridge/GZBridge.cpp
+index 21279f0..88b36e9 100644
+--- a/src/modules/simulation/gz_bridge/GZBridge.cpp
++++ b/src/modules/simulation/gz_bridge/GZBridge.cpp
+@@ -392,7 +392,8 @@ void GZBridge::opticalFlowCallback(const px4::msgs::OpticalFlow &msg)
+ 
+ void GZBridge::magnetometerCallback(const gz::msgs::Magnetometer &msg)
+ {
+-	const uint64_t timestamp = hrt_absolute_time();
++	const uint64_t timestamp = static_cast<uint64_t>(msg.header().stamp().sec()) * 1000000ULL
++				   + static_cast<uint64_t>(msg.header().stamp().nsec()) / 1000ULL;
+ 
+ 	_px4_mag.set_temperature(_temperature); // this will be static if no airspeed sensor is on the model.
+ 
+@@ -405,7 +406,9 @@ void GZBridge::magnetometerCallback(const gz::msgs::Magnetometer &msg)
+ void GZBridge::airPressureCallback(const gz::msgs::FluidPressure &msg)
+ {
+ 	_px4_baro.set_temperature(_temperature); // this will be static if no airspeed sensor is on the model.
+-	_px4_baro.update(hrt_absolute_time(), msg.pressure());
++	const uint64_t timestamp = static_cast<uint64_t>(msg.header().stamp().sec()) * 1000000ULL
++				   + static_cast<uint64_t>(msg.header().stamp().nsec()) / 1000ULL;
++	_px4_baro.update(timestamp, msg.pressure());
+ }
+ 
+ void GZBridge::airspeedCallback(const gz::msgs::AirSpeed &msg)
+@@ -431,7 +434,23 @@ void GZBridge::airspeedCallback(const gz::msgs::AirSpeed &msg)
+ 
+ void GZBridge::imuCallback(const gz::msgs::IMU &msg)
+ {
+-	const uint64_t timestamp = hrt_absolute_time();
++	// Sensor callbacks may be delivered in a batch after the Gazebo clock has
++	// already advanced.  hrt_absolute_time() then assigns identical sample
++	// times to distinct 250 Hz messages and PX4 rejects the duplicates.  The
++	// Gazebo protobuf header carries the actual simulation sample time.
++	const uint64_t source_timestamp = static_cast<uint64_t>(msg.header().stamp().sec()) * 1000000ULL
++					  + static_cast<uint64_t>(msg.header().stamp().nsec()) / 1000ULL;
++	// Gazebo can dispatch a sensor header slightly ahead of the clock sample
++	// currently visible to PX4.  Passing that future sample time makes
++	// VehicleIMU reject it because publication timestamp < timestamp_sample,
++	// which in turn destabilizes EKF vertical velocity during startup.
++	const uint64_t timestamp = math::min(source_timestamp, uint64_t{hrt_absolute_time()});
++
++	if (timestamp <= _imu_timestamp_sample_last) {
++		return;
++	}
++
++	_imu_timestamp_sample_last = timestamp;
+ 
+ 	// FLU -> FRD
+ 	static const auto q_FLU_to_FRD = gz::math::Quaterniond(0, 1, 0, 0);
+diff --git a/src/modules/simulation/gz_bridge/GZBridge.hpp b/src/modules/simulation/gz_bridge/GZBridge.hpp
+index 93183ef..60752dd 100644
+--- a/src/modules/simulation/gz_bridge/GZBridge.hpp
++++ b/src/modules/simulation/gz_bridge/GZBridge.hpp
+@@ -149,6 +149,7 @@ private:
+ 	PX4Magnetometer  _px4_mag{197388};    // 197388: DRV_MAG_DEVTYPE_MAGSIM, BUS: 1, ADDR: 3, TYPE: SIMULATION
+ 	PX4Rangefinder   _px4_rangefinder{10092812}; // 10092812: DRV_DIST_DEVTYPE_SIM, BUS: 1, ADDR: 1, TYPE: SIMULATION
+ 	PX4Barometer     _px4_baro{6619404};  // 6619404: DRV_BARO_DEVTYPE_BAROSIM, BUS: 1, ADDR: 1, TYPE: SIMULATION
++	hrt_abstime      _imu_timestamp_sample_last{0};
+ 
+ 	uORB::Publication<differential_pressure_s>    _differential_pressure_pub{ORB_ID(differential_pressure)};
+ 	uORB::Publication<obstacle_distance_s>        _obstacle_distance_pub{ORB_ID(obstacle_distance)};

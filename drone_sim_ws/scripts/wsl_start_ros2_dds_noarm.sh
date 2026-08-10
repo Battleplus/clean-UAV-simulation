@@ -35,6 +35,10 @@ if [[ "${CLEAN_STALE_RUNTIME:-1}" == "1" ]]; then
   # A PTY test may leave the installed Python entry point behind if the
   # parent shell is interrupted; never allow two DDS Offboard publishers.
   pkill -f '/px4_ros2_control/dds_wasd_control' 2>/dev/null || true
+  # The arm keyboard is a plain bash loop (not a ros2 process), so a prior
+  # visible terminal can otherwise survive a clean backend restart and leave
+  # two operator consoles on screen.
+  pkill -f '/run_ros2_arm_keyboard.sh' 2>/dev/null || true
   sleep 1
 fi
 
@@ -54,11 +58,13 @@ gazebo_log="${runtime_dir}/gazebo.log"
 px4_log="${runtime_dir}/px4.log"
 arm_init_log="${runtime_dir}/arm_init.log"
 settle_log="${runtime_dir}/settle.log"
+px4_stability_log="${runtime_dir}/px4_stability.log"
 : >"${agent_log}"
 : >"${gazebo_log}"
 : >"${px4_log}"
 : >"${arm_init_log}"
 : >"${settle_log}"
+: >"${px4_stability_log}"
 
 setsid /home/asus/.local/bin/MicroXRCEAgent udp4 -p 8888 -v 4 \
   >"${agent_log}" 2>&1 &
@@ -69,11 +75,17 @@ default_config_file="${workspace_dir}/src/drone_arm_sim/config/my_drone_v3_cad_7
 export MY_DRONE_URDF="${ROBOT_FILE:-${default_robot_file}}"
 setsid ros2 launch drone_arm_sim cad_direct_thrust.launch.py \
   headless:="${HEADLESS:-false}" enable_controller:=false \
-  enable_arm_control:="${ENABLE_ARM_CONTROL:-false}" spawn_z:=1.0 \
+  enable_arm_control:="${ENABLE_ARM_CONTROL:-false}" \
+  spawn_z:="${SPAWN_Z:-0.183}" \
   reaction_moment_ratio_m:="${REACTION_MOMENT_RATIO_M:--1}" \
   wind_enu_x:="${WIND_ENU_X:-nan}" wind_enu_y:="${WIND_ENU_Y:-nan}" \
   wind_enu_z:="${WIND_ENU_Z:-nan}" \
   battery_dynamics_enabled:="${BATTERY_DYNAMICS_ENABLED:-false}" \
+  enable_sensor_delay:="${ENABLE_SENSOR_DELAY:-true}" \
+  imu_delay_ms:="${IMU_DELAY_MS:-0}" \
+  mag_delay_ms:="${MAG_DELAY_MS:-10}" \
+  baro_delay_ms:="${BARO_DELAY_MS:-20}" \
+  navsat_delay_ms:="${NAVSAT_DELAY_MS:-50}" \
   battery_internal_resistance_ohm:="${BATTERY_INTERNAL_RESISTANCE_OHM:-nan}" \
   battery_capacity_ah:="${BATTERY_CAPACITY_AH:-nan}" \
   battery_full_voltage_v:="${BATTERY_FULL_VOLTAGE_V:-nan}" \
@@ -82,6 +94,8 @@ setsid ros2 launch drone_arm_sim cad_direct_thrust.launch.py \
   battery_thrust_voltage_exponent:="${BATTERY_THRUST_VOLTAGE_EXPONENT:-nan}" \
   arm_torque_feedforward_enabled:="${ARM_TORQUE_FEEDFORWARD_ENABLED:-false}" \
   arm_torque_feedforward_max_delta_n:="${ARM_TORQUE_FEEDFORWARD_MAX_DELTA_N:-2.0}" \
+  arm_static_com_feedforward_gain:="${ARM_STATIC_COM_FEEDFORWARD_GAIN:-0.0}" \
+  arm_static_com_feedforward_time_constant_s:="${ARM_STATIC_COM_FEEDFORWARD_TIME_CONSTANT_S:-5.0}" \
   arm_coupling_target_mass_kg:="${ARM_COUPLING_TARGET_MASS_KG:-7.735}" \
   arm_payload_mass_kg:="${ARM_PAYLOAD_MASS_KG:-0.0}" \
   config_file:="${CONFIG_FILE:-${default_config_file}}" \
@@ -131,10 +145,21 @@ for _ in $(seq 1 90); do
         --preset retracted --duration 8 --wait --tolerance 0.08 \
         >"${arm_init_log}" 2>&1
     fi
-    # PX4 needs a short interval after DDS topics appear to finish estimator
-    # and preflight checks.  Returning READY immediately makes an automated
-    # keyboard test press T while preflight_checks_pass is still false.
+    # DDS topic discovery is not evidence that the estimator is ready.  In
+    # particular, the formal 7.735 kg setup has occasionally reported a false
+    # 0.5-0.6 m/s vertical velocity for several seconds after Gazebo itself is
+    # already stationary.  Never let an automated test arm from that state.
     sleep "${px4_ready_settle_s}"
+    if ! python3 "${workspace_dir}/scripts/wait_px4_stable.py" \
+      --horizontal "${PX4_READY_HORIZONTAL_LIMIT_M_S:-0.10}" \
+      --vertical "${PX4_READY_VERTICAL_LIMIT_M_S:-0.08}" \
+      --hold "${PX4_READY_STABLE_HOLD_S:-5}" \
+      --timeout "${PX4_READY_STABLE_TIMEOUT_S:-90}" \
+      >"${px4_stability_log}" 2>&1; then
+      echo "PX4 local-position estimator did not stabilize; refusing to arm" >&2
+      cat "${px4_stability_log}" >&2 || true
+      exit 1
+    fi
     echo "ROS2_DDS_NOARM_READY"
     echo "ROS2_DDS_READY arm_control=${ENABLE_ARM_CONTROL:-false}"
     echo "logs=${runtime_dir}"

@@ -4,11 +4,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-$windowsScriptPath = Join-Path $PSScriptRoot "run_ros2_dds_wasd.sh"
-$scriptPath = (wsl.exe -d Ubuntu-24.04 -- wslpath -a $windowsScriptPath).Trim()
-if (-not $scriptPath) {
-    throw "Could not convert the controller script path for WSL."
-}
+$windowsScriptPath = (Resolve-Path (Join-Path $PSScriptRoot "run_ros2_dds_wasd.sh")).Path
+$drive = $windowsScriptPath.Substring(0, 1).ToLowerInvariant()
+$relativePath = $windowsScriptPath.Substring(3).Replace("\", "/")
+$scriptPath = "/mnt/$drive/$relativePath"
 
 if ($AttachGazeboGui) {
     # Attach a GUI only when the backend was launched with HEADLESS=true.
