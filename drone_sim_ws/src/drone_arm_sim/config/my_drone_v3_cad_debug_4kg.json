@@ -890,6 +890,6 @@
     "restore_on_land": true,
     "restore_clearance_m": 0.05,
     "restore_sdf_filename": "../worlds/landing_support.sdf",
-    "status": "ground-level contact pads are removed after 102 percent of weight and a balanced wrench are held; visible landing gear is attached to base_link and moves with the aircraft"
+    "status": "ground-level contact pads are removed after 102 percent of weight and a balanced wrench are held; the retracted CAD gripper is the aircraft's initial table contact"
   }
 }

@@ -22,45 +22,14 @@
         <box size="0.409830891 0.409830906 0.291000023" />
       </geometry>
     </collision>
-    <!-- Visible vehicle-mounted landing gear.  The SO101 hangs below the
-         fuselage, so the fuselage collision box itself must not be placed on
-         the ground.  These four legs move with base_link and provide 0.817 m
-         clearance for the retracted arm. -->
-    <visual name="front_left_landing_leg_visual">
-      <origin xyz="0.17 0.17 -0.4085" rpy="0 0 0" />
-      <geometry><box size="0.035 0.035 0.817" /></geometry>
-      <material name="landing_gear_material"><color rgba="0.12 0.12 0.14 1" /></material>
-    </visual>
-    <collision name="front_left_landing_leg_collision">
-      <origin xyz="0.17 0.17 -0.4085" rpy="0 0 0" />
-      <geometry><box size="0.035 0.035 0.817" /></geometry>
-    </collision>
-    <visual name="front_right_landing_leg_visual">
-      <origin xyz="0.17 -0.17 -0.4085" rpy="0 0 0" />
-      <geometry><box size="0.035 0.035 0.817" /></geometry>
-      <material name="landing_gear_material" />
-    </visual>
-    <collision name="front_right_landing_leg_collision">
-      <origin xyz="0.17 -0.17 -0.4085" rpy="0 0 0" />
-      <geometry><box size="0.035 0.035 0.817" /></geometry>
-    </collision>
-    <visual name="rear_left_landing_leg_visual">
-      <origin xyz="-0.17 0.17 -0.4085" rpy="0 0 0" />
-      <geometry><box size="0.035 0.035 0.817" /></geometry>
-      <material name="landing_gear_material" />
-    </visual>
-    <collision name="rear_left_landing_leg_collision">
-      <origin xyz="-0.17 0.17 -0.4085" rpy="0 0 0" />
-      <geometry><box size="0.035 0.035 0.817" /></geometry>
-    </collision>
-    <visual name="rear_right_landing_leg_visual">
-      <origin xyz="-0.17 -0.17 -0.4085" rpy="0 0 0" />
-      <geometry><box size="0.035 0.035 0.817" /></geometry>
-      <material name="landing_gear_material" />
-    </visual>
-    <collision name="rear_right_landing_leg_collision">
-      <origin xyz="-0.17 -0.17 -0.4085" rpy="0 0 0" />
-      <geometry><box size="0.035 0.035 0.817" /></geometry>
+    <!-- Collision-only approximation of the folded SO101 table footprint.
+         Gazebo cannot reliably support the complete aircraft through several
+         actuated child-link mesh contacts during controller bring-up.  This
+         thin footprint follows base_link, is invisible, and represents the
+         load-bearing envelope of the retracted arm without inventing legs. -->
+    <collision name="retracted_arm_ground_support_collision">
+      <origin xyz="0 0 -0.277158" rpy="0 0 0" />
+      <geometry><box size="0.32 0.28 0.02" /></geometry>
     </collision>
   </link>
   <link name="arm_base_link">
@@ -78,6 +47,10 @@
         <color rgba="0.95 0.45 0.05 1" />
       </material>
     </visual>
+    <collision name="arm_base_support_collision">
+      <origin xyz="-0.056563 0 -0.155794" rpy="0 0 0" />
+      <geometry><box size="0.277366 0.263800 0.111588" /></geometry>
+    </collision>
   </link>
   <link name="shoulder_link">
     <inertial>
@@ -94,6 +67,10 @@
         <color rgba="0.95 0.45 0.05 1" />
       </material>
     </visual>
+    <collision name="shoulder_support_collision">
+      <origin xyz="0.019401 -0.001140 -0.012182" rpy="0 0 0" />
+      <geometry><box size="0.063497 0.055080 0.110672" /></geometry>
+    </collision>
   </link>
   <link name="upper_arm_link">
     <inertial>
@@ -110,6 +87,10 @@
         <color rgba="0.95 0.45 0.05 1" />
       </material>
     </visual>
+    <collision name="upper_arm_support_collision">
+      <origin xyz="-0.059093 -0.017443 -0.012089" rpy="0 0 0" />
+      <geometry><box size="0.142954 0.067977 0.053988" /></geometry>
+    </collision>
   </link>
   <link name="lower_arm_link">
     <inertial>
@@ -126,6 +107,10 @@
         <color rgba="0.95 0.45 0.05 1" />
       </material>
     </visual>
+    <collision name="lower_arm_support_collision">
+      <origin xyz="0.066030 -0.017990 -0.002683" rpy="0 0 0" />
+      <geometry><box size="0.156642 0.065141 0.037465" /></geometry>
+    </collision>
   </link>
   <link name="wrist_link">
     <inertial>
@@ -142,6 +127,10 @@
         <color rgba="0.95 0.45 0.05 1" />
       </material>
     </visual>
+    <collision name="wrist_support_collision">
+      <origin xyz="0.033391 -0.026726 -0.002033" rpy="0 0 0" />
+      <geometry><box size="0.096256 0.076810 0.035863" /></geometry>
+    </collision>
   </link>
   <link name="gripper_link">
     <inertial>
@@ -166,6 +155,10 @@
         <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_gripper.stl" scale="0.001 0.001 0.001" />
       </geometry>
     </collision>
+    <collision name="gripper_support_collision">
+      <origin xyz="0.027840 -0.000475 0.009863" rpy="0 0 0" />
+      <geometry><box size="0.060996 0.057342 0.080002" /></geometry>
+    </collision>
   </link>
   <link name="moving_jaw_link">
     <inertial>
@@ -187,6 +180,10 @@
       <geometry>
         <mesh filename="package://drone_arm_sim/meshes/my_drone_v2/visual/so101_moving_jaw.stl" scale="0.001 0.001 0.001" />
       </geometry>
+    </collision>
+    <collision name="moving_jaw_support_collision">
+      <origin xyz="0.036498 -0.017418 0.024940" rpy="0 0 0" />
+      <geometry><box size="0.093766 0.115803 0.069980" /></geometry>
     </collision>
   </link>
   <joint name="arm_mount" type="fixed">

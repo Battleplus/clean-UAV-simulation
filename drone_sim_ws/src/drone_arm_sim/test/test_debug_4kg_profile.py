@@ -70,6 +70,11 @@ class Debug4kgProfileTest(unittest.TestCase):
 
     def test_isolated_world_starts_on_ground_level_contacts(self):
         root = ET.parse(WORLD).getroot()
+        table = root.find("./world/model[@name='ground_plane']/link/collision[@name='tabletop_collision']")
+        self.assertIsNotNone(table)
+        table_pose = [float(v) for v in table.find("pose").text.split()]
+        table_size = [float(v) for v in table.find("geometry/box/size").text.split()]
+        self.assertAlmostEqual(table_pose[2] + table_size[2] / 2.0, 0.0)
         support = root.find("./world/model[@name='my_drone_bringup_landing_support']")
         self.assertIsNotNone(support)
         for link in support.findall("link"):
@@ -83,16 +88,31 @@ class Debug4kgProfileTest(unittest.TestCase):
             WORKSPACE / "scripts/wsl_start_ros2_dds_debug_4kg.sh"
         ).read_text(encoding="utf-8")
         self.assertIn('PX4_WASD_VERTICAL_SPEED_M_S:-0.15', launcher)
-        self.assertIn('SPAWN_Z="${SPAWN_Z:-0.817}"', launcher)
+        self.assertIn('SPAWN_Z="${SPAWN_Z:-0.289}"', launcher)
 
-    def test_vehicle_has_visible_landing_gear(self):
+    def test_vehicle_does_not_invent_landing_gear(self):
         root = ET.parse(URDF).getroot()
         base = root.find("./link[@name='base_link']")
         self.assertIsNotNone(base)
         visuals = [v.get("name", "") for v in base.findall("visual")]
         collisions = [c.get("name", "") for c in base.findall("collision")]
-        self.assertEqual(sum("landing_leg" in name for name in visuals), 4)
-        self.assertEqual(sum("landing_leg" in name for name in collisions), 4)
+        self.assertEqual(sum("landing_leg" in name for name in visuals), 0)
+        self.assertEqual(sum("landing_leg" in name for name in collisions), 0)
+        self.assertIn("retracted_arm_ground_support_collision", collisions)
+        self.assertIsNotNone(root.find("./link[@name='gripper_link']/collision"))
+        self.assertIsNotNone(root.find("./link[@name='moving_jaw_link']/collision"))
+
+    def test_retracted_arm_links_have_support_collisions(self):
+        root = ET.parse(URDF).getroot()
+        for link_name in (
+            "arm_base_link", "shoulder_link", "upper_arm_link",
+            "lower_arm_link", "wrist_link", "gripper_link", "moving_jaw_link",
+        ):
+            collisions = root.findall(f"./link[@name='{link_name}']/collision")
+            self.assertTrue(
+                any("support_collision" in c.get("name", "") for c in collisions),
+                link_name,
+            )
 
 
 if __name__ == "__main__":

@@ -48,10 +48,13 @@
     <model name="ground_plane">
       <static>true</static>
       <link name="link">
-        <!-- The visible plane is not the normal takeoff contact.  This finite
-             catch layer sits 2 m below it and is reached only after a failed
-             flight, preventing an unbounded fall without slowing normal
-             four-pad ground contact. -->
+        <!-- The visible table is also the physical takeoff surface.  The
+             retracted SO101 rests on this collision before takeoff. -->
+        <collision name="tabletop_collision">
+          <pose>0 0 -0.01 0 0 0</pose>
+          <geometry><box><size>20 20 0.02</size></box></geometry>
+        </collision>
+        <!-- Lower catch layer remains as a diagnostic fallback. -->
         <collision name="emergency_catch_collision">
           <pose>0 0 -2.05 0 0 0</pose>
           <geometry><box><size>20 20 0.1</size></box></geometry>

@@ -122,8 +122,8 @@ def build_config(source: Path, output: Path) -> tuple[dict, float]:
             "restore_on_land": True,
             "status": (
                 "ground-level contact pads are removed after 102 percent of weight "
-                "and a balanced wrench are held; visible landing gear is attached "
-                "to base_link and moves with the aircraft"
+                "and a balanced wrench are held; the retracted CAD gripper is the "
+                "aircraft's initial table contact"
             ),
         }
     )

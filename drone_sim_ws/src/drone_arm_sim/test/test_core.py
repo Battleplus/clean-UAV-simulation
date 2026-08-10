@@ -869,10 +869,13 @@ class CoreRegressionTest(unittest.TestCase):
             link = root.find(f"./link[@name='{link_name}']")
             self.assertIsNotNone(link)
             collisions = link.findall("collision")
-            self.assertEqual(len(collisions), 1)
-            mesh = collisions[0].find("./geometry/mesh")
-            self.assertIsNotNone(mesh)
-            self.assertIn("so101_", mesh.attrib["filename"])
+            meshes = [c.find("./geometry/mesh") for c in collisions]
+            meshes = [mesh for mesh in meshes if mesh is not None]
+            self.assertTrue(meshes)
+            self.assertTrue(any("so101_" in mesh.attrib["filename"] for mesh in meshes))
+            self.assertTrue(
+                any("support_collision" in c.get("name", "") for c in collisions)
+            )
 
     def test_grasp_world_has_controlled_pose_and_contact_sensor(self):
         root = ET.parse(GRASP_WORLD_PATH).getroot()
