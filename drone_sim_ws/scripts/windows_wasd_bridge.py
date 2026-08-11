@@ -53,8 +53,8 @@ def main() -> int:
     print("my_drone true key-state WASD controller")
     print("W/S forward/back: 0.40 m/s | A/D left/right: 0.40 m/s")
     print("R up: 0.15 m/s | F down: 0.15 m/s | Q/E yaw: 15 deg/s")
-    print("Release a motion key -> smooth deceleration, then position hold")
-    print("H -> immediate position hold (manual brake)")
+    print("Release a motion key -> smooth deceleration to zero velocity")
+    print("H -> immediate zero-velocity command (manual brake)")
     print("T takeoff | L land | keep this window focused while flying")
     child = subprocess.Popen(command, stdin=subprocess.PIPE)
     user32 = ctypes.windll.user32
@@ -83,11 +83,8 @@ def main() -> int:
                 active_motion = selected
             elif active_motion is not None:
                 # Stop refreshing the key heartbeat.  The ROS 2 controller
-                # detects expiry, ramps the commanded velocity to zero, and
-                # only then captures a position-hold target.  Sending H here
-                # used to switch modes while the aircraft still had momentum,
-                # producing horizontal overshoot; it also bypassed the R/F
-                # path that adopts the newly reached altitude.
+                # detects expiry and ramps the commanded velocity to zero
+                # without switching to a position controller.
                 active_motion = None
                 last_heartbeat = 0.0
             previous = current

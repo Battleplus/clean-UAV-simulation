@@ -89,7 +89,7 @@ def test_r_commands_up_and_f_commands_down_velocity(monkeypatch):
     assert velocity[2] == pytest.approx(0.25)
 
 
-def test_hover_key_brakes_xy_but_preserves_commanded_altitude(monkeypatch):
+def test_hover_key_commands_zero_velocity_without_position_switch(monkeypatch):
     quiet_logger(monkeypatch)
     controller = make_controller(-1.45, sign=-1.0)
     controller.target = TargetNed(8.0, 9.0, -4.0, -1.0)
@@ -99,16 +99,16 @@ def test_hover_key_brakes_xy_but_preserves_commanded_altitude(monkeypatch):
 
     controller.hold_current_position()
 
-    assert controller.target.north == pytest.approx(1.0)
-    assert controller.target.east == pytest.approx(-2.0)
+    assert controller.target.north == pytest.approx(8.0)
+    assert controller.target.east == pytest.approx(9.0)
     assert controller.target.down == pytest.approx(-4.0)
-    assert controller.target.yaw == pytest.approx(0.4)
-    assert controller.control_state == FlightControlState.POSITION_HOLD
+    assert controller.target.yaw == pytest.approx(-1.0)
+    assert controller.control_state == FlightControlState.VELOCITY_CONTROL
     assert np.allclose(controller.velocity_command_ned, 0.0)
     assert controller.yaw_rate_command == 0.0
 
 
-def test_key_heartbeat_ramps_velocity_then_releases_to_hold(monkeypatch):
+def test_key_heartbeat_ramps_velocity_then_releases_to_zero_velocity(monkeypatch):
     quiet_logger(monkeypatch)
     controller = make_controller(-1.2)
     controller.target = TargetNed(0.0, 0.0, -1.2, 0.4)
@@ -121,14 +121,15 @@ def test_key_heartbeat_ramps_velocity_then_releases_to_hold(monkeypatch):
     assert controller.velocity_command_ned[1] == pytest.approx(0.0)
 
     controller.update_velocity_control(now=10.31, dt=0.10)
-    assert controller.control_state == FlightControlState.POSITION_HOLD
+    assert controller.control_state == FlightControlState.VELOCITY_CONTROL
     assert np.allclose(controller.velocity_command_ned, 0.0)
-    assert controller.target.north == pytest.approx(controller.local.x)
-    assert controller.target.east == pytest.approx(controller.local.y)
+    assert controller.active_velocity_key is None
+    assert controller.target.north == pytest.approx(0.0)
+    assert controller.target.east == pytest.approx(0.0)
     assert controller.target.down == pytest.approx(-1.2)
 
 
-def test_vertical_velocity_release_holds_new_measured_altitude(monkeypatch):
+def test_vertical_velocity_release_does_not_latch_measured_altitude(monkeypatch):
     quiet_logger(monkeypatch)
     controller = make_controller(-1.2)
     controller.target = TargetNed(0.0, 0.0, -1.2, 0.4)
@@ -138,11 +139,11 @@ def test_vertical_velocity_release_holds_new_measured_altitude(monkeypatch):
 
     controller.update_velocity_control(now=10.31, dt=0.0)
 
-    assert controller.control_state == FlightControlState.POSITION_HOLD
-    assert controller.target.down == pytest.approx(-1.5)
+    assert controller.control_state == FlightControlState.VELOCITY_CONTROL
+    assert controller.target.down == pytest.approx(-1.2)
 
 
-def test_release_waits_for_measured_velocity_before_position_hold(monkeypatch):
+def test_release_stays_in_velocity_mode_independent_of_measured_speed(monkeypatch):
     quiet_logger(monkeypatch)
     controller = make_controller(-1.2)
     controller.target = TargetNed(0.0, 0.0, -1.2, 0.4)
@@ -157,7 +158,8 @@ def test_release_waits_for_measured_velocity_before_position_hold(monkeypatch):
 
     controller.local.vx = 0.04
     controller.update_velocity_control(now=10.36, dt=0.0)
-    assert controller.control_state == FlightControlState.POSITION_HOLD
+    assert controller.control_state == FlightControlState.VELOCITY_CONTROL
+    assert controller.active_velocity_key is None
 
 
 def test_horizontal_velocity_uses_current_heading(monkeypatch):

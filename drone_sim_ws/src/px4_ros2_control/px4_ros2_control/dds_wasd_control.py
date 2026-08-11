@@ -808,35 +808,21 @@ class DdsWasdControl(Node):
             desired_yaw_rate,
             self.YAW_ACCEL_LIMIT_RAD_S2 * dt,
         )
-        stopped = (
-            not key_active
-            and float(np.linalg.norm(self.velocity_command_ned)) <= self.VELOCITY_ZERO_EPS
-            and abs(self.yaw_rate_command) <= self.VELOCITY_ZERO_EPS
-            and self._measured_motion_settled()
-        )
-        if stopped and self.local is not None:
+        if not key_active and self.active_velocity_key is not None:
+            # A released key means zero desired velocity.  Stay in velocity
+            # mode: changing to a measured position target here creates a
+            # second, conflicting control law and makes short/long presses
+            # behave differently.
             released_key = self.active_velocity_key
-            # Horizontal/yaw motion must not ratchet the altitude target down
-            # when the airframe briefly sags.  Only an intentional R/F move
-            # adopts the newly reached altitude on release.
-            hold_down = (
-                float(self.local.z)
-                if released_key in {"r", "f"}
-                else float(self.target.down)
-            )
-            self.target = TargetNed(
-                float(self.local.x),
-                float(self.local.y),
-                hold_down,
-                float(self.local.heading),
-            )
-            self._clear_velocity_command()
-            self.control_state = FlightControlState.POSITION_HOLD
-            self.get_logger().info(
-                "VELOCITY_RELEASE_HOLD "
-                f"NED=({self.target.north:.2f}, {self.target.east:.2f}, "
-                f"{self.target.down:.2f}) yaw={math.degrees(self.target.yaw):.1f} deg"
-            )
+            self.active_velocity_key = None
+            if (
+                float(np.linalg.norm(self.velocity_command_ned))
+                <= self.VELOCITY_ZERO_EPS
+                and abs(self.yaw_rate_command) <= self.VELOCITY_ZERO_EPS
+            ):
+                self.get_logger().info(
+                    f"VELOCITY_RELEASE_ZERO key={released_key.upper()}"
+                )
 
     def _measured_motion_settled(self) -> bool:
         """Wait for physical braking before latching a position setpoint."""
@@ -858,35 +844,10 @@ class DdsWasdControl(Node):
         return True
 
     def hold_current_position(self) -> None:
-        """Brake horizontal motion without ratcheting a disturbed altitude.
-
-        During an arm motion the vehicle can momentarily sag.  Copying the
-        measured Z into the target at that instant makes every H press accept
-        the sag as the new hover height.  Preserve the commanded altitude and
-        only reset horizontal position and heading to the measured pose.
-        """
-        if self.local is None:
-            self.get_logger().warning("Hover hold ignored: local position is absent")
-            return
-        hold_down = (
-            float(self.target.down)
-            if self.target_initialized and math.isfinite(float(self.target.down))
-            else float(self.local.z)
-        )
-        self.target = TargetNed(
-            float(self.local.x),
-            float(self.local.y),
-            hold_down,
-            float(self.local.heading),
-        )
+        """H is a velocity brake, not a position-controller switch."""
         self._clear_velocity_command()
-        self.control_state = FlightControlState.POSITION_HOLD
-        self.get_logger().info(
-            f"HOVER_HOLD_CURRENT NED=({self.target.north:.2f}, "
-            f"{self.target.east:.2f}, {self.target.down:.2f}) "
-            f"yaw={math.degrees(self.target.yaw):.1f} deg "
-            f"measured_down={float(self.local.z):.2f}"
-        )
+        self.control_state = FlightControlState.VELOCITY_CONTROL
+        self.get_logger().info("HOVER_ZERO_VELOCITY")
 
     def handle_key(self, key: str) -> None:
         if key == "t":
