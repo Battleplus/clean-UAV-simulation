@@ -61,41 +61,26 @@ def main() -> int:
     print(f"GIT_COMMIT={commit}")
     print("W/S forward/back: 0.40 m/s | A/D left/right: 0.40 m/s")
     print("R up: 0.15 m/s | F down: 0.15 m/s | Q/E yaw: 15 deg/s")
-    print("Release a motion key -> smooth deceleration to zero velocity")
-    print("H -> immediate zero-velocity command (manual brake)")
+    print("Tap/hold a motion key -> latch one velocity target")
+    print("Release does nothing | H -> zero velocity (manual stop)")
     print("T takeoff | L land | keep this window focused while flying")
     child = subprocess.Popen(command, stdin=subprocess.PIPE)
     user32 = ctypes.windll.user32
     console_hwnd = ctypes.windll.kernel32.GetConsoleWindow()
     previous = {key: False for key in MOTION_KEYS + ONE_SHOT_KEYS}
-    active_motion: str | None = None
-    last_heartbeat = 0.0
     try:
         while child.poll() is None:
-            now = time.monotonic()
             focused = bool(console_hwnd) and user32.GetForegroundWindow() == console_hwnd
             current = {
                 key: focused and pressed(user32, key)
                 for key in MOTION_KEYS + ONE_SHOT_KEYS
             }
-            # One-shot commands are edge triggered, never repeated by Windows.
-            for key in ONE_SHOT_KEYS:
+            # Every command is edge-triggered.  A motion key latches one
+            # velocity target in the ROS controller; holding it must never
+            # generate repeats and releasing it must never command zero.
+            for key in MOTION_KEYS + ONE_SHOT_KEYS:
                 if current[key] and not previous[key]:
                     send(child, key)
-            held = [key for key in MOTION_KEYS if current[key]]
-            selected = held[-1] if held else None
-            if selected is not None:
-                if selected != active_motion or now - last_heartbeat >= 0.08:
-                    send(child, selected)
-                    last_heartbeat = now
-                active_motion = selected
-            elif active_motion is not None:
-                # Explicit key-up token.  Do not depend on a heartbeat timeout:
-                # a tap and a long press must command the same velocity target;
-                # only the time for which that target is active may differ.
-                send(child, "U")
-                active_motion = None
-                last_heartbeat = 0.0
             previous = current
             time.sleep(0.01)
     except KeyboardInterrupt:

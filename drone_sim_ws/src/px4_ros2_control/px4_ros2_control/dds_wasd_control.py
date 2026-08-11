@@ -743,7 +743,7 @@ class DdsWasdControl(Node):
         return current + delta * (max_delta / norm)
 
     def set_velocity_key(self, key: str, now: float | None = None) -> None:
-        """Refresh a body-frame velocity command heartbeat."""
+        """Latch one body-frame velocity target until H or another command."""
         if key not in "wasdrfqe":
             return
         self.active_velocity_key = key
@@ -751,19 +751,6 @@ class DdsWasdControl(Node):
         if self.control_state != FlightControlState.VELOCITY_CONTROL:
             self.control_state = FlightControlState.VELOCITY_CONTROL
             self.get_logger().info(f"VELOCITY_CONTROL_ENTER key={key.upper()}")
-
-    def release_velocity_key(self) -> None:
-        """Apply an explicit Windows key-up while remaining velocity-only."""
-        released_key = self.active_velocity_key
-        self.active_velocity_key = None
-        self.last_velocity_key_monotonic = 0.0
-        self.velocity_command_ned = np.zeros(3)
-        self.yaw_rate_command = 0.0
-        self.control_state = FlightControlState.VELOCITY_CONTROL
-        if released_key is not None:
-            self.get_logger().info(
-                f"VELOCITY_RELEASE_ZERO key={released_key.upper()}"
-            )
 
     def _desired_velocity_ned(self, key_active: bool) -> tuple[np.ndarray, float]:
         desired = np.zeros(3)
@@ -799,32 +786,15 @@ class DdsWasdControl(Node):
     def update_velocity_control(self, now: float, dt: float) -> None:
         if self.control_state != FlightControlState.VELOCITY_CONTROL:
             return
-        key_active = (
-            self.active_velocity_key is not None
-            and 0.0 <= now - self.last_velocity_key_monotonic
-            <= self.KEY_RELEASE_TIMEOUT_S
-        )
+        # Manual velocity is deliberately latched.  Key release and elapsed
+        # time do not alter the target; only H or a new direction command does.
+        key_active = self.active_velocity_key is not None
         desired, desired_yaw_rate = self._desired_velocity_ned(key_active)
         # Publish one unambiguous velocity target.  PX4 applies its configured
         # acceleration and jerk limits to the physical vehicle.  A second
         # keyboard-side ramp made taps command a smaller peak speed than holds.
         self.velocity_command_ned = desired
         self.yaw_rate_command = desired_yaw_rate
-        if not key_active and self.active_velocity_key is not None:
-            # A released key means zero desired velocity.  Stay in velocity
-            # mode: changing to a measured position target here creates a
-            # second, conflicting control law and makes short/long presses
-            # behave differently.
-            released_key = self.active_velocity_key
-            self.active_velocity_key = None
-            if (
-                float(np.linalg.norm(self.velocity_command_ned))
-                <= self.VELOCITY_ZERO_EPS
-                and abs(self.yaw_rate_command) <= self.VELOCITY_ZERO_EPS
-            ):
-                self.get_logger().info(
-                    f"VELOCITY_RELEASE_ZERO key={released_key.upper()}"
-                )
 
     def _measured_motion_settled(self) -> bool:
         """Wait for physical braking before latching a position setpoint."""
@@ -879,8 +849,6 @@ class DdsWasdControl(Node):
                     self.set_velocity_key(key)
             else:
                 self.get_logger().warning("Movement ignored: PX4 is not in Offboard")
-        elif key == "u":
-            self.release_velocity_key()
         elif key == "l":
             self.land()
         elif key == "o":
