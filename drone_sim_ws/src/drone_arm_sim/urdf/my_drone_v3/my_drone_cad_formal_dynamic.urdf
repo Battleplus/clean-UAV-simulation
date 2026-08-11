@@ -183,7 +183,9 @@
     </collision>
     <collision name="moving_jaw_support_collision">
       <origin xyz="0.036498 -0.017418 0.024940" rpy="0 0 0" />
-      <geometry><box size="0.093766 0.115803 0.069980" /></geometry>
+      <!-- Contained numerical fallback only; the CAD mesh is the real
+           collision.  The former large box generated false contact impulses. -->
+      <geometry><box size="0.015 0.015 0.015" /></geometry>
     </collision>
   </link>
   <joint name="arm_mount" type="fixed">

@@ -752,6 +752,19 @@ class DdsWasdControl(Node):
             self.control_state = FlightControlState.VELOCITY_CONTROL
             self.get_logger().info(f"VELOCITY_CONTROL_ENTER key={key.upper()}")
 
+    def release_velocity_key(self) -> None:
+        """Apply an explicit Windows key-up while remaining velocity-only."""
+        released_key = self.active_velocity_key
+        self.active_velocity_key = None
+        self.last_velocity_key_monotonic = 0.0
+        self.velocity_command_ned = np.zeros(3)
+        self.yaw_rate_command = 0.0
+        self.control_state = FlightControlState.VELOCITY_CONTROL
+        if released_key is not None:
+            self.get_logger().info(
+                f"VELOCITY_RELEASE_ZERO key={released_key.upper()}"
+            )
+
     def _desired_velocity_ned(self, key_active: bool) -> tuple[np.ndarray, float]:
         desired = np.zeros(3)
         desired_yaw_rate = 0.0
@@ -792,22 +805,11 @@ class DdsWasdControl(Node):
             <= self.KEY_RELEASE_TIMEOUT_S
         )
         desired, desired_yaw_rate = self._desired_velocity_ned(key_active)
-        dt = max(0.0, min(float(dt), 0.25))
-        self.velocity_command_ned[:2] = self._ramp_horizontal(
-            self.velocity_command_ned[:2],
-            desired[:2],
-            self.HORIZONTAL_ACCEL_LIMIT_M_S2 * dt,
-        )
-        self.velocity_command_ned[2] = self._ramp_scalar(
-            self.velocity_command_ned[2],
-            desired[2],
-            self.VERTICAL_ACCEL_LIMIT_M_S2 * dt,
-        )
-        self.yaw_rate_command = self._ramp_scalar(
-            self.yaw_rate_command,
-            desired_yaw_rate,
-            self.YAW_ACCEL_LIMIT_RAD_S2 * dt,
-        )
+        # Publish one unambiguous velocity target.  PX4 applies its configured
+        # acceleration and jerk limits to the physical vehicle.  A second
+        # keyboard-side ramp made taps command a smaller peak speed than holds.
+        self.velocity_command_ned = desired
+        self.yaw_rate_command = desired_yaw_rate
         if not key_active and self.active_velocity_key is not None:
             # A released key means zero desired velocity.  Stay in velocity
             # mode: changing to a measured position target here creates a
@@ -877,6 +879,8 @@ class DdsWasdControl(Node):
                     self.set_velocity_key(key)
             else:
                 self.get_logger().warning("Movement ignored: PX4 is not in Offboard")
+        elif key == "u":
+            self.release_velocity_key()
         elif key == "l":
             self.land()
         elif key == "o":

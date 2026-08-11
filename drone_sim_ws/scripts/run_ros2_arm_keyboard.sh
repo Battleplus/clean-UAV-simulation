@@ -64,6 +64,21 @@ run_visible_demo() {
   discard_buffered_keys
 }
 
+run_gripper_demo() {
+  local duration=5
+  if vehicle_is_armed; then
+    duration=10
+    echo "AIRBORNE_GRIPPER: zero-velocity gate, then slow 10s open/close"
+    if ! request_hover_and_wait_stable; then
+      echo "AIRBORNE_GRIPPER_REFUSED: vehicle did not satisfy the stability gate"
+      discard_buffered_keys
+      return 1
+    fi
+  fi
+  ros2 run drone_arm_sim gripper_demo --open 1.2 --duration "${duration}" --hold 2
+  discard_buffered_keys
+}
+
 echo "SO101 keyboard controller"
 echo "1 flight_work_a | 2 flight_work_b | 3 retracted"
 echo "4 work_a (diagnostic) | 5 work_b (diagnostic)"
@@ -81,7 +96,7 @@ while true; do
     4) run_preset work_a 30 ;;
     5) run_preset work_b 30 ;;
     6) run_visible_demo ;;
-    7) ros2 run drone_arm_sim gripper_demo --open 1.2 --duration 3 --hold 2 ;;
+    7) run_gripper_demo ;;
     x) break ;;
   esac
 done

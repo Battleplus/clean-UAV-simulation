@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ctypes
+from pathlib import Path
 import subprocess
 import sys
 import time
@@ -50,7 +51,14 @@ def main() -> int:
         "export PX4_TOUCHDOWN_DISARM_HOLD_S=0.5 && "
         "exec ros2 run px4_ros2_control dds_wasd_control",
     ]
+    workspace = Path(__file__).resolve().parents[1]
+    commit = subprocess.run(
+        ["git", "-C", str(workspace), "rev-parse", "--short", "HEAD"],
+        check=False, capture_output=True, text=True,
+    ).stdout.strip() or "unknown"
     print("my_drone true key-state WASD controller")
+    print(f"LATEST_WORKSPACE={workspace}")
+    print(f"GIT_COMMIT={commit}")
     print("W/S forward/back: 0.40 m/s | A/D left/right: 0.40 m/s")
     print("R up: 0.15 m/s | F down: 0.15 m/s | Q/E yaw: 15 deg/s")
     print("Release a motion key -> smooth deceleration to zero velocity")
@@ -82,9 +90,10 @@ def main() -> int:
                     last_heartbeat = now
                 active_motion = selected
             elif active_motion is not None:
-                # Stop refreshing the key heartbeat.  The ROS 2 controller
-                # detects expiry and ramps the commanded velocity to zero
-                # without switching to a position controller.
+                # Explicit key-up token.  Do not depend on a heartbeat timeout:
+                # a tap and a long press must command the same velocity target;
+                # only the time for which that target is active may differ.
+                send(child, "U")
                 active_motion = None
                 last_heartbeat = 0.0
             previous = current
