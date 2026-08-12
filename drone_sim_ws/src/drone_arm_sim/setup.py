@@ -56,6 +56,7 @@ setup(
             "cartesian_arm_jog = drone_arm_sim.cartesian_arm_jog:main",
             "cartesian_arm_sequence = drone_arm_sim.cartesian_arm_sequence:main",
             "arm_preset_control = drone_arm_sim.arm_preset_control:main",
+            "arm_joint_jog = drone_arm_sim.arm_joint_jog:main",
             "build_formal_cad_urdf = drone_arm_sim.build_formal_cad_urdf:main",
             "floating_base_reaction = drone_arm_sim.floating_base_reaction:main",
             "flight_control_demo = drone_arm_sim.flight_control_demo:main",

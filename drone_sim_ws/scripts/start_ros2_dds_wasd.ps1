@@ -1,5 +1,6 @@
 param(
-    [switch]$AttachGazeboGui
+    [switch]$AttachGazeboGui,
+    [switch]$ArmCompensationTest
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,9 +18,14 @@ if ($AttachGazeboGui) {
     ) -WindowStyle Hidden
 }
 
-# Keep the keyboard controller in a visible terminal so it owns stdin.
-Start-Process -FilePath "wsl.exe" -ArgumentList @(
-    "-d", "Ubuntu-24.04", "--", "bash", $scriptPath
-)
+# Keep the keyboard controller in a visible terminal so it owns stdin.  The
+# force feed-forward switch belongs to this process, independently of the
+# backend torque feed-forward switch.
+$wasdArgs = @("-d", "Ubuntu-24.04", "--")
+if ($ArmCompensationTest) {
+    $wasdArgs += @("env", "ARM_FEEDFORWARD_ENABLED=true")
+}
+$wasdArgs += @("bash", $scriptPath)
+Start-Process -FilePath "wsl.exe" -ArgumentList $wasdArgs
 
-Write-Host "ROS 2 DDS WASD terminal started."
+Write-Host "ROS 2 DDS WASD terminal started. Arm compensation test=$ArmCompensationTest"
