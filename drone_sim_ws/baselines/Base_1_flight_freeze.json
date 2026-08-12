@@ -1,0 +1,122 @@
+{
+  "schema": "my_drone.base1-flight-freeze.v1",
+  "generated_utc": "2026-08-12T15:56:17.459144+00:00",
+  "reference": "base-1",
+  "reference_commit": "b340ed6ce77ac4f7820be5a80edba783ce7b55ec",
+  "expected_base1_commit_prefix": "b340ed6",
+  "scope": "4kg Base 1 flight only; 7.735kg explicitly excluded",
+  "default_compensation": {
+    "ARM_FEEDFORWARD_ENABLED": false,
+    "ARM_TORQUE_FEEDFORWARD_ENABLED": false,
+    "ARM_STATIC_COM_FEEDFORWARD_GAIN": 0.0,
+    "ARM_DISTURBANCE_OBSERVER_ENABLED": false
+  },
+  "files": [
+    {
+      "path": "drone_sim_ws/px4/airframes/4027_gz_my_drone_octorotor_debug_4kg",
+      "base1_sha256": "216934aecb99f3f5ca2cde251de023424d780f8f8b4e906b5d6a997dbdb7ccba",
+      "worktree_raw_sha256": "216934aecb99f3f5ca2cde251de023424d780f8f8b4e906b5d6a997dbdb7ccba",
+      "worktree_canonical_sha256": "216934aecb99f3f5ca2cde251de023424d780f8f8b4e906b5d6a997dbdb7ccba",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/scripts/run_ros2_dds_wasd.sh",
+      "base1_sha256": "cc5b7cc58b7b4ba74a14790ab93c117620fe34468877fe995e69ef2dce4827f2",
+      "worktree_raw_sha256": "cc5b7cc58b7b4ba74a14790ab93c117620fe34468877fe995e69ef2dce4827f2",
+      "worktree_canonical_sha256": "cc5b7cc58b7b4ba74a14790ab93c117620fe34468877fe995e69ef2dce4827f2",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/scripts/start_main_model_gazebo.ps1",
+      "base1_sha256": "a89b177c1e033e971c90b9b5e0aef734cae20db4438776f221db9244542e56a1",
+      "worktree_raw_sha256": "a89b177c1e033e971c90b9b5e0aef734cae20db4438776f221db9244542e56a1",
+      "worktree_canonical_sha256": "a89b177c1e033e971c90b9b5e0aef734cae20db4438776f221db9244542e56a1",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/scripts/start_ros2_dds_wasd.ps1",
+      "base1_sha256": "d78597729634b5ed5407db699ba8d2d9cb1001c1f9f6b85b5f171444678b1dd4",
+      "worktree_raw_sha256": "d78597729634b5ed5407db699ba8d2d9cb1001c1f9f6b85b5f171444678b1dd4",
+      "worktree_canonical_sha256": "d78597729634b5ed5407db699ba8d2d9cb1001c1f9f6b85b5f171444678b1dd4",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/scripts/wsl_start_ros2_dds_debug_4kg.sh",
+      "base1_sha256": "f1cb7e4808b34c934e2e56d92349ae5c5c3c3d87a30fe525ebcfb855f5d9c2ec",
+      "worktree_raw_sha256": "f1cb7e4808b34c934e2e56d92349ae5c5c3c3d87a30fe525ebcfb855f5d9c2ec",
+      "worktree_canonical_sha256": "f1cb7e4808b34c934e2e56d92349ae5c5c3c3d87a30fe525ebcfb855f5d9c2ec",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/scripts/wsl_start_ros2_dds_noarm.sh",
+      "base1_sha256": "d681af53408ee10d9e13027568779b3469a45a67274b47117c114485bbf96c1e",
+      "worktree_raw_sha256": "d681af53408ee10d9e13027568779b3469a45a67274b47117c114485bbf96c1e",
+      "worktree_canonical_sha256": "d681af53408ee10d9e13027568779b3469a45a67274b47117c114485bbf96c1e",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/src/drone_arm_sim/config/my_drone_v3_cad_debug_4kg.json",
+      "base1_sha256": "22ec6598136273157e00a485daf80c1bcc2d36a6b14f88ad0797c8988bab484a",
+      "worktree_raw_sha256": "29db0689d96b91d1139e0d07b31f661ec0a3ae69c1c3e3b2c5fb825973bc1e9e",
+      "worktree_canonical_sha256": "22ec6598136273157e00a485daf80c1bcc2d36a6b14f88ad0797c8988bab484a",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/src/drone_arm_sim/drone_arm_sim/gazebo_direct_motor_model.py",
+      "base1_sha256": "c9eef556e2da7297d93276c40abf3c44f562ed2e1539d536042be4d042ca0d2e",
+      "worktree_raw_sha256": "c9eef556e2da7297d93276c40abf3c44f562ed2e1539d536042be4d042ca0d2e",
+      "worktree_canonical_sha256": "c9eef556e2da7297d93276c40abf3c44f562ed2e1539d536042be4d042ca0d2e",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/src/drone_arm_sim/launch/cad_direct_thrust.launch.py",
+      "base1_sha256": "1839f24f39b770b54470728d6acdcf4b3368a6c67d5df91ab234eb860e9ee1bc",
+      "worktree_raw_sha256": "1839f24f39b770b54470728d6acdcf4b3368a6c67d5df91ab234eb860e9ee1bc",
+      "worktree_canonical_sha256": "1839f24f39b770b54470728d6acdcf4b3368a6c67d5df91ab234eb860e9ee1bc",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/src/drone_arm_sim/urdf/my_drone_v3/my_drone_cad_debug_4kg.urdf",
+      "base1_sha256": "6ae7962129128d750b64f648f30163f827b0decfbbc1f667dfaba7b67dc39b91",
+      "worktree_raw_sha256": "7f5e4965cdd336311ebaedb9e3e201758307e314063ed6603fecfc063baad45c",
+      "worktree_canonical_sha256": "6ae7962129128d750b64f648f30163f827b0decfbbc1f667dfaba7b67dc39b91",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/src/drone_arm_sim/worlds/flight_world_debug_4kg.sdf",
+      "base1_sha256": "d0d44651e937151a6b1e315f80e8f3ab553c0e90251a1d3028831050a8c6fcf7",
+      "worktree_raw_sha256": "d0d44651e937151a6b1e315f80e8f3ab553c0e90251a1d3028831050a8c6fcf7",
+      "worktree_canonical_sha256": "d0d44651e937151a6b1e315f80e8f3ab553c0e90251a1d3028831050a8c6fcf7",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/src/drone_motor_system/src/LatestWrenchSystem.cc",
+      "base1_sha256": "39de9e1e22b209df80f05822bb68603f363cca1deef7533c945d98968e7aa74d",
+      "worktree_raw_sha256": "39de9e1e22b209df80f05822bb68603f363cca1deef7533c945d98968e7aa74d",
+      "worktree_canonical_sha256": "39de9e1e22b209df80f05822bb68603f363cca1deef7533c945d98968e7aa74d",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    },
+    {
+      "path": "drone_sim_ws/src/px4_ros2_control/px4_ros2_control/dds_wasd_control.py",
+      "base1_sha256": "f55180701d3e3a9c0d2d2de0f0cbe89678efe11b40ccb68ffc027cd15ef28278",
+      "worktree_raw_sha256": "f55180701d3e3a9c0d2d2de0f0cbe89678efe11b40ccb68ffc027cd15ef28278",
+      "worktree_canonical_sha256": "f55180701d3e3a9c0d2d2de0f0cbe89678efe11b40ccb68ffc027cd15ef28278",
+      "comparison": "SHA-256 after CRLF/CR to LF normalization",
+      "matches_base1": true
+    }
+  ],
+  "all_core_files_match": true,
+  "mismatches": []
+}
