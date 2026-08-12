@@ -31,18 +31,19 @@
       4,
       5
     ],
-    "upward_thrust_motors": [
+    "cad_propeller_side_ray_upward_component_motors": [
       1,
       2,
-      3,
-      6
-    ],
-    "downward_thrust_motors": [
       4,
-      5,
+      5
+    ],
+    "cad_propeller_side_ray_downward_component_motors": [
+      3,
+      6,
       7,
       8
-    ]
+    ],
+    "positive_thrust_direction_status": "UNRESOLVED_FOR_ALL_MOTORS"
   },
   "assembly_bbox_origin_m": [
     -0.06443653447931826,
@@ -69,6 +70,11 @@
         31.649782614962493,
         -183.01001573362026
       ],
+      "assembly_propeller_side_axis": [
+        0.3535533905932739,
+        0.8660254037844385,
+        -0.3535533905932742
+      ],
       "assembly_thrust_axis": [
         0.3535533905932739,
         0.8660254037844385,
@@ -79,12 +85,17 @@
         0.3535533905932739,
         -0.8660254037844385
       ],
-      "ros_flu_thrust_axis": [
+      "all_up_hypothesis_axis_ros_flu": [
         0.3535533905932742,
         -0.3535533905932739,
         0.8660254037844385
       ],
-      "px4_frd_thrust_axis": [
+      "all_up_hypothesis_axis_frd": [
+        0.3535533905932742,
+        0.3535533905932739,
+        -0.8660254037844385
+      ],
+      "legacy_rotation_mount_hypothesis_axis_frd": [
         0.3535533905932742,
         0.3535533905932739,
         -0.8660254037844385
@@ -99,12 +110,12 @@
         0.07766654762208444,
         0.005715767664977334
       ],
-      "tilt_deg": 30.000000000000018,
-      "azimuth_deg": 44.99999999999998,
+      "all_up_hypothesis_tilt_deg": 30.000000000000018,
+      "all_up_hypothesis_azimuth_deg": 44.99999999999998,
       "propeller_side_tilt_deg": 30.000000000000018,
       "propulsion_mode": "puller",
-      "vertical_thrust_direction": "up",
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "cad_propeller_side_ray_vertical_component": "upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "motor_propeller_line_offset_mm": 3.274864922277287e-14,
       "motor_propeller_axis_angle_deg": 0.0,
       "coaxial_motor_face_radii_mm": [
@@ -132,6 +143,11 @@
         31.649782614962678,
         182.32307951054796
       ],
+      "assembly_propeller_side_axis": [
+        -0.3535533905932737,
+        0.866025403784439,
+        0.35355339059327323
+      ],
       "assembly_thrust_axis": [
         -0.3535533905932737,
         0.866025403784439,
@@ -142,12 +158,17 @@
         -0.3535533905932737,
         -0.866025403784439
       ],
-      "ros_flu_thrust_axis": [
+      "all_up_hypothesis_axis_ros_flu": [
         -0.35355339059327323,
         0.3535533905932737,
         0.866025403784439
       ],
-      "px4_frd_thrust_axis": [
+      "all_up_hypothesis_axis_frd": [
+        -0.35355339059327323,
+        -0.3535533905932737,
+        -0.866025403784439
+      ],
+      "legacy_rotation_mount_hypothesis_axis_frd": [
         -0.35355339059327323,
         -0.3535533905932737,
         -0.866025403784439
@@ -162,12 +183,12 @@
         -0.0776665476220844,
         0.005715767664977146
       ],
-      "tilt_deg": 29.999999999999954,
-      "azimuth_deg": -134.99999999999997,
+      "all_up_hypothesis_tilt_deg": 29.999999999999954,
+      "all_up_hypothesis_azimuth_deg": -134.99999999999997,
       "propeller_side_tilt_deg": 29.999999999999954,
       "propulsion_mode": "puller",
-      "vertical_thrust_direction": "up",
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "cad_propeller_side_ray_vertical_component": "upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
       "motor_propeller_axis_angle_deg": 0.0,
       "coaxial_motor_face_radii_mm": [
@@ -195,6 +216,11 @@
         43.081317944917075,
         -78.01001573362068
       ],
+      "assembly_propeller_side_axis": [
+        0.3535533905932736,
+        -0.8660254037844387,
+        -0.35355339059327384
+      ],
       "assembly_thrust_axis": [
         0.3535533905932736,
         -0.8660254037844387,
@@ -205,12 +231,17 @@
         0.3535533905932736,
         0.8660254037844387
       ],
-      "ros_flu_thrust_axis": [
+      "all_up_hypothesis_axis_ros_flu": [
         -0.35355339059327384,
         0.3535533905932736,
         0.8660254037844387
       ],
-      "px4_frd_thrust_axis": [
+      "all_up_hypothesis_axis_frd": [
+        -0.35355339059327384,
+        -0.3535533905932736,
+        -0.8660254037844387
+      ],
+      "legacy_rotation_mount_hypothesis_axis_frd": [
         -0.35355339059327384,
         -0.3535533905932736,
         -0.8660254037844387
@@ -225,12 +256,12 @@
         0.1826665476220841,
         -0.00571576766497725
       ],
-      "tilt_deg": 29.999999999999993,
-      "azimuth_deg": -135.00000000000003,
+      "all_up_hypothesis_tilt_deg": 29.999999999999993,
+      "all_up_hypothesis_azimuth_deg": -135.00000000000003,
       "propeller_side_tilt_deg": 150.0,
       "propulsion_mode": "pusher",
-      "vertical_thrust_direction": "up",
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "cad_propeller_side_ray_vertical_component": "downward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "motor_propeller_line_offset_mm": 1.811234284755796e-14,
       "motor_propeller_axis_angle_deg": 0.0,
       "coaxial_motor_face_radii_mm": [
@@ -258,6 +289,11 @@
         31.649782614962763,
         182.32307951054779
       ],
+      "assembly_propeller_side_axis": [
+        0.3535533905932738,
+        0.8660254037844388,
+        0.3535533905932735
+      ],
       "assembly_thrust_axis": [
         0.3535533905932738,
         0.8660254037844388,
@@ -268,12 +304,17 @@
         0.3535533905932738,
         -0.8660254037844388
       ],
-      "ros_flu_thrust_axis": [
-        0.3535533905932735,
+      "all_up_hypothesis_axis_ros_flu": [
+        -0.3535533905932735,
+        -0.3535533905932738,
+        0.8660254037844388
+      ],
+      "all_up_hypothesis_axis_frd": [
+        -0.3535533905932735,
         0.3535533905932738,
         -0.8660254037844388
       ],
-      "px4_frd_thrust_axis": [
+      "legacy_rotation_mount_hypothesis_axis_frd": [
         0.3535533905932735,
         -0.3535533905932738,
         0.8660254037844388
@@ -288,12 +329,12 @@
         0.07766654762208444,
         0.005715767664977063
       ],
-      "tilt_deg": 150.00000000000003,
-      "azimuth_deg": -45.00000000000003,
+      "all_up_hypothesis_tilt_deg": 29.99999999999998,
+      "all_up_hypothesis_azimuth_deg": 134.99999999999997,
       "propeller_side_tilt_deg": 29.99999999999998,
       "propulsion_mode": "puller",
-      "vertical_thrust_direction": "down",
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "cad_propeller_side_ray_vertical_component": "upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
       "motor_propeller_axis_angle_deg": 0.0,
       "coaxial_motor_face_radii_mm": [
@@ -321,6 +362,11 @@
         31.649782614962533,
         -183.01001573362015
       ],
+      "assembly_propeller_side_axis": [
+        -0.3535533905932735,
+        0.8660254037844385,
+        -0.3535533905932745
+      ],
       "assembly_thrust_axis": [
         -0.3535533905932735,
         0.8660254037844385,
@@ -331,12 +377,17 @@
         -0.3535533905932735,
         -0.8660254037844385
       ],
-      "ros_flu_thrust_axis": [
-        -0.3535533905932745,
+      "all_up_hypothesis_axis_ros_flu": [
+        0.3535533905932745,
+        0.3535533905932735,
+        0.8660254037844385
+      ],
+      "all_up_hypothesis_axis_frd": [
+        0.3535533905932745,
         -0.3535533905932735,
         -0.8660254037844385
       ],
-      "px4_frd_thrust_axis": [
+      "legacy_rotation_mount_hypothesis_axis_frd": [
         -0.3535533905932745,
         0.3535533905932735,
         0.8660254037844385
@@ -351,12 +402,12 @@
         -0.07766654762208437,
         0.005715767664977292
       ],
-      "tilt_deg": 149.99999999999997,
-      "azimuth_deg": 135.00000000000009,
+      "all_up_hypothesis_tilt_deg": 30.000000000000018,
+      "all_up_hypothesis_azimuth_deg": -44.99999999999992,
       "propeller_side_tilt_deg": 30.000000000000018,
       "propulsion_mode": "puller",
-      "vertical_thrust_direction": "down",
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "cad_propeller_side_ray_vertical_component": "upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "motor_propeller_line_offset_mm": 9.488200048182762e-14,
       "motor_propeller_axis_angle_deg": 0.0,
       "coaxial_motor_face_radii_mm": [
@@ -384,6 +435,11 @@
         43.08131794491705,
         77.32307951054818
       ],
+      "assembly_propeller_side_axis": [
+        -0.3535533905932736,
+        -0.8660254037844387,
+        0.35355339059327373
+      ],
       "assembly_thrust_axis": [
         -0.3535533905932736,
         -0.8660254037844387,
@@ -394,12 +450,17 @@
         -0.3535533905932736,
         0.8660254037844387
       ],
-      "ros_flu_thrust_axis": [
+      "all_up_hypothesis_axis_ros_flu": [
         0.35355339059327373,
         -0.3535533905932736,
         0.8660254037844387
       ],
-      "px4_frd_thrust_axis": [
+      "all_up_hypothesis_axis_frd": [
+        0.35355339059327373,
+        0.3535533905932736,
+        -0.8660254037844387
+      ],
+      "legacy_rotation_mount_hypothesis_axis_frd": [
         0.35355339059327373,
         0.3535533905932736,
         -0.8660254037844387
@@ -414,12 +475,12 @@
         -0.18266654762208406,
         -0.00571576766497723
       ],
-      "tilt_deg": 29.999999999999993,
-      "azimuth_deg": 44.99999999999999,
+      "all_up_hypothesis_tilt_deg": 29.999999999999993,
+      "all_up_hypothesis_azimuth_deg": 44.99999999999999,
       "propeller_side_tilt_deg": 150.0,
       "propulsion_mode": "pusher",
-      "vertical_thrust_direction": "up",
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "cad_propeller_side_ray_vertical_component": "downward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "motor_propeller_line_offset_mm": 7.735613448393047e-14,
       "motor_propeller_axis_angle_deg": 0.0,
       "coaxial_motor_face_radii_mm": [
@@ -447,6 +508,11 @@
         43.08131794491704,
         -78.01001573362062
       ],
+      "assembly_propeller_side_axis": [
+        -0.3535533905932741,
+        -0.8660254037844386,
+        -0.3535533905932736
+      ],
       "assembly_thrust_axis": [
         -0.3535533905932741,
         -0.8660254037844386,
@@ -457,12 +523,17 @@
         -0.3535533905932741,
         0.8660254037844386
       ],
-      "ros_flu_thrust_axis": [
-        0.3535533905932736,
+      "all_up_hypothesis_axis_ros_flu": [
+        -0.3535533905932736,
+        -0.3535533905932741,
+        0.8660254037844386
+      ],
+      "all_up_hypothesis_axis_frd": [
+        -0.3535533905932736,
         0.3535533905932741,
         -0.8660254037844386
       ],
-      "px4_frd_thrust_axis": [
+      "legacy_rotation_mount_hypothesis_axis_frd": [
         0.3535533905932736,
         -0.3535533905932741,
         0.8660254037844386
@@ -477,12 +548,12 @@
         -0.18266654762208395,
         -0.005715767664977216
       ],
-      "tilt_deg": 150.0,
-      "azimuth_deg": -45.00000000000004,
+      "all_up_hypothesis_tilt_deg": 30.000000000000004,
+      "all_up_hypothesis_azimuth_deg": 134.99999999999997,
       "propeller_side_tilt_deg": 150.0,
       "propulsion_mode": "pusher",
-      "vertical_thrust_direction": "down",
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "cad_propeller_side_ray_vertical_component": "downward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "motor_propeller_line_offset_mm": 2.091245844657973e-14,
       "motor_propeller_axis_angle_deg": 0.0,
       "coaxial_motor_face_radii_mm": [
@@ -510,6 +581,11 @@
         43.08131794491697,
         77.32307951054815
       ],
+      "assembly_propeller_side_axis": [
+        0.353553390593274,
+        -0.8660254037844387,
+        0.3535533905932736
+      ],
       "assembly_thrust_axis": [
         0.353553390593274,
         -0.8660254037844387,
@@ -520,12 +596,17 @@
         0.353553390593274,
         0.8660254037844387
       ],
-      "ros_flu_thrust_axis": [
-        -0.3535533905932736,
+      "all_up_hypothesis_axis_ros_flu": [
+        0.3535533905932736,
+        0.353553390593274,
+        0.8660254037844387
+      ],
+      "all_up_hypothesis_axis_frd": [
+        0.3535533905932736,
         -0.353553390593274,
         -0.8660254037844387
       ],
-      "px4_frd_thrust_axis": [
+      "legacy_rotation_mount_hypothesis_axis_frd": [
         -0.3535533905932736,
         0.353553390593274,
         0.8660254037844387
@@ -540,12 +621,12 @@
         0.18266654762208398,
         -0.005715767664977139
       ],
-      "tilt_deg": 150.0,
-      "azimuth_deg": 134.99999999999997,
+      "all_up_hypothesis_tilt_deg": 29.999999999999993,
+      "all_up_hypothesis_azimuth_deg": -45.00000000000003,
       "propeller_side_tilt_deg": 150.0,
       "propulsion_mode": "pusher",
-      "vertical_thrust_direction": "down",
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "cad_propeller_side_ray_vertical_component": "downward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "motor_propeller_line_offset_mm": 2.455281089561238e-14,
       "motor_propeller_axis_angle_deg": 0.0,
       "coaxial_motor_face_radii_mm": [

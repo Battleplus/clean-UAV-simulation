@@ -1,0 +1,48 @@
+{
+  "profile": "gripper_4kg",
+  "gazebo_seed": 4027,
+  "px4_fresh_workdir": true,
+  "ground_stability_hold_s": 5.0,
+  "runs": [
+    {
+      "log": "analysis/reproducible_start_gripper_4kg_20260811.log",
+      "initial_local_ned_z_m": 0.023,
+      "initial_truth_enu_z_m": 0.285,
+      "takeoff_target_ned_z_m": -1.18,
+      "horizontal_drift_m": 0.092,
+      "altitude_span_m": 0.090,
+      "max_truth_tilt_deg": 0.781,
+      "motor_saturation_samples": 0,
+      "failsafe_seen": false,
+      "landing_disarmed_confirmed": true,
+      "pass": true
+    },
+    {
+      "log": "analysis/reproducible_start_gripper_4kg_repeat2_20260811.log",
+      "initial_local_ned_z_m": 0.014,
+      "initial_truth_enu_z_m": 0.285,
+      "takeoff_target_ned_z_m": -1.15,
+      "horizontal_drift_m": 0.079,
+      "altitude_span_m": 0.106,
+      "max_truth_tilt_deg": 0.922,
+      "motor_saturation_samples": 0,
+      "failsafe_seen": false,
+      "landing_disarmed_confirmed": true,
+      "pass": true
+    }
+  ],
+  "absolute_deltas": {
+    "initial_local_ned_z_m": 0.009,
+    "initial_truth_enu_z_m": 0.0,
+    "takeoff_target_ned_z_m": 0.03,
+    "horizontal_drift_m": 0.013,
+    "altitude_span_m": 0.016,
+    "max_truth_tilt_deg": 0.141
+  },
+  "comparison_to_previous_uncontrolled_start": {
+    "previous_local_ned_ground_origin_delta_m": 0.433,
+    "current_local_ned_ground_origin_delta_m": 0.009,
+    "classification": "STARTUP_REPRODUCIBILITY_IMPROVED"
+  },
+  "scope": "4 kg debug model only; this does not validate the 7.735 kg formal vehicle or propeller handedness"
+}

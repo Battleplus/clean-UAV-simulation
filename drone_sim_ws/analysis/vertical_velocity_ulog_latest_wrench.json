@@ -1,0 +1,32 @@
+{
+  "schema": 2,
+  "ulog": "/home/asus/PX4-Autopilot/build/px4_sitl_default/rootfs/log/2026-08-11/07_13_50.ulg",
+  "velocity_only_start_log_s": 52.597014,
+  "velocity_only_duration_s": 13.970986,
+  "setpoint_samples": 71,
+  "command_vz_min_m_s": -0.15306289494037628,
+  "command_vz_max_m_s": 0.15704040229320526,
+  "acceleration_feedforward_finite_fraction": 1.0,
+  "command_az_min_m_s2": -0.18000000715255737,
+  "command_az_max_m_s2": 0.18000000715255737,
+  "estimated_vz_min_m_s": -0.12883546948432922,
+  "estimated_vz_max_m_s": 0.17010802030563354,
+  "truth_vz_min_m_s": -0.12622825801372528,
+  "truth_vz_max_m_s": 0.17191484272480012,
+  "estimated_truth_vz_error_mean_m_s": -0.0008354199630379536,
+  "estimated_truth_vz_error_max_abs_m_s": 0.010172630613669752,
+  "estimated_truth_vz_correlation": 0.999436975018494,
+  "native_truth_samples": 699,
+  "native_truth_max_sample_interval_s": 0.02,
+  "native_truth_max_abs_vz_delta_m_s": 0.0036271177232265472,
+  "native_truth_max_abs_vertical_acceleration_m_s2": 0.18135588616132736,
+  "native_truth_vertical_impulses_over_5m_s2": 0,
+  "z_reset_counters_in_window": [
+    2
+  ],
+  "vz_reset_counters_in_window": [
+    1
+  ],
+  "z_reset_changes_in_window": 0,
+  "vz_reset_changes_in_window": 0
+}

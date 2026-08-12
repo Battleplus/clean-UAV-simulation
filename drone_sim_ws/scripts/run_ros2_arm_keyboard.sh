@@ -6,6 +6,9 @@ source /opt/ros/jazzy/setup.bash
 source /home/asus/ros2_px4_build_ws/install/setup.bash
 source "${workspace_dir}/install/setup.bash"
 
+# Keep flight and arm input windows visually distinct.
+printf '\033]0;my_drone 4kg 联合调试 - SO101 机械臂\007'
+
 run_preset() {
   local preset="$1"
   local duration="$2"

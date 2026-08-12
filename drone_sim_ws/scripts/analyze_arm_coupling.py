@@ -43,6 +43,7 @@ def main() -> int:
         default=package / "config/so101_motion_reference.json",
     )
     parser.add_argument("--payload-mass-kg", type=float, default=0.25)
+    parser.add_argument("--target-mass-kg", type=float, default=7.735)
     parser.add_argument(
         "--output",
         type=Path,
@@ -50,7 +51,13 @@ def main() -> int:
     )
     args = parser.parse_args()
     reference = json.loads(args.motion_reference.read_text(encoding="utf-8"))
-    dynamics = CoupledArmDynamics(args.urdf, reference, target_mass_kg=7.735)
+    if args.target_mass_kg <= 0.0:
+        parser.error("--target-mass-kg must be positive")
+    if args.payload_mass_kg < 0.0:
+        parser.error("--payload-mass-kg must be nonnegative")
+    dynamics = CoupledArmDynamics(
+        args.urdf, reference, target_mass_kg=args.target_mass_kg
+    )
 
     def positions(preset: str) -> dict[str, float]:
         return dict(zip(JOINT_NAMES, reference["presets"][preset]))
@@ -68,7 +75,7 @@ def main() -> int:
     report = {
         "schema": 1,
         "urdf": str(args.urdf),
-        "model_mass_without_payload_kg": 7.735,
+        "model_mass_without_payload_kg": args.target_mass_kg,
         "payload_mass_kg": args.payload_mass_kg,
         "states": {
             "retracted": record(retracted),

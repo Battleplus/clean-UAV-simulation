@@ -61,8 +61,10 @@ def main() -> int:
     print(f"GIT_COMMIT={commit}")
     print("W/S forward/back: 0.40 m/s | A/D left/right: 0.40 m/s")
     print("R up: 0.15 m/s | F down: 0.15 m/s | Q/E yaw: 15 deg/s")
+    print("S-curve: horizontal a=0.30 m/s^2 jerk=0.60 m/s^3")
+    print("S-curve: vertical a=0.18 m/s^2 jerk=0.40 m/s^3")
     print("Tap/hold a motion key -> latch one velocity target")
-    print("Release does nothing | H -> zero velocity (manual stop)")
+    print("Release does nothing | H -> S-curve brake to zero + heading hold")
     print("T takeoff | L land | keep this window focused while flying")
     child = subprocess.Popen(command, stdin=subprocess.PIPE)
     user32 = ctypes.windll.user32

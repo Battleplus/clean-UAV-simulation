@@ -26,7 +26,13 @@ TARGET_RE = re.compile(
     r"target NED=\(([-+0-9.e]+),\s*([-+0-9.e]+),\s*([-+0-9.e]+)\)"
 )
 DIAGNOSTIC_RE = re.compile(
-    r"arm_torque_nm=([-+0-9.e]+) motors=\[([^\]]*)\]"
+    r"arm_torque_nm=([-+0-9.e]+) "
+    r"arm_force_n=([-+0-9.e]+) "
+    r"arm_com_shift_m=([-+0-9.e]+) "
+    r"arm_inertia_diag=\(([^)]*)\) motors=\[([^\]]*)\]"
+)
+TRUTH_RPY_RE = re.compile(
+    r"truth_rpy_deg=\(([-+0-9.e]+),([-+0-9.e]+),([-+0-9.e]+)\)"
 )
 CARTESIAN_BEGIN_RE = re.compile(
     r"CARTESIAN_DEMO_BEGIN cycle=(\d+) monotonic=([-+0-9.e]+)"
@@ -83,9 +89,15 @@ def main() -> int:
     output = ""
     states = []
     diagnostics = []
+    truth_attitudes = []
     initialized = False
+    seen_armed = False
+    prehover_disarm = False
     first_state_time = None
     takeoff_stable_since = None
+    ground_stable_hold_s = float(
+        os.environ.get("ARM_FLIGHT_GROUND_STABLE_HOLD_S", "5.0")
+    )
     offboard_time = None
     target_ned = None
     flight_ready_time = None
@@ -94,6 +106,8 @@ def main() -> int:
     arm_process = None
     arm_label = None
     arm_results = {}
+    arm_action_started = {}
+    arm_action_completed = {}
     cartesian_action_started = {}
     cartesian_action_completed = {}
     first_cartesian_completed_time = None
@@ -151,6 +165,58 @@ def main() -> int:
         ]
         arm_duration = "14"
         land_after_s = 67.0
+    elif profile == "gripper_4kg":
+        # First coupling rung: move only the gripper while every upstream arm
+        # joint remains at the CAD retracted pose.
+        arm_schedule = [
+            (5.0, "gripper_open"),
+            (20.0, "gripper_closed"),
+        ]
+        arm_duration = "10"
+        land_after_s = 38.0
+    elif profile == "wrist_roll_4kg":
+        # Second coupling rung: only wrist_roll moves; the gripper remains
+        # closed and every upstream joint remains retracted.  Use a slower
+        # trajectory than the first 0.30 rad identification run; that run is
+        # retained in analysis as a failed strict-gate data point.
+        arm_schedule = [
+            (5.0, "wrist_roll_test"),
+            (22.0, "wrist_roll_home"),
+        ]
+        arm_duration = "12"
+        land_after_s = 42.0
+    elif profile == "shoulder_pan_4kg":
+        # Third coupling rung: rotate the complete downstream arm chain about
+        # shoulder_pan, but keep every other joint at the retracted pose.  The
+        # deliberately small 0.10 rad move over 15 s identifies upstream-joint
+        # coupling before any multi-joint trajectory is authorized.
+        arm_schedule = [
+            (5.0, "shoulder_pan_slow_test"),
+            (25.0, "shoulder_pan_home"),
+        ]
+        arm_duration = "15"
+        land_after_s = 47.0
+    elif profile == "multi_joint_slow_4kg":
+        # Fourth coupling rung: all six joints make the already bounded
+        # flight_work_a move together, but over 30 s in each direction.  This
+        # is intentionally separate from the full work_a/extended trajectory.
+        arm_schedule = [
+            (5.0, "flight_work_a"),
+            (40.0, "retracted"),
+        ]
+        arm_duration = "30"
+        land_after_s = 76.0
+    elif profile == "full_extend_slow_4kg":
+        # Fifth coupling rung: use the complete, visibly extended target with
+        # no amplitude reduction.  Ninety seconds each way isolates the
+        # static COM/inertia change from an unnecessarily aggressive joint
+        # acceleration before payload testing is considered.
+        arm_schedule = [
+            (5.0, "demo_extended"),
+            (100.0, "retracted"),
+        ]
+        arm_duration = "90"
+        land_after_s = 196.0
     elif profile == "combined_4kg":
         # Integrated 4 kg bring-up: deliberately overlap bounded arm motion
         # with paired position and yaw commands.  Opposing key pairs return
@@ -314,15 +380,41 @@ def main() -> int:
                 ):
                     internal_land = True
                 for match in STATE_RE.finditer(data):
-                    states.append(
-                        (time.monotonic(),) + tuple(float(x) for x in match.groups())
+                    state = (
+                        (time.monotonic(),)
+                        + tuple(float(x) for x in match.groups())
                     )
+                    states.append(state)
+                    arming_state = int(state[1])
+                    if arming_state == 2:
+                        seen_armed = True
+                    elif (
+                        seen_armed
+                        and arming_state == 1
+                        and flight_ready_time is None
+                    ):
+                        prehover_disarm = True
                 for match in DIAGNOSTIC_RE.finditer(data):
                     motors = [
-                        float(value) for value in match.group(2).split(",") if value
+                        float(value) for value in match.group(5).split(",") if value
                     ]
-                    diagnostics.append(
-                        (time.monotonic(), float(match.group(1)), motors)
+                    inertia_diag = [
+                        float(value) for value in match.group(4).split(",") if value
+                    ]
+                    if len(inertia_diag) == 3:
+                        diagnostics.append({
+                            "timestamp": time.monotonic(),
+                            "reaction_torque_norm_nm": float(match.group(1)),
+                            "reaction_force_norm_n": float(match.group(2)),
+                            "com_shift_norm_m": float(match.group(3)),
+                            "inertia_diag_kg_m2": inertia_diag,
+                            "motors": motors,
+                        })
+                for match in TRUTH_RPY_RE.finditer(data):
+                    truth_attitudes.append(
+                        (time.monotonic(),) + tuple(
+                            float(value) for value in match.groups()
+                        )
                     )
                 targets = list(TARGET_RE.finditer(data))
                 if targets:
@@ -332,33 +424,45 @@ def main() -> int:
                 if "OFFBOARD mode and ARM commands sent" in output and offboard_time is None:
                     offboard_time = time.monotonic()
 
+            if prehover_disarm:
+                print(
+                    "ARM_FLIGHT_PREHOVER_DISARM "
+                    "vehicle disarmed after arming but before hover-ready gate",
+                    flush=True,
+                )
+                break
+
             if first_state_time is not None and not initialized:
-                takeoff_ready = time.monotonic() - first_state_time >= 2.0
-                if profile == "cartesian_formal_7p735":
-                    recent_ground = [
-                        state for state in states
-                        if time.monotonic() - state[0] <= 5.0 and int(state[1]) == 1
+                recent_ground = [
+                    state for state in states
+                    if time.monotonic() - state[0] <= 5.0 and int(state[1]) == 1
+                ]
+                takeoff_ready = False
+                if len(recent_ground) >= 4:
+                    latest = recent_ground[-1]
+                    position_ranges = [
+                        max(state[index] for state in recent_ground)
+                        - min(state[index] for state in recent_ground)
+                        for index in (3, 4, 5)
                     ]
-                    takeoff_ready = False
-                    if len(recent_ground) >= 4:
-                        latest = recent_ground[-1]
-                        position_ranges = [
-                            max(state[index] for state in recent_ground)
-                            - min(state[index] for state in recent_ground)
-                            for index in (3, 4, 5)
-                        ]
-                        speed = math.sqrt(
-                            latest[6] * latest[6]
-                            + latest[7] * latest[7]
-                            + latest[8] * latest[8]
+                    speed = math.sqrt(
+                        latest[6] * latest[6]
+                        + latest[7] * latest[7]
+                        + latest[8] * latest[8]
+                    )
+                    position_limit = (
+                        0.15 if profile == "cartesian_formal_7p735" else 0.08
+                    )
+                    stable_now = max(position_ranges) < position_limit and speed < 0.08
+                    if stable_now:
+                        if takeoff_stable_since is None:
+                            takeoff_stable_since = time.monotonic()
+                        takeoff_ready = (
+                            time.monotonic() - takeoff_stable_since
+                            >= ground_stable_hold_s
                         )
-                        stable_now = max(position_ranges) < 0.15 and speed < 0.10
-                        if stable_now:
-                            if takeoff_stable_since is None:
-                                takeoff_stable_since = time.monotonic()
-                            takeoff_ready = time.monotonic() - takeoff_stable_since >= 5.0
-                        else:
-                            takeoff_stable_since = None
+                    else:
+                        takeoff_stable_since = None
                 if takeoff_ready:
                     os.write(master, b"t")
                     initialized = True
@@ -367,6 +471,7 @@ def main() -> int:
             if arm_process is not None and arm_process.poll() is not None:
                 arm_stdout, _ = arm_process.communicate()
                 arm_results[arm_label] = (arm_process.returncode, arm_stdout)
+                arm_action_completed[arm_label] = time.monotonic()
                 print(arm_stdout, end="", flush=True)
                 if arm_label in {"cartesian_sequence_twice", "cartesian_sequence_once"}:
                     starts = {
@@ -620,6 +725,7 @@ def main() -> int:
                             text=True,
                             env=ros2_child_environment(),
                         )
+                        arm_action_started[schedule_id] = time.monotonic()
                         sent.add(schedule_id)
                         print(f"ARM_FLIGHT_SENT_{schedule_id}", flush=True)
                         break
@@ -751,6 +857,8 @@ def main() -> int:
             missing.append(item)
     if controller_timed_out:
         missing.append("flight-controller-timeout")
+    if prehover_disarm:
+        missing.append("prehover-disarm")
     if profile in {"full_a", "full_a_slow"}:
         required_presets = ("work_a", "retracted")
     elif profile == "full_b_slow":
@@ -759,6 +867,16 @@ def main() -> int:
         required_presets = ("work_a", "work_b", "retracted")
     elif profile in {"micro", "micro_4kg"}:
         required_presets = ("flight_micro_a", "flight_micro_b", "retracted")
+    elif profile == "gripper_4kg":
+        required_presets = ("gripper_open", "gripper_closed")
+    elif profile == "wrist_roll_4kg":
+        required_presets = ("wrist_roll_test", "wrist_roll_home")
+    elif profile == "shoulder_pan_4kg":
+        required_presets = ("shoulder_pan_slow_test", "shoulder_pan_home")
+    elif profile == "multi_joint_slow_4kg":
+        required_presets = ("flight_work_a", "retracted")
+    elif profile == "full_extend_slow_4kg":
+        required_presets = ("demo_extended", "retracted")
     elif profile in {"demo_extended_4kg", "demo_extended_twice_4kg"}:
         required_presets = ("demo_extended", "retracted")
     elif profile == "cartesian_demo_4kg":
@@ -822,6 +940,20 @@ def main() -> int:
                 state for state in states
                 if action_start <= state[0] <= action_end
             )
+    elif profile in {
+        "gripper_4kg", "wrist_roll_4kg", "shoulder_pan_4kg",
+        "multi_joint_slow_4kg", "full_extend_slow_4kg",
+    }:
+        for label in required_presets:
+            action_start = arm_action_started.get(label)
+            action_end = arm_action_completed.get(label)
+            if action_start is None or action_end is None:
+                continue
+            action_intervals.append((label, action_start, action_end))
+            arm_window.extend(
+                state for state in states
+                if action_start <= state[0] <= action_end
+            )
     elif flight_ready_time is not None:
         arm_window = [
             state for state in states
@@ -854,7 +986,10 @@ def main() -> int:
                 f"altitude_span_m={cycle_altitude_span:.3f} "
                 f"samples={len(cycle_window)}"
             )
-        if len(cycle_drifts) == len(cartesian_labels):
+        # Isolated gripper/wrist profiles do not have Cartesian labels.  The
+        # old comparison against cartesian_labels therefore left both values
+        # at infinity even when every scheduled arm interval was measured.
+        if len(cycle_drifts) == len(action_intervals):
             max_horizontal_drift = max(cycle_drifts)
             altitude_span = max(cycle_altitude_spans)
     elif arm_window:
@@ -868,18 +1003,31 @@ def main() -> int:
     if action_intervals:
         diagnostic_window = [
             sample for sample in diagnostics
-            if any(start <= sample[0] <= end for _, start, end in action_intervals)
+            if any(
+                start <= sample["timestamp"] <= end
+                for _, start, end in action_intervals
+            )
         ]
     elif flight_ready_time is not None:
         diagnostic_window = [
             sample for sample in diagnostics
-            if 0.0 <= sample[0] - flight_ready_time <= land_after_s
+            if 0.0 <= sample["timestamp"] - flight_ready_time <= land_after_s
         ]
     max_arm_torque = max(
-        (sample[1] for sample in diagnostic_window), default=float("inf")
+        (sample["reaction_torque_norm_nm"] for sample in diagnostic_window),
+        default=float("inf"),
+    )
+    max_arm_force = max(
+        (sample["reaction_force_norm_n"] for sample in diagnostic_window),
+        default=float("inf"),
+    )
+    max_com_shift = max(
+        (sample["com_shift_norm_m"] for sample in diagnostic_window),
+        default=float("inf"),
     )
     motor_samples = [
-        motors for _, _, motors in diagnostic_window if len(motors) >= 8
+        sample["motors"] for sample in diagnostic_window
+        if len(sample["motors"]) >= 8
     ]
     saturation_samples = sum(
         1
@@ -889,25 +1037,83 @@ def main() -> int:
     saturation_rate = (
         saturation_samples / len(motor_samples) if motor_samples else float("inf")
     )
+    inertia_reference = None
+    if action_intervals:
+        first_action_start = min(start for _, start, _ in action_intervals)
+        baseline_samples = [
+            sample for sample in diagnostics
+            if sample["timestamp"] < first_action_start
+        ]
+        if baseline_samples:
+            inertia_reference = baseline_samples[-1]["inertia_diag_kg_m2"]
+    elif diagnostics:
+        inertia_reference = diagnostics[0]["inertia_diag_kg_m2"]
+    max_inertia_diag_change = float("inf")
+    if inertia_reference is not None and diagnostic_window:
+        max_inertia_diag_change = max(
+            math.sqrt(sum(
+                (value - reference) ** 2
+                for value, reference in zip(
+                    sample["inertia_diag_kg_m2"], inertia_reference
+                )
+            ))
+            for sample in diagnostic_window
+        )
+    if action_intervals:
+        truth_attitude_window = [
+            sample for sample in truth_attitudes
+            if any(start <= sample[0] <= end for _, start, end in action_intervals)
+        ]
+    elif flight_ready_time is not None:
+        truth_attitude_window = [
+            sample for sample in truth_attitudes
+            if 0.0 <= sample[0] - flight_ready_time <= land_after_s
+        ]
+    else:
+        truth_attitude_window = []
+    max_truth_tilt_deg = max(
+        (math.hypot(sample[1], sample[2]) for sample in truth_attitude_window),
+        default=float("inf"),
+    )
+    truth_tilt_deg = [
+        math.hypot(sample[1], sample[2]) for sample in truth_attitude_window
+    ]
+    rms_truth_tilt_deg = (
+        math.sqrt(sum(value * value for value in truth_tilt_deg) / len(truth_tilt_deg))
+        if truth_tilt_deg
+        else float("inf")
+    )
     stable = max_horizontal_drift < 1.5 and altitude_span < 1.5
     if profile in {
         "cartesian_demo_4kg", "cartesian_demo_twice_4kg",
-        "cartesian_velocity_4kg", "cartesian_formal_7p735",
+        "cartesian_velocity_4kg", "cartesian_formal_7p735", "gripper_4kg",
+        "wrist_roll_4kg", "shoulder_pan_4kg", "multi_joint_slow_4kg",
+        "full_extend_slow_4kg",
     }:
         stable = (
             max_horizontal_drift < 0.15
             and altitude_span < 0.30
             and max_arm_torque < 0.50
             and saturation_samples == 0
+            and max_truth_tilt_deg < 3.0
+            and math.isfinite(max_arm_force)
+            and math.isfinite(max_com_shift)
+            and math.isfinite(max_inertia_diag_change)
+            and len(diagnostic_window) > 0
         )
     print(
         "ARM_FLIGHT_METRICS "
         f"horizontal_drift_m={max_horizontal_drift:.3f} "
         f"altitude_span_m={altitude_span:.3f} "
+        f"max_com_shift_m={max_com_shift:.6f} "
+        f"max_inertia_diag_change_kg_m2={max_inertia_diag_change:.9f} "
+        f"max_arm_force_n={max_arm_force:.6f} "
         f"max_arm_torque_nm={max_arm_torque:.3f} "
         f"motor_saturation_samples={saturation_samples}/{len(motor_samples)} "
         f"motor_saturation_rate={saturation_rate:.6f} "
         f"rated_motor_output={rated_motor_output:.3f} "
+        f"max_truth_tilt_deg={max_truth_tilt_deg:.3f} "
+        f"rms_truth_tilt_deg={rms_truth_tilt_deg:.3f} "
         f"samples={len(arm_window)}"
     )
     if safety_abort:

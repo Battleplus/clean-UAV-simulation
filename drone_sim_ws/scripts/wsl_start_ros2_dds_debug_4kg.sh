@@ -3,7 +3,7 @@ set -euo pipefail
 
 workspace_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 px4_dir="${PX4_DIR:-/home/asus/PX4-Autopilot}"
-airframe="${workspace_dir}/px4/airframes/4027_gz_my_drone_octorotor_debug_4kg"
+airframe="${PROJECT_AIRFRAME_FILE:-${workspace_dir}/px4/airframes/4027_gz_my_drone_octorotor_debug_4kg}"
 px4_airframe="${px4_dir}/build/px4_sitl_default/etc/init.d-posix/airframes/4027_gz_my_drone_octorotor_debug_4kg"
 
 if [[ ! -f "${airframe}" ]]; then
@@ -13,12 +13,14 @@ fi
 cp "${airframe}" "${px4_airframe}"
 chmod +x "${px4_airframe}"
 
-export AIRFRAME_ID=4027
-export PROJECT_AIRFRAME_FILE="${workspace_dir}/px4/airframes/.4027_already_installed"
-export ROBOT_FILE="${workspace_dir}/src/drone_arm_sim/urdf/my_drone_v3/my_drone_cad_debug_4kg.urdf"
-export CONFIG_FILE="${workspace_dir}/src/drone_arm_sim/config/my_drone_v3_cad_debug_4kg.json"
+export AIRFRAME_ID="${AIRFRAME_ID:-4027}"
+export PROJECT_AIRFRAME_FILE="${PROJECT_AIRFRAME_FILE:-${airframe}}"
+export ROBOT_FILE="${ROBOT_FILE:-${workspace_dir}/src/drone_arm_sim/urdf/my_drone_v3/my_drone_cad_debug_4kg.urdf}"
+export CONFIG_FILE="${CONFIG_FILE:-${workspace_dir}/src/drone_arm_sim/config/my_drone_v3_cad_debug_4kg.json}"
 export MY_DRONE_WORLD="${workspace_dir}/src/drone_arm_sim/worlds/flight_world_debug_4kg.sdf"
-export ARM_COUPLING_TARGET_MASS_KG=4.0
+# Keep 4.0 kg as the validated debug default, but allow payload-derived
+# profiles to pass their analyzed total mass without editing this launcher.
+export ARM_COUPLING_TARGET_MASS_KG="${ARM_COUPLING_TARGET_MASS_KG:-4.0}"
 export BATTERY_DYNAMICS_ENABLED=false
 # This node is also the raw->PX4 Gazebo topic relay.  Keep it running while
 # setting every delay below to zero; disabling the node removes all IMU/GNSS
@@ -28,7 +30,10 @@ export IMU_DELAY_MS=0
 export MAG_DELAY_MS=0
 export BARO_DELAY_MS=0
 export NAVSAT_DELAY_MS=0
-export REACTION_MOMENT_RATIO_M=0.001
+# Experimental yaw-authority value for the 4 kg calibration profile only.
+# Real propeller reaction torque is still unresolved and must replace this
+# value before the formal 7.735 kg model can be called physically frozen.
+export REACTION_MOMENT_RATIO_M="${REACTION_MOMENT_RATIO_M:-0.005}"
 # The PX4 profile retains 0.25 m/s up/down safety limits.  A gentler manual
 # command avoids the measured descent overshoot seen with a 0.25 m/s key
 # command while preserving responsive R/F control.

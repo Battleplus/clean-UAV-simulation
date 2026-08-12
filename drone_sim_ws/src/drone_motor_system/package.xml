@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>drone_motor_system</name>
+  <version>0.1.0</version>
+  <description>Gazebo physics-step wrench hold for the clean UAV motor model.</description>
+  <maintainer email="asus@example.com">asus</maintainer>
+  <license>Apache-2.0</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <build_depend>pkg-config</build_depend>
+
+  <export>
+    <build_type>ament_cmake</build_type>
+  </export>
+</package>

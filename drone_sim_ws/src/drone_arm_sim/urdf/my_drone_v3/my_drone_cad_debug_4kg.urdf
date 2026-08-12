@@ -190,7 +190,6 @@
     <collision name="moving_jaw_support_collision">
       <origin xyz="0.036498 -0.017418 0.024940" rpy="0 0 0" />
       <geometry>
-        <!-- Contained fallback only; the CAD mesh is the real collision. -->
         <box size="0.015 0.015 0.015" />
       </geometry>
     </collision>

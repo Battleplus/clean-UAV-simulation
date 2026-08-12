@@ -20,9 +20,17 @@ from drone_arm_sim.arm_coupling_monitor import (
     bounded_compensation_ned,
     filtered_joint_acceleration_step,
 )
+from drone_arm_sim.arm_disturbance_observer import (
+    BoundedTorqueDisturbanceObserver,
+    inertia_tensor_flu_to_frd,
+    motor_torque_about_dynamic_com_frd,
+    parse_cli_and_ros_args,
+    rigid_body_residual_torque_frd,
+)
 from drone_arm_sim.gazebo_wrench_controller import compute_wrench_enu
 from drone_arm_sim.gazebo_direct_motor_model import (
     FRD_TO_FLU,
+    arm_compensation_torque_step,
     battery_step,
     command_to_current_a,
     command_to_thrust_n,
@@ -48,6 +56,7 @@ from drone_arm_sim.cartesian_arm_demo import (
 )
 from drone_arm_sim.gazebo_sensor_delay import message_stamp_seconds
 from drone_arm_sim.model_analysis import UrdfModel, _rpy_matrix
+from drone_arm_sim.motor_evidence import validate_motor_thrust_evidence
 from drone_arm_sim.rl_env import make_default_env
 
 
@@ -76,6 +85,9 @@ CAD_V3_FORMAL_REPORT = PACKAGE / "config" / "my_drone_v3_cad_formal_urdf.json"
 CAD_V3_FLIGHT_CONFIG_PATH = (
     PACKAGE / "config" / "my_drone_v3_cad_7p735_flight.json"
 )
+CAD_V3_DEBUG_4KG_CONFIG_PATH = (
+    PACKAGE / "config" / "my_drone_v3_cad_debug_4kg.json"
+)
 CAD_V3_AIRFRAME_PATH = (
     WORKSPACE / "px4" / "airframes" / "4026_gz_my_drone_octorotor_7p735"
 )
@@ -83,7 +95,26 @@ SO101_MOTION_REFERENCE_PATH = PACKAGE / "config" / "so101_motion_reference.json"
 GRASP_WORLD_PATH = PACKAGE / "worlds" / "flight_world_grasp_test.sdf"
 FLIGHT_WORLD_PATH = PACKAGE / "worlds" / "flight_world_250hz.sdf"
 LANDING_SUPPORT_PATH = PACKAGE / "worlds" / "landing_support.sdf"
+LATEST_WRENCH_SOURCE = (
+    PACKAGE.parent / "drone_motor_system" / "src" / "LatestWrenchSystem.cc"
+)
+CAD_DIRECT_LAUNCH = PACKAGE / "launch" / "cad_direct_thrust.launch.py"
 CAD_MANIFEST_PATH = WORKSPACE / "analysis" / "cad_direct" / "assembly_manifest.json"
+MOTOR_FREEZE_STATUS_PATH = (
+    WORKSPACE / "analysis" / "cad_direct" / "motor_physical_freeze_status.json"
+)
+MOTOR_AXIS_EVIDENCE_PATH = (
+    WORKSPACE / "analysis" / "cad_direct" / "motor_axis_evidence.json"
+)
+MOTOR_EVIDENCE_TEMPLATE_PATH = (
+    WORKSPACE / "analysis" / "cad_direct" / "motor_thrust_evidence.template.json"
+)
+PROPELLER_PITCH_EVIDENCE_PATH = (
+    WORKSPACE / "analysis" / "cad_direct" / "propeller_pitch_geometry_evidence.json"
+)
+PROPELLER_METADATA_EVIDENCE_PATH = (
+    WORKSPACE / "analysis" / "cad_direct" / "propeller_metadata_evidence.json"
+)
 EXTRACTED_MOUNTS_PATH = (
     WORKSPACE / "analysis" / "motor_geometry" / "extracted_mounts.json"
 )
@@ -131,6 +162,46 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertGreater(float(np.linalg.norm(trim_torque - base_torque)), 1e-4)
         self.assertLess(float(np.linalg.norm(trim_force - base_force)), 1.0)
 
+    def test_4kg_observer_trim_realizes_opposite_torque_without_net_force(self):
+        """Check the observer sign through the actual 4 kg 6x8 allocator.
+
+        This is deliberately stronger than checking that motor commands merely
+        changed: away from actuator limits, the resulting rotor-wrench delta
+        must be the requested negative disturbance torque and approximately
+        zero force in PX4 FRD.
+        """
+        config = json.loads(
+            CAD_V3_DEBUG_4KG_CONFIG_PATH.read_text(encoding="utf-8")
+        )
+        hover_commands = np.asarray(
+            [
+                thrust_to_actuator_command(config, thrust_n)
+                for thrust_n in config["bounded_hover_thrust_n"]
+            ],
+            dtype=float,
+        )
+        disturbance_frd_nm = np.array([0.04, -0.03, 0.02])
+        compensated, _ = torque_feedforward_command_delta(
+            config,
+            hover_commands,
+            disturbance_frd_nm,
+            max_delta_n=1.0,
+        )
+        base_force_flu, base_torque_flu = direct_wrench_flu(
+            config, hover_commands
+        )
+        trim_force_flu, trim_torque_flu = direct_wrench_flu(
+            config, compensated
+        )
+        force_delta_frd = FRD_TO_FLU @ (trim_force_flu - base_force_flu)
+        torque_delta_frd = FRD_TO_FLU @ (trim_torque_flu - base_torque_flu)
+
+        np.testing.assert_allclose(force_delta_frd, np.zeros(3), atol=1.0e-8)
+        np.testing.assert_allclose(
+            torque_delta_frd, -disturbance_frd_nm, atol=1.0e-8
+        )
+        self.assertTrue(np.all((compensated > 0.0) & (compensated < 1.0)))
+
     def test_static_com_low_pass_is_bounded_and_default_can_be_noop(self):
         from drone_arm_sim.gazebo_direct_motor_model import first_order_vector_step
 
@@ -143,6 +214,38 @@ class CoreRegressionTest(unittest.TestCase):
         instant = first_order_vector_step(np.zeros(3), target, 0.1, 0.0)
         np.testing.assert_allclose(instant, target)
 
+    def test_static_com_compensation_persists_after_arm_motion_stops(self):
+        combined, filtered, active = arm_compensation_torque_step(
+            np.zeros(3),
+            np.array([0.2, 0.0, 0.0]),
+            np.array([0.0, 0.6, 0.0]),
+            reaction_available=False,
+            gravity_available=True,
+            gravity_gain=0.5,
+            dt_s=0.1,
+            gravity_time_constant_s=0.0,
+        )
+        self.assertTrue(active)
+        np.testing.assert_allclose(filtered, [0.0, 0.6, 0.0])
+        # The transient reaction is absent, but the pose-dependent gravity
+        # moment remains and therefore still produces an allocator request.
+        np.testing.assert_allclose(combined, [0.0, 0.3, 0.0])
+
+    def test_arm_reaction_and_static_com_have_independent_gates(self):
+        combined, filtered, active = arm_compensation_torque_step(
+            np.zeros(3),
+            np.array([0.2, -0.1, 0.05]),
+            np.array([0.0, 0.6, 0.0]),
+            reaction_available=True,
+            gravity_available=False,
+            gravity_gain=1.0,
+            dt_s=0.1,
+            gravity_time_constant_s=0.0,
+        )
+        self.assertTrue(active)
+        np.testing.assert_allclose(filtered, np.zeros(3))
+        np.testing.assert_allclose(combined, [0.2, -0.1, 0.05])
+
     def test_cad_flight_reaction_torque_signs_match_cw_ccw(self):
         config = json.loads(
             (PACKAGE / "config" / "my_drone_v2_cad_flight_pitch_corrected.json")
@@ -151,7 +254,7 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertAlmostEqual(config["reaction_moment_ratio_m"], 0.001)
         self.assertEqual(
             config["reaction_moment_estimate"]["status"],
-            "enabled as a clean single-bridge closed-loop estimate",
+            "initial formal estimate; not a measured propeller parameter",
         )
         for rotor in config["rotors"]:
             expected = -1 if rotor["turning_direction"] == "CW" else 1
@@ -523,6 +626,32 @@ class CoreRegressionTest(unittest.TestCase):
                 self.assertAlmostEqual(float(match.group(1)), expected, places=6)
         for motor in range(1, 9):
             self.assertRegex(airframe, rf"SIM_GZ_EC_MAX{motor}\s+1000\b")
+
+    def test_propeller_cad_does_not_claim_unencoded_opposite_pitch(self):
+        evidence = json.loads(
+            PROPELLER_PITCH_EVIDENCE_PATH.read_text(encoding="utf-8")
+        )
+        reuse = evidence["component_reuse_evidence"]
+        self.assertEqual(evidence["result"], "PITCH_GEOMETRY_UNRESOLVED")
+        self.assertEqual(reuse["unique_source_part_count"], 1)
+        self.assertTrue(reuse["all_instance_transform_determinants_positive"])
+        self.assertEqual(reuse["mirrored_motor_instances"], [])
+        self.assertLess(evidence["maximum_p95_abs_pitch_angle_deg"], 0.01)
+
+    def test_propeller_metadata_contains_no_hidden_handedness_designation(self):
+        metadata = json.loads(
+            PROPELLER_METADATA_EVIDENCE_PATH.read_text(encoding="utf-8")
+        )
+        pitch = json.loads(
+            PROPELLER_PITCH_EVIDENCE_PATH.read_text(encoding="utf-8")
+        )
+        self.assertEqual(metadata["conclusion"], "NO_HANDEDNESS_METADATA_FOUND")
+        self.assertEqual(metadata["handedness_tokens_found"], [])
+        self.assertEqual(metadata["mirror_features"], [])
+        self.assertIn(
+            metadata["source_part_sha256"],
+            pitch["component_reuse_evidence"]["unique_source_part_sha256"],
+        )
 
     def test_formal_cad_urdf_closes_aggregate_mass_com_and_inertia(self):
         report = json.loads(CAD_V3_FORMAL_REPORT.read_text(encoding="utf-8"))
@@ -939,6 +1068,60 @@ class CoreRegressionTest(unittest.TestCase):
             # support so AUTO LAND still observes downward motion at contact.
             self.assertAlmostEqual(pose[2] + height / 2.0, 0.797, places=6)
 
+    def test_motor_wrench_is_held_by_physics_step_plugin(self):
+        root = ET.parse(FLIGHT_WORLD_PATH).getroot()
+        world = root.find("./world[@name='flight_world']")
+        plugin = world.find(
+            "./plugin[@name='drone_motor_system::LatestWrenchSystem']"
+        )
+        self.assertIsNotNone(plugin)
+        self.assertEqual(
+            plugin.attrib.get("filename"), "libdrone_latest_wrench_system.so"
+        )
+        self.assertEqual(
+            plugin.findtext("./topic"), "/world/flight_world/wrench/latest"
+        )
+        launch_text = CAD_DIRECT_LAUNCH.read_text(encoding="utf-8")
+        self.assertIn("/world/flight_world/wrench/latest", launch_text)
+        source = LATEST_WRENCH_SOURCE.read_text(encoding="utf-8")
+        self.assertIn("ISystemPreUpdate", source)
+        self.assertIn("link.AddWorldWrench", source)
+
+    def test_isolated_gripper_presets_leave_other_joints_retracted(self):
+        reference = json.loads(
+            SO101_MOTION_REFERENCE_PATH.read_text(encoding="utf-8")
+        )
+        retracted = np.asarray(reference["presets"]["retracted"], dtype=float)
+        opened = np.asarray(reference["presets"]["gripper_open"], dtype=float)
+        closed = np.asarray(reference["presets"]["gripper_closed"], dtype=float)
+        np.testing.assert_allclose(opened[:5], retracted[:5], atol=1.0e-12)
+        np.testing.assert_allclose(closed, retracted, atol=1.0e-12)
+        self.assertGreater(opened[5], closed[5])
+
+    def test_isolated_wrist_roll_presets_move_only_wrist_roll(self):
+        reference = json.loads(
+            SO101_MOTION_REFERENCE_PATH.read_text(encoding="utf-8")
+        )
+        retracted = np.asarray(reference["presets"]["retracted"], dtype=float)
+        moved = np.asarray(reference["presets"]["wrist_roll_test"], dtype=float)
+        home = np.asarray(reference["presets"]["wrist_roll_home"], dtype=float)
+        np.testing.assert_allclose(moved[[0, 1, 2, 3, 5]], retracted[[0, 1, 2, 3, 5]])
+        np.testing.assert_allclose(home, retracted, atol=1.0e-12)
+        self.assertNotAlmostEqual(moved[4], retracted[4], places=6)
+
+    def test_isolated_shoulder_pan_presets_move_only_shoulder_pan(self):
+        reference = json.loads(
+            SO101_MOTION_REFERENCE_PATH.read_text(encoding="utf-8")
+        )
+        retracted = np.asarray(reference["presets"]["retracted"], dtype=float)
+        moved = np.asarray(
+            reference["presets"]["shoulder_pan_slow_test"], dtype=float
+        )
+        home = np.asarray(reference["presets"]["shoulder_pan_home"], dtype=float)
+        np.testing.assert_allclose(moved[1:], retracted[1:], atol=1.0e-12)
+        np.testing.assert_allclose(home, retracted, atol=1.0e-12)
+        self.assertAlmostEqual(moved[0] - retracted[0], 0.10, places=9)
+
     def test_arm_feedforward_is_bounded_and_frame_converted(self):
         result = bounded_compensation_ned(
             np.array([0.0, 0.0, 7.735]), 7.735, np.eye(3), 0.6
@@ -957,6 +1140,218 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertEqual(clipped, 4.0)
         unchanged = filtered_joint_acceleration_step(1.25, float("nan"), 0.01, 0.20, 4.0)
         self.assertEqual(unchanged, 1.25)
+
+    def test_arm_dob_motor_model_matches_balanced_4kg_hover(self):
+        config = json.loads(CAD_V3_DEBUG_4KG_CONFIG_PATH.read_text(encoding="utf-8"))
+        hover_commands = np.array([
+            thrust_to_actuator_command(config, thrust)
+            for thrust in config["bounded_hover_thrust_n"]
+        ])
+        torque = motor_torque_about_dynamic_com_frd(
+            config, hover_commands, np.zeros(3)
+        )
+        np.testing.assert_allclose(torque, np.zeros(3), atol=1.0e-8)
+
+    def test_arm_dob_cli_preserves_ros_launch_arguments(self):
+        parsed, ros_arguments = parse_cli_and_ros_args(
+            [
+                "--maximum-torque-nm",
+                "0.07",
+                "--ros-args",
+                "-r",
+                "__node:=arm_dob_test",
+            ]
+        )
+        self.assertAlmostEqual(parsed.maximum_torque_nm, 0.07)
+        self.assertEqual(
+            ros_arguments,
+            ["--ros-args", "-r", "__node:=arm_dob_test"],
+        )
+
+    def test_arm_dob_dynamic_com_shift_changes_rotor_moment_consistently(self):
+        config = json.loads(CAD_V3_DEBUG_4KG_CONFIG_PATH.read_text(encoding="utf-8"))
+        commands = np.full(8, 0.40)
+        shift_flu = np.array([0.01, -0.02, 0.03])
+        reference = motor_torque_about_dynamic_com_frd(config, commands)
+        shifted = motor_torque_about_dynamic_com_frd(
+            config, commands, shift_flu
+        )
+        records = per_motor_wrench_frd(config, commands)
+        total_force_frd = sum(
+            (record["force_frd_n"] for record in records), np.zeros(3)
+        )
+        shift_frd = FRD_TO_FLU @ shift_flu
+        np.testing.assert_allclose(
+            shifted - reference,
+            -np.cross(shift_frd, total_force_frd),
+            atol=1.0e-10,
+        )
+
+    def test_arm_dob_rigid_body_residual_obeys_euler_equation(self):
+        inertia = np.array([0.2, 0.3, 0.4])
+        omega = np.array([0.5, -0.2, 0.1])
+        alpha = np.array([0.4, -0.1, 0.2])
+        disturbance = np.array([0.03, -0.02, 0.01])
+        motor = (
+            inertia * alpha
+            + np.cross(omega, inertia * omega)
+            - disturbance
+        )
+        result = rigid_body_residual_torque_frd(alpha, omega, inertia, motor)
+        np.testing.assert_allclose(result, disturbance, atol=1.0e-12)
+
+    def test_arm_dob_rigid_body_residual_uses_full_inertia_tensor(self):
+        inertia = np.array([
+            [0.20, 0.012, -0.006],
+            [0.012, 0.31, 0.009],
+            [-0.006, 0.009, 0.43],
+        ])
+        omega = np.array([0.5, -0.2, 0.1])
+        alpha = np.array([0.4, -0.1, 0.2])
+        disturbance = np.array([0.03, -0.02, 0.01])
+        motor = inertia @ alpha + np.cross(omega, inertia @ omega) - disturbance
+        result = rigid_body_residual_torque_frd(alpha, omega, inertia, motor)
+        np.testing.assert_allclose(result, disturbance, atol=1.0e-12)
+
+    def test_arm_dob_inertia_tensor_flu_to_frd_flips_cross_term_signs(self):
+        inertia_flu = np.array([
+            [0.20, 0.012, -0.006],
+            [0.012, 0.31, 0.009],
+            [-0.006, 0.009, 0.43],
+        ])
+        converted = inertia_tensor_flu_to_frd(inertia_flu)
+        expected = FRD_TO_FLU @ inertia_flu @ FRD_TO_FLU.T
+        np.testing.assert_allclose(converted, expected, atol=1.0e-12)
+        self.assertAlmostEqual(converted[0, 1], -inertia_flu[0, 1])
+        self.assertAlmostEqual(converted[0, 2], -inertia_flu[0, 2])
+        self.assertAlmostEqual(converted[1, 2], inertia_flu[1, 2])
+
+    def test_arm_dob_is_baseline_gated_motion_only_and_bounded(self):
+        observer = BoundedTorqueDisturbanceObserver(
+            angular_acceleration_time_constant_s=0.0,
+            baseline_time_constant_s=0.0,
+            estimate_time_constant_s=0.0,
+            decay_time_constant_s=0.0,
+            maximum_torque_nm=0.08,
+        )
+        inertia = np.array([0.2, 0.21, 0.22])
+        omega = np.zeros(3)
+        for _ in range(25):
+            torque, active = observer.step(
+                angular_velocity_frd_rad_s=omega,
+                predicted_motor_torque_frd_nm=np.zeros(3),
+                inertia_diag_kg_m2=inertia,
+                dt_s=0.01,
+                armed=True,
+                arm_motion_active=False,
+            )
+            self.assertFalse(active)
+            np.testing.assert_array_equal(torque, np.zeros(3))
+
+        omega = np.array([0.01, 0.0, 0.0])
+        torque, active = observer.step(
+            angular_velocity_frd_rad_s=omega,
+            predicted_motor_torque_frd_nm=np.zeros(3),
+            inertia_diag_kg_m2=inertia,
+            dt_s=0.01,
+            armed=True,
+            arm_motion_active=True,
+        )
+        self.assertTrue(active)
+        self.assertAlmostEqual(float(np.linalg.norm(torque)), 0.08)
+        self.assertGreater(torque[0], 0.0)
+
+        torque, active = observer.step(
+            angular_velocity_frd_rad_s=omega,
+            predicted_motor_torque_frd_nm=np.zeros(3),
+            inertia_diag_kg_m2=inertia,
+            dt_s=0.01,
+            armed=True,
+            arm_motion_active=False,
+        )
+        self.assertFalse(active)
+        np.testing.assert_array_equal(torque, np.zeros(3))
+
+    def test_arm_dob_subtracts_static_actuator_model_residual(self):
+        observer = BoundedTorqueDisturbanceObserver(
+            angular_acceleration_time_constant_s=0.0,
+            baseline_time_constant_s=0.0,
+            estimate_time_constant_s=0.0,
+            maximum_torque_nm=0.08,
+        )
+        inertia = np.array([0.2, 0.21, 0.22])
+        model_bias = np.array([0.04, -0.02, 0.01])
+        for _ in range(25):
+            observer.step(
+                angular_velocity_frd_rad_s=np.zeros(3),
+                predicted_motor_torque_frd_nm=model_bias,
+                inertia_diag_kg_m2=inertia,
+                dt_s=0.01,
+                armed=True,
+                arm_motion_active=False,
+            )
+        torque, active = observer.step(
+            angular_velocity_frd_rad_s=np.zeros(3),
+            predicted_motor_torque_frd_nm=model_bias,
+            inertia_diag_kg_m2=inertia,
+            dt_s=0.01,
+            armed=True,
+            arm_motion_active=True,
+        )
+        self.assertTrue(active)
+        np.testing.assert_allclose(torque, np.zeros(3), atol=1.0e-12)
+
+    def test_arm_dob_compensation_sign_reduces_constant_disturbance_error(self):
+        def simulate(enabled: bool) -> np.ndarray:
+            dt = 0.004
+            inertia = np.diag([0.20, 0.21, 0.22])
+            observer = BoundedTorqueDisturbanceObserver(maximum_torque_nm=0.08)
+            angle = np.zeros(3)
+            omega = np.zeros(3)
+            estimate = np.zeros(3)
+            # Establish the same armed, arm-static baseline required in flight.
+            for _ in range(125):
+                motor = -1.2 * angle - 0.30 * omega
+                alpha = np.linalg.solve(inertia, motor)
+                omega += alpha * dt
+                angle += omega * dt
+                estimate, _ = observer.step(
+                    angular_velocity_frd_rad_s=omega,
+                    predicted_motor_torque_frd_nm=motor,
+                    inertia_diag_kg_m2=inertia,
+                    dt_s=dt,
+                    armed=True,
+                    arm_motion_active=False,
+                )
+            history = []
+            disturbance = np.array([0.04, 0.0, 0.0])
+            for _ in range(750):
+                # Production allocation requests the exact negative of the
+                # observer estimate; retain the experimental 0.5 gain here.
+                compensation = -0.5 * estimate if enabled else np.zeros(3)
+                motor = -1.2 * angle - 0.30 * omega + compensation
+                alpha = np.linalg.solve(inertia, motor + disturbance)
+                omega += alpha * dt
+                angle += omega * dt
+                estimate, _ = observer.step(
+                    angular_velocity_frd_rad_s=omega,
+                    predicted_motor_torque_frd_nm=motor,
+                    inertia_diag_kg_m2=inertia,
+                    dt_s=dt,
+                    armed=True,
+                    arm_motion_active=True,
+                )
+                history.append(angle[0])
+            return np.asarray(history)
+
+        uncompensated = simulate(False)
+        compensated = simulate(True)
+        tail = slice(len(uncompensated) // 2, None)
+        self.assertLess(
+            float(np.sqrt(np.mean(compensated[tail] ** 2))),
+            float(np.sqrt(np.mean(uncompensated[tail] ** 2))),
+        )
+        self.assertLess(abs(float(compensated[-1])), abs(float(uncompensated[-1])))
 
     def test_offline_rl_env_shapes_bounds_and_arm_coupling(self):
         env = make_default_env("arm_pose")
@@ -991,6 +1386,149 @@ class CoreRegressionTest(unittest.TestCase):
             self.assertEqual(info["end_effector_position_m"].shape, (3,))
             self.assertEqual(info["end_effector_target_m"].shape, (3,))
             self.assertTrue(np.isfinite(info["end_effector_error_norm_m"]))
+
+    def test_motor_thrust_evidence_template_cannot_promote_physics(self):
+        frozen = json.loads(MOTOR_FREEZE_STATUS_PATH.read_text(encoding="utf-8"))
+        template = json.loads(MOTOR_EVIDENCE_TEMPLATE_PATH.read_text(encoding="utf-8"))
+        errors = validate_motor_thrust_evidence(template, frozen)
+        self.assertTrue(errors)
+        for motor in range(1, 9):
+            self.assertTrue(
+                any(error.startswith(f"motor {motor}:") for error in errors),
+                f"template unexpectedly has no incomplete marker for motor {motor}",
+            )
+
+    def test_cad_axis_evidence_never_promotes_thrust_sign(self):
+        axes = json.loads(MOTOR_AXIS_EVIDENCE_PATH.read_text(encoding="utf-8"))
+        frozen = json.loads(MOTOR_FREEZE_STATUS_PATH.read_text(encoding="utf-8"))
+        body = axes["body_frame_frozen"]
+        self.assertEqual(
+            body["positive_thrust_direction_status"],
+            "UNRESOLVED_FOR_ALL_MOTORS",
+        )
+        self.assertNotIn("upward_thrust_motors", body)
+        self.assertNotIn("downward_thrust_motors", body)
+        raw_by_motor = {int(row["motor"]): row for row in axes["motors"]}
+        for row in frozen["motors"]:
+            motor = int(row["motor"])
+            raw = raw_by_motor[motor]
+            self.assertEqual(
+                row["thrust_sign_status"],
+                "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+            )
+            self.assertEqual(
+                raw["thrust_sign_status"],
+                "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+            )
+            np.testing.assert_allclose(
+                row["cad_propeller_side_axis"],
+                raw["cad_propeller_side_axis_frd"],
+                atol=1.0e-6,
+            )
+
+    def test_propeller_instances_are_not_mirrored_by_assembly_transforms(self):
+        pitch = json.loads(
+            PROPELLER_PITCH_EVIDENCE_PATH.read_text(encoding="utf-8")
+        )
+        reuse = pitch["component_reuse_evidence"]
+        self.assertTrue(reuse["all_instance_transform_determinants_positive"])
+        self.assertEqual(reuse["mirrored_motor_instances"], [])
+        self.assertEqual(
+            sorted(int(row["motor"]) for row in pitch["motors"]),
+            list(range(1, 9)),
+        )
+        for row in pitch["motors"]:
+            self.assertAlmostEqual(
+                row["assembly_transform_determinant"], 1.0, places=9
+            )
+            self.assertFalse(row["mirrored_instance"])
+            self.assertFalse(row["pitch_sign_resolved"])
+
+    def test_motor_freeze_table_separates_base_link_and_com_positions(self):
+        frozen = json.loads(MOTOR_FREEZE_STATUS_PATH.read_text(encoding="utf-8"))
+        formal = json.loads(CAD_V3_FLIGHT_CONFIG_PATH.read_text(encoding="utf-8"))
+        self.assertIn("base_link", frozen["coordinate_frame"])
+        self.assertIn("provisional CAD-density-derived", frozen["formal_allocation_reference"])
+        formal_by_motor = {int(row["motor"]): row for row in formal["rotors"]}
+        com_distinct = False
+        for row in frozen["motors"]:
+            allocation = formal_by_motor[int(row["motor"])]
+            np.testing.assert_allclose(
+                row["position_m"], allocation["wrench_position_m"], atol=1.0e-6
+            )
+            com_distinct |= not np.allclose(
+                row["position_m"], allocation["position_m"], atol=1.0e-6
+            )
+        self.assertTrue(com_distinct)
+
+    def test_flight_configs_label_all_up_axes_as_hypotheses(self):
+        for path in (CAD_V3_FLIGHT_CONFIG_PATH, CAD_V3_DEBUG_4KG_CONFIG_PATH):
+            config = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                config["axis_assumption"],
+                "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+            )
+            self.assertEqual(
+                config["positive_thrust_direction_status"],
+                "UNRESOLVED_FOR_ALL_MOTORS",
+            )
+            for rotor in config["rotors"]:
+                self.assertEqual(
+                    rotor["thrust_sign_status"],
+                    "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+                )
+
+    def test_complete_manufacturer_motor_evidence_closes_validator_gate(self):
+        frozen = json.loads(MOTOR_FREEZE_STATUS_PATH.read_text(encoding="utf-8"))
+        records = []
+        for row in frozen["motors"]:
+            motor = int(row["motor"])
+            records.append(
+                {
+                    "motor": motor,
+                    "rotation": row["rotation"],
+                    "rotation_observation": "LOOKING_FROM_MOTOR_TOWARD_PROPELLER",
+                    "prop_type": "REVERSE" if motor in {4, 5, 7, 8} else "NORMAL",
+                    "thrust_sign_along_cad_propeller_ray": (
+                        -1 if motor in {4, 5, 7, 8} else 1
+                    ),
+                    "maximum_thrust_n": 11.76798,
+                    "evidence_type": "manufacturer",
+                    "evidence_refs": [f"evidence/motor_{motor}_label.jpg"],
+                    "propeller_part_number": f"TEST-PROP-{motor}",
+                    "observation_definition": "Manufacturer declares handedness and axial thrust direction for this viewing convention.",
+                }
+            )
+        self.assertEqual(
+            validate_motor_thrust_evidence({"motors": records}, frozen), []
+        )
+
+    def test_bench_force_sign_must_match_declared_cad_ray_sign(self):
+        frozen = json.loads(MOTOR_FREEZE_STATUS_PATH.read_text(encoding="utf-8"))
+        records = []
+        for row in frozen["motors"]:
+            records.append(
+                {
+                    "motor": int(row["motor"]),
+                    "rotation": row["rotation"],
+                    "rotation_observation": "LOOKING_FROM_MOTOR_TOWARD_PROPELLER",
+                    "prop_type": "NORMAL",
+                    "thrust_sign_along_cad_propeller_ray": -1,
+                    "maximum_thrust_n": 11.76798,
+                    "evidence_type": "bench_test",
+                    "evidence_refs": ["evidence/test.csv"],
+                    "rpm": 1000,
+                    "signed_axial_force_n": 0.5,
+                    "force_positive_axis": "CAD_PROPELLER_SIDE_RAY",
+                    "observation_definition": "Load-cell positive axis follows the CAD propeller-side ray.",
+                }
+            )
+        errors = validate_motor_thrust_evidence({"motors": records}, frozen)
+        for motor in range(1, 9):
+            self.assertIn(
+                f"motor {motor}: thrust sign contradicts signed axial force and force axis",
+                errors,
+            )
 
 
 if __name__ == "__main__":

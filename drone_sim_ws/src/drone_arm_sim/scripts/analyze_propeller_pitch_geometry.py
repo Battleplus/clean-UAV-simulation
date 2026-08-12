@@ -45,6 +45,12 @@ def main() -> None:
     analysis = project / "drone_sim_ws" / "analysis" / "cad_direct"
     mesh_root = project / "drone_sim_ws" / "src" / "drone_arm_sim" / "meshes" / "my_drone_v2" / "visual"
     axis_evidence = json.loads((analysis / "motor_axis_evidence.json").read_text(encoding="utf-8"))
+    assembly_manifest = json.loads(
+        (analysis / "assembly_manifest.json").read_text(encoding="utf-8")
+    )
+    manifest_components = {
+        item["instance"]: item for item in assembly_manifest["components"]
+    }
     motor_evidence = {tuple(item["cad_key"]): item for item in axis_evidence["motors"]}
     mesh_paths = sorted(path for path in mesh_root.glob("*.STL") if "螺旋桨" in path.name)
     if len(mesh_paths) != 8:
@@ -54,12 +60,15 @@ def main() -> None:
         numbers = [int(x) for x in re.findall(r"-(\d+)", mesh_path.stem)]
         cad_key = tuple(numbers[-2:])
         item = motor_evidence[cad_key]
+        component = manifest_components[item["propeller_instance"]]
+        transform = np.asarray(component["transform_array"][:9], dtype=float).reshape(3, 3)
+        transform_determinant = float(np.linalg.det(transform))
         triangles = load_binary_stl(mesh_path)
         vertices = triangles.reshape(-1, 3)
         mesh_center = vertices.mean(axis=0)
         eigenvalues, eigenvectors = np.linalg.eigh(np.cov((vertices - mesh_center).T))
         mesh_axis = eigenvectors[:, 0]
-        cad_axis = unit(item["assembly_thrust_axis"])
+        cad_axis = unit(item["assembly_propeller_side_axis"])
         if float(mesh_axis @ cad_axis) < 0.0:
             mesh_axis *= -1.0
         centres = triangles.mean(axis=1)
@@ -81,6 +90,10 @@ def main() -> None:
                 "motor": PX4_MOTOR_MAP[cad_key],
                 "cad_key": list(cad_key),
                 "mesh": str(mesh_path),
+                "source_part": component["source_path"],
+                "source_part_sha256": component["source_sha256"],
+                "assembly_transform_determinant": transform_determinant,
+                "mirrored_instance": transform_determinant < 0.0,
                 "triangle_count": int(len(triangles)),
                 "cad_cylinder_axis": cad_axis.tolist(),
                 "mesh_smallest_variance_axis": mesh_axis.tolist(),
@@ -95,13 +108,21 @@ def main() -> None:
             }
         )
     max_p95 = max(item["geometric_pitch_angle_abs_p95_deg"] for item in records)
+    unique_source_hashes = sorted({item["source_part_sha256"] for item in records})
+    mirrored_instances = [item["motor"] for item in records if item["mirrored_instance"]]
     payload = {
-        "schema": 1,
+        "schema": 2,
         "source_assembly": str(project / "零件" / "完整零件" / "组合无人机.SLDASM"),
         "method": "binary STL face normals cross-checked against SolidWorks hub-cylinder axes",
         "result": "PITCH_GEOMETRY_UNRESOLVED",
         "maximum_p95_abs_pitch_angle_deg": max_p95,
-        "formal_conclusion": "The CAD preserves hub axes and puller/pusher placement, but its simplified flat propeller solids do not encode usable blade pitch. CW/CCW plus this geometry cannot determine thrust sign.",
+        "component_reuse_evidence": {
+            "unique_source_part_count": len(unique_source_hashes),
+            "unique_source_part_sha256": unique_source_hashes,
+            "mirrored_motor_instances": mirrored_instances,
+            "all_instance_transform_determinants_positive": not mirrored_instances,
+        },
+        "formal_conclusion": "All eight instances reuse one non-mirrored source part, and its simplified flat blades do not encode usable signed pitch. The CAD therefore contains neither a distinct opposite-pitch part nor measurable pitch geometry; CW/CCW plus this geometry cannot determine thrust sign.",
         "required_replacement": "pitch-accurate propeller CAD or manufacturer blade handedness/pitch designation",
         "motors": sorted(records, key=lambda item: item["motor"]),
     }

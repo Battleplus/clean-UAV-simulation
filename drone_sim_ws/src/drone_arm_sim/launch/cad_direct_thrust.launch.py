@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import get_package_prefix, get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, IncludeLaunchDescription, SetEnvironmentVariable, TimerAction
 from launch.conditions import IfCondition, UnlessCondition
@@ -12,6 +12,7 @@ from launch_ros.actions import Node
 
 def generate_launch_description():
     package_share = Path(get_package_share_directory("drone_arm_sim"))
+    motor_system_lib = Path(get_package_prefix("drone_motor_system")) / "lib"
     ros_gz_share = Path(get_package_share_directory("ros_gz_sim"))
     # Keep the normal flight world as the default, while allowing a separate
     # contact/grasp world to be selected without changing the formal model.
@@ -38,7 +39,11 @@ def generate_launch_description():
             "<kinematic>true</kinematic></gazebo>\n</robot>",
         )
     config = LaunchConfiguration("config_file")
-    common_args = f"-r -v 3 --physics-engine gz-physics-dartsim-plugin {world}"
+    common_args = [
+        "-r -v 3 --seed ",
+        LaunchConfiguration("gz_seed"),
+        f" --physics-engine gz-physics-dartsim-plugin {world}",
+    ]
     gazebo = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(str(ros_gz_share / "launch" / "gz_sim.launch.py")),
         launch_arguments={"gz_args": common_args}.items(),
@@ -46,7 +51,7 @@ def generate_launch_description():
     )
     gazebo_headless = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(str(ros_gz_share / "launch" / "gz_sim.launch.py")),
-        launch_arguments={"gz_args": f"-s {common_args}"}.items(),
+        launch_arguments={"gz_args": ["-s ", *common_args]}.items(),
         condition=IfCondition(LaunchConfiguration("headless")),
     )
     bridge = Node(
@@ -56,6 +61,7 @@ def generate_launch_description():
         arguments=[
             "/model/my_drone/odometry@nav_msgs/msg/Odometry[gz.msgs.Odometry",
             "/world/flight_world/wrench@ros_gz_interfaces/msg/EntityWrench]gz.msgs.EntityWrench",
+            "/world/flight_world/wrench/latest@ros_gz_interfaces/msg/EntityWrench]gz.msgs.EntityWrench",
             "/world/flight_world/wrench/persistent@ros_gz_interfaces/msg/EntityWrench]gz.msgs.EntityWrench",
             "/world/flight_world/wrench/clear@ros_gz_interfaces/msg/Entity]gz.msgs.Entity",
             "/my_drone/command/motor_speed@actuator_msgs/msg/Actuators[gz.msgs.Actuators",
@@ -116,12 +122,20 @@ def generate_launch_description():
                     LaunchConfiguration("battery_thrust_voltage_exponent"),
                     "--arm-torque-feedforward-enabled",
                     LaunchConfiguration("arm_torque_feedforward_enabled"),
+                    "--arm-reaction-torque-feedforward-gain",
+                    LaunchConfiguration("arm_reaction_torque_feedforward_gain"),
                     "--arm-torque-feedforward-max-delta-n",
                     LaunchConfiguration("arm_torque_feedforward_max_delta_n"),
                     "--arm-static-com-feedforward-gain",
                     LaunchConfiguration("arm_static_com_feedforward_gain"),
                     "--arm-static-com-feedforward-time-constant-s",
                     LaunchConfiguration("arm_static_com_feedforward_time_constant_s"),
+                    "--arm-disturbance-observer-enabled",
+                    LaunchConfiguration("arm_disturbance_observer_enabled"),
+                    "--arm-disturbance-observer-gain",
+                    LaunchConfiguration("arm_disturbance_observer_gain"),
+                    "--arm-disturbance-observer-max-delta-n",
+                    LaunchConfiguration("arm_disturbance_observer_max_delta_n"),
                 ],
             )
         ],
@@ -207,11 +221,30 @@ def generate_launch_description():
             )
         ],
     )
+    arm_disturbance_observer = TimerAction(
+        period=10.5,
+        condition=IfCondition(
+            LaunchConfiguration("arm_disturbance_observer_enabled")
+        ),
+        actions=[
+            Node(
+                package="drone_arm_sim",
+                executable="arm_disturbance_observer",
+                output="screen",
+                arguments=[
+                    "--config", config,
+                    "--maximum-torque-nm",
+                    LaunchConfiguration("arm_disturbance_observer_max_torque_nm"),
+                ],
+            )
+        ],
+    )
     return LaunchDescription(
         [
             DeclareLaunchArgument("spawn_z", default_value="1.0"),
             DeclareLaunchArgument("target_ned_z", default_value="-1.0"),
             DeclareLaunchArgument("headless", default_value="false"),
+            DeclareLaunchArgument("gz_seed", default_value="4027"),
             DeclareLaunchArgument("enable_controller", default_value="true"),
             DeclareLaunchArgument("enable_arm_control", default_value="false"),
             # PX4 publishes on /my_drone/command/motor_speed.  The optional
@@ -242,6 +275,9 @@ def generate_launch_description():
                 "arm_torque_feedforward_enabled", default_value="false"
             ),
             DeclareLaunchArgument(
+                "arm_reaction_torque_feedforward_gain", default_value="1.0"
+            ),
+            DeclareLaunchArgument(
                 "arm_torque_feedforward_max_delta_n", default_value="2.0"
             ),
             DeclareLaunchArgument(
@@ -249,6 +285,18 @@ def generate_launch_description():
             ),
             DeclareLaunchArgument(
                 "arm_static_com_feedforward_time_constant_s", default_value="5.0"
+            ),
+            DeclareLaunchArgument(
+                "arm_disturbance_observer_enabled", default_value="false"
+            ),
+            DeclareLaunchArgument(
+                "arm_disturbance_observer_gain", default_value="0.5"
+            ),
+            DeclareLaunchArgument(
+                "arm_disturbance_observer_max_torque_nm", default_value="0.08"
+            ),
+            DeclareLaunchArgument(
+                "arm_disturbance_observer_max_delta_n", default_value="1.0"
             ),
             DeclareLaunchArgument("arm_coupling_rate_hz", default_value="3.0"),
             DeclareLaunchArgument("arm_coupling_target_mass_kg", default_value="7.735"),
@@ -262,6 +310,12 @@ def generate_launch_description():
             # drone_arm_sim directory below each resource root.  Therefore
             # the root must be share/, not share/drone_arm_sim/ itself.
             SetEnvironmentVariable("GZ_SIM_RESOURCE_PATH", str(package_share.parent)),
+            SetEnvironmentVariable(
+                "GZ_SIM_SYSTEM_PLUGIN_PATH",
+                str(motor_system_lib)
+                + os.pathsep
+                + os.environ.get("GZ_SIM_SYSTEM_PLUGIN_PATH", ""),
+            ),
             gazebo,
             gazebo_headless,
             bridge,
@@ -273,5 +327,6 @@ def generate_launch_description():
             joint_state_controller,
             arm_controller,
             arm_coupling_monitor,
+            arm_disturbance_observer,
         ]
     )

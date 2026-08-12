@@ -1,5 +1,5 @@
 {
-  "description": "Formal rotor lines extracted from SolidWorks cylindrical faces; bounding-box centre-to-centre axes are not used.",
+  "description": "CAD rotor positions and signless shaft lines extracted from SolidWorks cylindrical faces. axis_body preserves the legacy rotation/mount-table hypothesis for comparison; it is not a physical thrust-sign fact.",
   "source_manifest": "analysis/cad_direct/assembly_manifest.json",
   "axis_source": "analysis/cad_direct/motor_axis_evidence.json",
   "axis_extraction_method": "SolidWorks IFace2.GetSurface / ISurface.IsCylinder / CylinderParams",
@@ -28,18 +28,19 @@
       4,
       5
     ],
-    "upward_thrust_motors": [
+    "cad_propeller_side_ray_upward_component_motors": [
       1,
       2,
-      3,
-      6
-    ],
-    "downward_thrust_motors": [
       4,
-      5,
+      5
+    ],
+    "cad_propeller_side_ray_downward_component_motors": [
+      3,
+      6,
       7,
       8
-    ]
+    ],
+    "positive_thrust_direction_status": "UNRESOLVED_FOR_ALL_MOTORS"
   },
   "assembly_sha256": "0cbd1455f3bf9c4acee91a4f5ee997f8fc823cd7817ba7f4a217f9fc029ee202",
   "coordinate_frame": "PX4 body FRD; ROS FLU uses X=-CAD Z, Y=-CAD X, Z=CAD Y",
@@ -251,18 +252,6 @@
   "best_case_thrust_to_weight_nonreversible": 0.9935916481910003,
   "flight_feasibility_nonreversible": "INFEASIBLE",
   "flight_feasibility_reason": "Even the optimistic upward-only thrust bound is below vehicle weight; downward-pointing fixed-pitch rotors cannot be used for lift.",
-  "upward_thrust_motors": [
-    1,
-    2,
-    3,
-    6
-  ],
-  "downward_thrust_motors": [
-    4,
-    5,
-    7,
-    8
-  ],
   "rotors": [
     {
       "motor": 1,
@@ -288,10 +277,13 @@
         0.3535533905932739,
         -0.8660254037844385
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 3.274864922277287e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-2",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-2"
     },
     {
       "motor": 2,
@@ -317,10 +309,13 @@
         -0.3535533905932737,
         -0.866025403784439
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-3",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-3"
     },
     {
       "motor": 3,
@@ -346,10 +341,13 @@
         0.3535533905932736,
         0.8660254037844387
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 1.811234284755796e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-3",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-3"
     },
     {
       "motor": 4,
@@ -375,10 +373,13 @@
         0.3535533905932738,
         -0.8660254037844388
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-4",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-4"
     },
     {
       "motor": 5,
@@ -404,10 +405,13 @@
         -0.3535533905932735,
         -0.8660254037844385
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 9.488200048182762e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-1",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-1"
     },
     {
       "motor": 6,
@@ -433,10 +437,13 @@
         -0.3535533905932736,
         0.8660254037844387
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 7.735613448393047e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-2",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-2"
     },
     {
       "motor": 7,
@@ -462,10 +469,13 @@
         -0.3535533905932741,
         0.8660254037844386
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 2.091245844657973e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-1",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-1"
     },
     {
       "motor": 8,
@@ -491,10 +501,15 @@
         0.353553390593274,
         0.8660254037844387
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: downward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 2.455281089561238e-14,
-      "motor_propeller_axis_angle_deg": 0.0
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-4",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-4"
     }
-  ]
+  ],
+  "axis_assumption": "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT",
+  "positive_thrust_direction_status": "UNRESOLVED_FOR_ALL_MOTORS"
 }

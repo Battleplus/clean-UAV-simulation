@@ -45,6 +45,24 @@ the accepted flight profile is `ARM_FLIGHT_PROFILE=micro`.
   action window; the paired comparison is therefore not accepted as an
   improvement.
 
+### 2026-08-11 deterministic 4 kg status
+
+- Startup tests now fix Gazebo seed `4027`, use a fresh PX4 work directory and
+  require five seconds of stable ground state before takeoff. Two repeated
+  gripper flights reduced the PX4 ground-origin difference from `0.433 m` to
+  `0.009 m`; see
+  `drone_sim_ws/analysis/flight_start_reproducibility_4kg_20260811.json`.
+- A deterministic static-COM gain `0.5` pair was rejected: horizontal drift
+  changed from `0.072 m` to `0.151 m`, although altitude span improved from
+  `0.174 m` to `0.150 m`. Predictive reaction/static-COM compensation remains
+  disabled.
+- A new sensor-side torque disturbance-observer candidate uses PX4 gyro,
+  actual motor commands, CAD lever arms and online inertia/COM without Gazebo
+  truth. It is independently gated, bounded and default-off; `60` focused
+  tests and an observe-only live smoke test pass. It is not accepted until a
+  deterministic full-extension OFF/ON pair passes. See
+  `drone_sim_ws/analysis/arm_torque_dob_candidate_4kg_20260811.md`.
+
 The latest clean rerun with the reaction-torque safety gate installed is saved
 in `drone_sim_ws/analysis/wasd_clean_runtime_pass.log`: no failsafe,
 horizontal error `0.947 m`, height error `1.248 m`, yaw range `5.8 deg`,
@@ -167,17 +185,31 @@ E:\清洁无人机\drone_sim_ws\scripts\start_wasd_control_windows.cmd
 | 按键 | 动作 |
 |---|---|
 | `T` | 进入 Offboard、解锁并起飞到约 1.2 m |
-| `W` / `S` | 按住时以 `0.40 m/s` 前进 / 后退 |
-| `A` / `D` | 按住时以 `0.40 m/s` 左移 / 右移 |
-| `R` / `F` | 按住时以 `0.15 m/s` 上升 / 下降 |
-| `Q` / `E` | 按住时以 `15 deg/s` 左偏航 / 右偏航 |
-| 松开方向键 / `H` | 立即停止速度指令，并锁定当前位置悬停 |
+| `W` / `S` | 单击或长按均只锁存 `+0.40 / -0.40 m/s` 前后速度 |
+| `A` / `D` | 单击或长按均只锁存 `0.40 m/s` 左右速度 |
+| `R` / `F` | 单击或长按均只锁存 `0.15 m/s` 上升 / 下降速度 |
+| `Q` / `E` | 单击或长按均只锁存 `15 deg/s` 左 / 右偏航速度 |
+| 松开方向键 | 不改变已经锁存的目标速度 |
+| `H` | 目标速度改为零，经 S 曲线制动并锁存停止后的航向 |
 | `L` | 自动降落并解除武装 |
 | `O` | 退出 Offboard，请求位置控制 |
 | `Z` | 未解锁时安全退出；已解锁时先请求降落 |
 | 连按两次 `X` | 失控时紧急解除武装（仅紧急使用） |
 
-新启动器直接读取 Windows 按键按下/松开状态；控制窗口失去焦点时也会自动发出悬停。启动前会终止遗留的 `dds_wasd_control`，确保同一 PX4 实例只有一个手动控制节点。不要同时启动旧版 `px4_wasd_control.py` 或其他 pymavlink Offboard 节点。
+Windows 启动器只在按键从“未按下”变成“按下”的边沿发送一次命令，因此长按不会依赖键盘自动连发，也不会重复累加速度；松开和窗口失焦均不会修改锁存目标。需要停止时必须明确按 `H`。启动前会终止遗留的 `dds_wasd_control`，确保同一 PX4 实例只有一个手动控制节点。不要同时启动旧版 `px4_wasd_control.py` 或其他 pymavlink Offboard 节点。
+
+锁存目标经过独立 S 曲线发生器再送入 PX4。当前 4 kg 实飞验证参数为：
+
+| 通道 | 最大速度 | 最大加速度 | 最大 jerk |
+|---|---:|---:|---:|
+| 水平 | `0.40 m/s` | `0.30 m/s²` | `0.60 m/s³` |
+| 垂直 | `0.15 m/s` | `0.18 m/s²` | `0.40 m/s³` |
+| 偏航 | `15°/s` | `20°/s²` | 角速度斜坡 |
+
+最初建议的垂直 `0.20 m/s²` 在干净 R→F→Q 回归中产生约 `11.3%`
+超调，降低到 `0.18 m/s²` 后约为 `2.0%`。偏航建议初值 `30°/s²` 在
+Q→E 反转时产生约 `0.223 m/s` 垂向耦合，降低到 `20°/s²` 后约为
+`0.035 m/s`，偏航超调约 `2.7%`；这两个偏离属于实测调优结果，不是漏配。
 
 ## 机械臂控制
 
@@ -216,10 +248,12 @@ bash scripts/run_ros2_arm_preset.sh retracted 3
 ```bash
 cd /mnt/e/清洁无人机/drone_sim_ws
 source /opt/ros/jazzy/setup.bash
-PYTHONPATH=src/drone_arm_sim pytest -q src/drone_arm_sim/test/test_core.py
+source /home/asus/ros2_px4_build_ws/install/setup.bash
+source install/setup.bash
+python3 -m pytest -q src/drone_arm_sim/test src/px4_ros2_control/test
 ```
 
-当前结果：`36 passed`。
+当前飞行与机械臂核心回归结果：`78 passed`（3 个上游 protobuf 弃用警告）。
 
 启动正式后端后，可运行：
 
@@ -232,7 +266,28 @@ python3 scripts/analyze_arm_coupling.py
 python3 scripts/rl_env_smoke_test.py --task hover --steps 200
 ```
 
-通过标志：`DDS_WASD_PTY_PASS`、`DDS_ARM_FLIGHT_PASS`、`ARM_COUPLING_ANALYSIS_PASS`。最近一次无机械臂 WASD 复测（`MOVE_STEP_M=0.08`、偏航步长 `3°`）的最大水平误差 `1.233 m`、高度误差 `1.197 m`、电机饱和率 `7.55%`，无 failsafe，并正常降落解除武装；`flight_micro_a/b` 机械臂安全飞行测试的水平漂移约 `0.357 m`、高度跨度约 `1.450 m`。
+通过标志：`DDS_VELOCITY_WASD_PASS`、`DDS_ARM_FLIGHT_PASS`、`ARM_COUPLING_ANALYSIS_PASS`。修复物理步施力后，4 kg 调试机型的完整 `W/S/A/D/R/F/Q/E/W/H` 速度序列实测为：水平峰值 `0.422 m/s`、垂直峰值 `0.147 m/s`、偏航峰值 `15.4 deg/s`、电机饱和率 `0`，无 failsafe 并正常 LAND/解除武装。独立 Q/E/H 的最大非指令垂直速度为 `0.027 m/s`。这些数据只验收调试控制链，不替代 7.735 kg 正式机的真实桨型和推力余量验收。
+
+机械臂空中耦合按单关节逐级验收。仅夹爪开合已通过；仅腕部滚转约
+`0.20 rad`、单程 `12 s` 的伸出/返回也已通过：两个动作窗口水平漂移
+`0.094/0.089 m`，高度跨度 `0.091/0.070 m`，最大真值倾角 `0.894°`，
+最大反作用力矩 `0.035 N·m`，无电机饱和和 failsafe，并正常 LAND/解除武装。
+原 `0.30 rad / 10 s` 运行的超门限证据仍保留，未通过放宽门限覆盖。
+
+后续 4 kg 阶梯也已通过：`shoulder_pan` 单关节、`flight_work_a` 多关节、
+无幅度缩减的 `demo_extended` 完整伸展/收回。最后加入 `0.05 kg` 末端刚性
+负载后，分析总质量为 `4.05 kg`，完整伸展和收回各用 `90 s`，仍通过严格门：
+伸展/收回水平漂移 `0.075/0.078 m`，高度跨度 `0.138/0.062 m`，最大真值
+倾角 `1.020°`，最大反作用力矩 `0.035 N·m`，电机饱和 `0/150`，无 failsafe，
+正常 LAND/解除武装。原始证据为
+`analysis/arm_flight_full_extend_payload_0p05_corrected.log`。这只闭合 4 kg
+控制链的负载阶梯；正式 `7.735 kg` 负载飞行仍未通过，不能据此替代。
+
+完整 4 kg 阶梯汇总由 `scripts/validate_arm_coupling_ladder.py` 逐条回读原始
+日志校验，必须同时存在飞行通过、正常降落解除武装和完整指标记录。夹爪级
+采用两次独立运行的逐指标较大值，其余五级各绑定一份已接受日志；当前结果为
+`ARM_COUPLING_LADDER_EVIDENCE_PASS`（6 级、7 次接受运行），见
+`analysis/arm_coupling_ladder_4kg_evidence_validation.json`。
 
 ## 第 11 步：离线课程与 PX4/Gazebo 在线 RL 接口
 
@@ -292,9 +347,9 @@ LAND/解除武装。报告明确记录 `px4_in_the_loop=true`、
 
 当前版本用于功能和控制链路验证，仍需用实测数据提高真实性：
 
-- 4/5/7/8 的反向螺距和推力方向是当前假设，需用桨叶螺距或台架试验确认。
+- 八台桨的正推力符号都尚未由桨叶螺距或带符号试验冻结，其中 4/5/7/8 是否为反向螺距桨是决定全向上假设能否成立的重点；当前逐台证据与互斥推重比假设见 [1～8 号电机物理冻结审计表](drone_sim_ws/analysis/cad_direct/final_motor_evidence_table.md)，证据填写和机器校验方法见 [桨型与推力方向闭环流程](drone_sim_ws/analysis/cad_direct/桨型与推力方向闭环流程.md)。
 - `RPM—推力—扭矩`、反扭矩系数、电机/电调延迟、电池内阻、风场和地面效应尚未完成实机标定。
-- 完整机械臂飞行动作会导致较大姿态/位置扰动；应先增加推力余量、动作限幅和控制器补偿，再进行动态作业飞行。
+- 正式 7.735 kg 的完整机械臂飞行动作仍会导致较大姿态/位置扰动；应先冻结真实桨型并确认推力余量，再进行正式动态作业飞行。
 - CAD 几何来自 `零件/`，但 7.735 kg 是当前冻结的工程配置；更换称重或惯量数据后需要重新生成 URDF、控制分配矩阵和 PX4 参数。
 
 详细步骤和审计记录见：[启动说明_7p735正式版.md](drone_sim_ws/启动说明_7p735正式版.md) 和 [完成审计_7p735正式版.md](drone_sim_ws/完成审计_7p735正式版.md)。

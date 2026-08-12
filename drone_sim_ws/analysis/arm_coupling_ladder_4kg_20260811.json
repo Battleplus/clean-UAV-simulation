@@ -1,0 +1,134 @@
+{
+  "date": "2026-08-11",
+  "scope": "4 kg Gazebo/PX4/SO101 staged coupling acceptance",
+  "runtime_mode": "headless Gazebo server for deterministic acceptance",
+  "feedforward_enabled": false,
+  "overall_result": "pass_for_4kg_debug_scope",
+  "full_tensor_model_evidence": {
+    "report": "analysis/arm_coupling_full_tensor_4kg_modelcheck_20260812.json",
+    "validation": "analysis/arm_coupling_full_tensor_4kg_modelcheck_20260812.validation.json",
+    "report_sha256": "72dd427f8777f78a1735be4020e011d5097a69c289a364e2636162ee46802c6a"
+  },
+  "metric_semantics": {
+    "max_com_shift_m": "maximum modeled vehicle center-of-mass displacement reported during the arm-action measurement window",
+    "max_inertia_diag_change_kg_m2": "maximum modeled change of a diagonal vehicle inertia term during the arm-action measurement window",
+    "max_arm_force_n": "maximum modeled arm reaction-force magnitude reported by the coupling monitor",
+    "max_arm_torque_nm": "maximum modeled arm reaction-torque magnitude reported by the coupling monitor",
+    "max_truth_tilt_deg": "maximum Gazebo ground-truth body tilt during the accepted measurement window",
+    "motor_saturation_samples": "number of sampled windows in which at least one motor reached the configured rated output"
+  },
+  "acceptance_limits": {
+    "horizontal_drift_m": 0.15,
+    "altitude_span_m": 0.3,
+    "truth_tilt_deg": 3.0,
+    "arm_reaction_torque_nm": 0.5,
+    "motor_saturation_samples": 0
+  },
+  "stages": [
+    {
+      "stage": "gripper",
+      "total_mass_kg": 4.0,
+      "repeat_count": 2,
+      "aggregation": "component-wise maximum across both accepted repetitions",
+      "horizontal_drift_m": 0.092,
+      "altitude_span_m": 0.106,
+      "max_com_shift_m": 0.001429,
+      "max_inertia_diag_change_kg_m2": 0.001150853,
+      "max_arm_force_n": 0.000789,
+      "max_arm_torque_nm": 0.065,
+      "max_truth_tilt_deg": 0.922,
+      "motor_saturation_samples": 0,
+      "result": "pass",
+      "logs": [
+        "analysis/reproducible_start_gripper_4kg_20260811.log",
+        "analysis/reproducible_start_gripper_4kg_repeat2_20260811.log"
+      ]
+    },
+    {
+      "stage": "wrist_roll",
+      "total_mass_kg": 4.0,
+      "horizontal_drift_m": 0.109,
+      "altitude_span_m": 0.075,
+      "max_com_shift_m": 0.000955,
+      "max_inertia_diag_change_kg_m2": 0.000030873,
+      "max_arm_force_n": 0.000022,
+      "max_arm_torque_nm": 0.035,
+      "max_truth_tilt_deg": 0.806,
+      "motor_saturation_samples": 0,
+      "result": "pass",
+      "log": "analysis/arm_flight_wrist_roll_4kg_headless_retry_20260811.log"
+    },
+    {
+      "stage": "shoulder_pan_single_joint",
+      "total_mass_kg": 4.0,
+      "horizontal_drift_m": 0.086,
+      "altitude_span_m": 0.114,
+      "max_com_shift_m": 0.000955,
+      "max_inertia_diag_change_kg_m2": 0.000110271,
+      "max_arm_force_n": 0.000637,
+      "max_arm_torque_nm": 0.053,
+      "max_truth_tilt_deg": 0.781,
+      "motor_saturation_samples": 0,
+      "result": "pass",
+      "log": "analysis/arm_flight_shoulder_pan_4kg_20260811.log"
+    },
+    {
+      "stage": "multi_joint_slow",
+      "total_mass_kg": 4.0,
+      "horizontal_drift_m": 0.108,
+      "altitude_span_m": 0.115,
+      "max_com_shift_m": 0.001897,
+      "max_inertia_diag_change_kg_m2": 0.001275908,
+      "max_arm_force_n": 0.001289,
+      "max_arm_torque_nm": 0.055,
+      "max_truth_tilt_deg": 0.860,
+      "motor_saturation_samples": 0,
+      "result": "pass",
+      "log": "analysis/arm_flight_multi_joint_slow_4kg_20260811.log"
+    },
+    {
+      "stage": "full_extend_retract",
+      "total_mass_kg": 4.0,
+      "horizontal_drift_m": 0.108,
+      "altitude_span_m": 0.199,
+      "max_com_shift_m": 0.023003,
+      "max_inertia_diag_change_kg_m2": 0.032068234,
+      "max_arm_force_n": 0.003887,
+      "max_arm_torque_nm": 0.035,
+      "max_truth_tilt_deg": 1.345,
+      "motor_saturation_samples": 0,
+      "result": "pass",
+      "log": "analysis/arm_flight_full_extend_slow_4kg_20260811.log"
+    },
+    {
+      "stage": "full_extend_retract_with_rigid_payload",
+      "total_mass_kg": 4.05,
+      "payload_mass_kg": 0.05,
+      "payload_status": "generic simulation fixture; not measured cleaning-tool data",
+      "horizontal_drift_m": 0.110,
+      "altitude_span_m": 0.191,
+      "max_com_shift_m": 0.026086,
+      "max_inertia_diag_change_kg_m2": 0.037909060,
+      "max_arm_force_n": 0.004954,
+      "max_arm_torque_nm": 0.035,
+      "max_truth_tilt_deg": 0.943,
+      "motor_saturation_samples": 0,
+      "result": "pass",
+      "log": "analysis/arm_flight_full_extend_payload_0p05_enhanced_20260811.log"
+    }
+  ],
+  "gui_runtime_diagnostic": {
+    "result": "invalid acceptance run",
+    "log": "analysis/arm_flight_wrist_roll_4kg_20260811.log",
+    "px4_log": "analysis/wrist_roll_px4_20260811.log",
+    "gazebo_log": "analysis/wrist_roll_gazebo_20260811.log",
+    "cause": "PX4 reported simultaneous MAG #0 and BARO #0 TIMEOUT before failsafe; the same wrist trajectory passed headless",
+    "classification": "GUI/WSLg scheduling or Gazebo-to-PX4 sensor relay interruption, not an accepted arm-coupling failure"
+  },
+  "scope_limits": [
+    "Does not accept the formal 7.735 kg vehicle.",
+    "Does not freeze propeller handedness or thrust direction for motors 4, 5, 7 and 8.",
+    "Does not validate a real cleaning payload.",
+    "The 4 kg ladder does not justify enabling the rejected experimental torque feed-forward by default."
+  ]
+}

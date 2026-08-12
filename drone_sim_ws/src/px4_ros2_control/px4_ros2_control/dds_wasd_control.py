@@ -6,6 +6,7 @@ W/S forward/back, A/D left/right, R/F up/down and Q/E yaw left/right.
 """
 
 import argparse
+import json
 import math
 import os
 import select
@@ -36,7 +37,7 @@ from px4_msgs.msg import (
     VehicleOdometry,
     VehicleStatus,
 )
-from std_msgs.msg import Bool, Float32MultiArray
+from std_msgs.msg import Bool, Float32MultiArray, String
 
 
 def wrap_pi(angle: float) -> float:
@@ -101,6 +102,7 @@ class RawTerminal:
 
 class DdsWasdControl(Node):
     RATE_HZ = 20.0
+    STATE_REPORT_HZ = float(os.environ.get("PX4_STATE_REPORT_HZ", "1.0"))
     STATUS_TIMEOUT_S = 1.0
     PRESTREAM_S = 2.0
     # RL actions still use bounded position increments.  Interactive keyboard
@@ -109,7 +111,7 @@ class DdsWasdControl(Node):
     ALT_STEP_M = 0.12
     YAW_STEP_RAD = math.radians(3.0)
     HORIZONTAL_SPEED_M_S = float(os.environ.get("PX4_WASD_HORIZONTAL_SPEED_M_S", "0.4"))
-    VERTICAL_SPEED_M_S = float(os.environ.get("PX4_WASD_VERTICAL_SPEED_M_S", "0.25"))
+    VERTICAL_SPEED_M_S = float(os.environ.get("PX4_WASD_VERTICAL_SPEED_M_S", "0.15"))
     YAW_RATE_RAD_S = math.radians(
         float(os.environ.get("PX4_WASD_YAW_RATE_DEG_S", "15.0"))
     )
@@ -117,13 +119,26 @@ class DdsWasdControl(Node):
         os.environ.get("PX4_KEY_RELEASE_TIMEOUT_S", "0.20")
     )
     HORIZONTAL_ACCEL_LIMIT_M_S2 = float(
-        os.environ.get("PX4_WASD_HORIZONTAL_ACCEL_M_S2", "0.5")
+        os.environ.get("PX4_WASD_HORIZONTAL_ACCEL_M_S2", "0.30")
+    )
+    HORIZONTAL_JERK_LIMIT_M_S3 = float(
+        os.environ.get("PX4_WASD_HORIZONTAL_JERK_M_S3", "0.60")
     )
     VERTICAL_ACCEL_LIMIT_M_S2 = float(
-        os.environ.get("PX4_WASD_VERTICAL_ACCEL_M_S2", "0.3")
+        # 0.20 m/s^2 produced 11.3% overshoot in the clean R->F->Q
+        # transition regression.  0.18 m/s^2 reduced it to 2.0% while
+        # preserving the requested 0.15 m/s latched vertical speed.
+        os.environ.get("PX4_WASD_VERTICAL_ACCEL_M_S2", "0.18")
+    )
+    VERTICAL_JERK_LIMIT_M_S3 = float(
+        os.environ.get("PX4_WASD_VERTICAL_JERK_M_S3", "0.40")
     )
     YAW_ACCEL_LIMIT_RAD_S2 = math.radians(
-        float(os.environ.get("PX4_WASD_YAW_ACCEL_DEG_S2", "30.0"))
+        # Direct Q->E reversal with 30 deg/s^2 caused a 0.223 m/s vertical
+        # coupling transient.  20 deg/s^2, together with the debug yaw-rate
+        # integral tune, held the transient to 0.035 m/s and yaw overshoot to
+        # 2.7%.  The 15 deg/s latched yaw-rate limit is unchanged.
+        float(os.environ.get("PX4_WASD_YAW_ACCEL_DEG_S2", "20.0"))
     )
     RELEASE_HORIZONTAL_SPEED_M_S = float(
         os.environ.get("PX4_WASD_RELEASE_HORIZONTAL_SPEED_M_S", "0.08")
@@ -168,6 +183,8 @@ class DdsWasdControl(Node):
         self.odometry: Optional[VehicleOdometry] = None
         self.gazebo_truth_enu: Optional[np.ndarray] = None
         self.gazebo_truth_velocity_enu: Optional[np.ndarray] = None
+        self.gazebo_truth_rpy: Optional[np.ndarray] = None
+        self.gazebo_truth_angular_velocity: Optional[np.ndarray] = None
         self.actuator_outputs: Optional[ActuatorOutputs] = None
         self.last_actuator_monotonic = 0.0
         self.last_status_monotonic = 0.0
@@ -181,7 +198,13 @@ class DdsWasdControl(Node):
         self.active_velocity_key: Optional[str] = None
         self.last_velocity_key_monotonic = 0.0
         self.velocity_command_ned = np.zeros(3)
+        self.acceleration_command_ned = np.zeros(3)
+        self.velocity_acceleration_feedforward_enabled = os.environ.get(
+            "PX4_WASD_ACCELERATION_FEEDFORWARD_ENABLED", "true"
+        ).lower() in {"1", "true", "yes", "on"}
         self.yaw_rate_command = 0.0
+        self.yaw_hold_rad = float("nan")
+        self.yaw_hold_pending = False
         self.last_control_tick_monotonic = time.monotonic()
         self.pending_takeoff = False
         self.offboard_requested = False
@@ -206,6 +229,10 @@ class DdsWasdControl(Node):
         self.last_arm_feedforward_monotonic = 0.0
         self.arm_reaction_torque_body_nm = np.zeros(3)
         self.last_arm_reaction_monotonic = 0.0
+        self.arm_reaction_force_norm_n = float("nan")
+        self.arm_com_shift_norm_m = float("nan")
+        self.arm_inertia_diag_kg_m2 = np.full(3, float("nan"))
+        self.last_arm_coupling_state_monotonic = 0.0
         # The coupling monitor also publishes an explicit motion window.  A
         # freshly spawned arm can report a large numerical acceleration while
         # its gravity-loaded controller is settling; that startup transient
@@ -309,6 +336,12 @@ class DdsWasdControl(Node):
             10,
         )
         self.create_subscription(
+            String,
+            "/my_drone/arm_coupling_state",
+            self._arm_coupling_state_cb,
+            10,
+        )
+        self.create_subscription(
             Bool,
             "/my_drone/arm_motion_active",
             self._arm_motion_active_cb,
@@ -348,6 +381,17 @@ class DdsWasdControl(Node):
                 float(msg.twist.twist.linear.z),
             ]
         )
+        orientation = msg.pose.pose.orientation
+        self.gazebo_truth_rpy = self._quaternion_wxyz_to_rpy(
+            [orientation.w, orientation.x, orientation.y, orientation.z]
+        )
+        self.gazebo_truth_angular_velocity = np.array(
+            [
+                float(msg.twist.twist.angular.x),
+                float(msg.twist.twist.angular.y),
+                float(msg.twist.twist.angular.z),
+            ]
+        )
 
     def _local_cb(self, msg: VehicleLocalPosition) -> None:
         if self.target_initialized:
@@ -381,6 +425,8 @@ class DdsWasdControl(Node):
             ):
                 delta_heading = float(msg.delta_heading)
                 self.target.yaw = wrap_pi(self.target.yaw + delta_heading)
+                if math.isfinite(self.yaw_hold_rad):
+                    self.yaw_hold_rad = wrap_pi(self.yaw_hold_rad + delta_heading)
                 self.get_logger().warning(
                     "LOCAL_HEADING_RESET_APPLIED "
                     f"counter={int(msg.heading_reset_counter)} "
@@ -394,6 +440,7 @@ class DdsWasdControl(Node):
         self.last_local_monotonic = time.monotonic()
         if not self.target_initialized and msg.xy_valid and msg.z_valid:
             self.target = TargetNed(msg.x, msg.y, msg.z, msg.heading)
+            self.yaw_hold_rad = float(msg.heading)
             self.target_initialized = True
             # This is a one-time origin snapshot.  Logging it on every
             # VehicleLocalPosition callback made a healthy stream look like
@@ -535,6 +582,26 @@ class DdsWasdControl(Node):
             self.arm_reaction_torque_body_nm = values
             self.last_arm_reaction_monotonic = time.monotonic()
 
+    def _arm_coupling_state_cb(self, msg: String) -> None:
+        """Accept only finite, dimensionally complete coupling diagnostics."""
+        try:
+            report = json.loads(msg.data)
+            com_shift = np.asarray(report["com_shift_m"], dtype=float)
+            inertia_diag = np.asarray(report["inertia_diag_kg_m2"], dtype=float)
+            reaction_force = np.asarray(report["reaction_force_body_n"], dtype=float)
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            return
+        if any(values.shape != (3,) for values in (com_shift, inertia_diag, reaction_force)):
+            return
+        if not all(np.all(np.isfinite(values)) for values in (com_shift, inertia_diag, reaction_force)):
+            return
+        if np.any(inertia_diag <= 0.0):
+            return
+        self.arm_com_shift_norm_m = float(np.linalg.norm(com_shift))
+        self.arm_inertia_diag_kg_m2 = inertia_diag
+        self.arm_reaction_force_norm_n = float(np.linalg.norm(reaction_force))
+        self.last_arm_coupling_state_monotonic = time.monotonic()
+
     def _arm_motion_active_cb(self, msg: Bool) -> None:
         self.arm_motion_active = bool(msg.data)
         self.last_arm_motion_monotonic = time.monotonic()
@@ -611,10 +678,18 @@ class DdsWasdControl(Node):
         sp.timestamp = mode.timestamp
         sp.position = [nan, nan, nan]
         sp.velocity = self.velocity_command_ned.tolist()
-        sp.acceleration = [nan, nan, nan]
+        sp.acceleration = (
+            self.acceleration_command_ned.tolist()
+            if self.velocity_acceleration_feedforward_enabled
+            else [nan, nan, nan]
+        )
         sp.jerk = [nan, nan, nan]
-        sp.yaw = nan
-        sp.yawspeed = float(self.yaw_rate_command)
+        if abs(self.yaw_rate_command) > self.VELOCITY_ZERO_EPS:
+            sp.yaw = nan
+            sp.yawspeed = float(self.yaw_rate_command)
+        else:
+            sp.yaw = float(self.yaw_hold_rad)
+            sp.yawspeed = nan
         self.setpoint_pub.publish(sp)
 
     def begin_takeoff(self) -> bool:
@@ -721,7 +796,15 @@ class DdsWasdControl(Node):
         self.active_velocity_key = None
         self.last_velocity_key_monotonic = 0.0
         self.velocity_command_ned = np.zeros(3)
+        self.acceleration_command_ned = np.zeros(3)
         self.yaw_rate_command = 0.0
+        self.yaw_hold_pending = False
+
+    def stop_velocity_demand(self) -> None:
+        """Latch zero demand; the S-curve state decelerates independently."""
+        self.active_velocity_key = None
+        self.last_velocity_key_monotonic = 0.0
+        self.yaw_hold_pending = True
 
     @staticmethod
     def _ramp_scalar(current: float, target: float, max_delta: float) -> float:
@@ -742,15 +825,80 @@ class DdsWasdControl(Node):
             return target.copy()
         return current + delta * (max_delta / norm)
 
+    @classmethod
+    def _jerk_limited_vector_step(
+        cls,
+        velocity: np.ndarray,
+        acceleration: np.ndarray,
+        target_velocity: np.ndarray,
+        acceleration_limit: float,
+        jerk_limit: float,
+        dt: float,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Advance a bounded S-curve state without overshooting its target."""
+        velocity = np.asarray(velocity, dtype=float).copy()
+        acceleration = np.asarray(acceleration, dtype=float).copy()
+        previous_acceleration = acceleration.copy()
+        target_velocity = np.asarray(target_velocity, dtype=float)
+        dt = max(0.0, min(float(dt), 0.25))
+        if dt <= 0.0:
+            return velocity, acceleration
+        error = target_velocity - velocity
+        error_norm = float(np.linalg.norm(error))
+        if (
+            error_norm <= cls.VELOCITY_ZERO_EPS + 1.0e-12
+            and float(np.linalg.norm(acceleration)) <= jerk_limit * dt
+        ):
+            return target_velocity.copy(), np.zeros_like(acceleration)
+        direction = error / max(error_norm, 1.0e-12)
+        acceleration_toward_target = max(float(np.dot(acceleration, direction)), 0.0)
+        braking_delta_velocity = (
+            acceleration_toward_target * acceleration_toward_target
+            / max(2.0 * jerk_limit, 1.0e-12)
+        )
+        # The continuous-time stopping distance lands exactly on the target
+        # only when the control update is infinitesimal. Reserve one complete
+        # update of velocity plus half a jerk step so a discrete S-curve starts
+        # removing acceleration before it crosses the latched speed bound.
+        braking_delta_velocity += (
+            1.5 * acceleration_toward_target * dt
+            + jerk_limit * dt * dt
+        )
+        if error_norm <= braking_delta_velocity:
+            desired_acceleration = np.zeros_like(acceleration)
+        else:
+            desired_acceleration = direction * acceleration_limit
+        acceleration = cls._ramp_horizontal(
+            acceleration, desired_acceleration, jerk_limit * dt
+        )
+        acceleration_norm = float(np.linalg.norm(acceleration))
+        if acceleration_norm > acceleration_limit > 0.0:
+            acceleration *= acceleration_limit / acceleration_norm
+        candidate = velocity + acceleration * dt
+        if float(np.dot(target_velocity - candidate, error)) <= 0.0:
+            crossing_acceleration = error / dt
+            if float(np.linalg.norm(crossing_acceleration - previous_acceleration)) <= jerk_limit * dt + 1.0e-12:
+                return target_velocity.copy(), crossing_acceleration
+        return candidate, acceleration
+
     def set_velocity_key(self, key: str, now: float | None = None) -> None:
         """Latch one body-frame velocity target until H or another command."""
         if key not in "wasdrfqe":
             return
+        # A real terminal emits repeated characters while a key is held.  The
+        # latched command is edge-triggered: repeating the same key must not
+        # restart any ramp or re-latch heading to a drifting measured value.
+        # This makes a tap and a long press physically identical.
+        if key == self.active_velocity_key:
+            return
         self.active_velocity_key = key
         self.last_velocity_key_monotonic = time.monotonic() if now is None else float(now)
+        self.get_logger().info(f"VELOCITY_DEMAND_LATCH key={key.upper()}")
         if self.control_state != FlightControlState.VELOCITY_CONTROL:
             self.control_state = FlightControlState.VELOCITY_CONTROL
             self.get_logger().info(f"VELOCITY_CONTROL_ENTER key={key.upper()}")
+        if key not in "qe":
+            self.yaw_hold_pending = True
 
     def _desired_velocity_ned(self, key_active: bool) -> tuple[np.ndarray, float]:
         desired = np.zeros(3)
@@ -790,11 +938,39 @@ class DdsWasdControl(Node):
         # time do not alter the target; only H or a new direction command does.
         key_active = self.active_velocity_key is not None
         desired, desired_yaw_rate = self._desired_velocity_ned(key_active)
-        # Publish one unambiguous velocity target.  PX4 applies its configured
-        # acceleration and jerk limits to the physical vehicle.  A second
-        # keyboard-side ramp made taps command a smaller peak speed than holds.
-        self.velocity_command_ned = desired
-        self.yaw_rate_command = desired_yaw_rate
+        horizontal, horizontal_acceleration = self._jerk_limited_vector_step(
+            self.velocity_command_ned[:2],
+            self.acceleration_command_ned[:2],
+            desired[:2],
+            self.HORIZONTAL_ACCEL_LIMIT_M_S2,
+            self.HORIZONTAL_JERK_LIMIT_M_S3,
+            dt,
+        )
+        vertical, vertical_acceleration = self._jerk_limited_vector_step(
+            self.velocity_command_ned[2:3],
+            self.acceleration_command_ned[2:3],
+            desired[2:3],
+            self.VERTICAL_ACCEL_LIMIT_M_S2,
+            self.VERTICAL_JERK_LIMIT_M_S3,
+            dt,
+        )
+        self.velocity_command_ned[:2] = horizontal
+        self.acceleration_command_ned[:2] = horizontal_acceleration
+        self.velocity_command_ned[2] = vertical[0]
+        self.acceleration_command_ned[2] = vertical_acceleration[0]
+        self.yaw_rate_command = self._ramp_scalar(
+            self.yaw_rate_command,
+            desired_yaw_rate,
+            self.YAW_ACCEL_LIMIT_RAD_S2 * max(0.0, min(float(dt), 0.25)),
+        )
+        if (
+            self.yaw_hold_pending
+            and abs(self.yaw_rate_command) <= self.VELOCITY_ZERO_EPS
+            and self.local is not None
+            and math.isfinite(float(self.local.heading))
+        ):
+            self.yaw_hold_rad = float(self.local.heading)
+            self.yaw_hold_pending = False
 
     def _measured_motion_settled(self) -> bool:
         """Wait for physical braking before latching a position setpoint."""
@@ -816,10 +992,10 @@ class DdsWasdControl(Node):
         return True
 
     def hold_current_position(self) -> None:
-        """H is a velocity brake, not a position-controller switch."""
-        self._clear_velocity_command()
+        """H latches zero demand; S-curve braking remains velocity-only."""
+        self.stop_velocity_demand()
         self.control_state = FlightControlState.VELOCITY_CONTROL
-        self.get_logger().info("HOVER_ZERO_VELOCITY")
+        self.get_logger().info("HOVER_ZERO_VELOCITY_DEMAND")
 
     def handle_key(self, key: str) -> None:
         if key == "t":
@@ -872,8 +1048,17 @@ class DdsWasdControl(Node):
         dt = now - self.last_control_tick_monotonic
         self.last_control_tick_monotonic = now
         self.publish_rl_observation()
-        if self.status and self.local and now - self.last_state_report >= 1.0:
+        state_report_period_s = 1.0 / max(0.2, min(20.0, self.STATE_REPORT_HZ))
+        if self.status and self.local and now - self.last_state_report >= state_report_period_s:
             self.last_state_report = now
+            attitude_rpy = (
+                self._quaternion_wxyz_to_rpy(self.odometry.q)
+                if self.odometry is not None else np.zeros(3)
+            )
+            angular_velocity = (
+                np.asarray(self.odometry.angular_velocity, dtype=float)
+                if self.odometry is not None else np.zeros(3)
+            )
             truth_report = (
                 "truth_enu=(nan,nan,nan)"
                 if self.gazebo_truth_enu is None
@@ -888,18 +1073,57 @@ class DdsWasdControl(Node):
                 + ",".join(f"{value:.3f}" for value in self.gazebo_truth_velocity_enu)
                 + ")"
             )
+            truth_attitude_report = (
+                "truth_rpy_deg=(nan,nan,nan)"
+                if self.gazebo_truth_rpy is None
+                else "truth_rpy_deg=("
+                + ",".join(
+                    f"{math.degrees(value):.1f}" for value in self.gazebo_truth_rpy
+                )
+                + ")"
+            )
+            truth_rate_report = (
+                "truth_body_rate_deg_s=(nan,nan,nan)"
+                if self.gazebo_truth_angular_velocity is None
+                else "truth_body_rate_deg_s=("
+                + ",".join(
+                    f"{math.degrees(value):.1f}"
+                    for value in self.gazebo_truth_angular_velocity
+                )
+                + ")"
+            )
             self.get_logger().info(
                 "STATE "
                 f"arm={self.status.arming_state} nav={self.status.nav_state} "
                 f"NED=({self.local.x:.3f},{self.local.y:.3f},{self.local.z:.3f}) "
                 f"vel=({self.local.vx:.3f},{self.local.vy:.3f},{self.local.vz:.3f}) "
                 f"{truth_report} {truth_velocity_report} "
+                f"{truth_attitude_report} {truth_rate_report} "
                 f"control={self.control_state.value} "
+                f"velocity_key={self.active_velocity_key or 'ZERO'} "
+                f"velocity_sp=({self.velocity_command_ned[0]:.3f},"
+                f"{self.velocity_command_ned[1]:.3f},"
+                f"{self.velocity_command_ned[2]:.3f}) "
+                f"acceleration_sp=({self.acceleration_command_ned[0]:.3f},"
+                f"{self.acceleration_command_ned[1]:.3f},"
+                f"{self.acceleration_command_ned[2]:.3f}) "
                 f"yaw_deg={math.degrees(self.local.heading):.1f} "
+                f"rpy_deg=({math.degrees(attitude_rpy[0]):.1f},"
+                f"{math.degrees(attitude_rpy[1]):.1f},"
+                f"{math.degrees(attitude_rpy[2]):.1f}) "
+                f"body_rate_deg_s=({math.degrees(angular_velocity[0]):.1f},"
+                f"{math.degrees(angular_velocity[1]):.1f},"
+                f"{math.degrees(angular_velocity[2]):.1f}) "
+                f"yaw_rate_sp_deg_s={math.degrees(self.yaw_rate_command):.1f} "
                 f"failsafe={self.status.failsafe} "
                 f"age_s=({now - self.last_status_monotonic:.2f},"
                 f"{now - self.last_local_monotonic:.2f}) "
                 f"arm_torque_nm={np.linalg.norm(self.arm_reaction_torque_body_nm):.3f} "
+                f"arm_force_n={self.arm_reaction_force_norm_n:.6f} "
+                f"arm_com_shift_m={self.arm_com_shift_norm_m:.6f} "
+                "arm_inertia_diag=("
+                + ",".join(f"{value:.9f}" for value in self.arm_inertia_diag_kg_m2)
+                + ") "
                 f"motors={self._motor_report(now)}"
             )
         if (

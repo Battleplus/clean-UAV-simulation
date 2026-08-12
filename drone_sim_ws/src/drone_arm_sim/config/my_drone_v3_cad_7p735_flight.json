@@ -28,18 +28,19 @@
       4,
       5
     ],
-    "upward_thrust_motors": [
+    "cad_propeller_side_ray_upward_component_motors": [
       1,
       2,
-      3,
-      6
-    ],
-    "downward_thrust_motors": [
       4,
-      5,
+      5
+    ],
+    "cad_propeller_side_ray_downward_component_motors": [
+      3,
+      6,
       7,
       8
-    ]
+    ],
+    "positive_thrust_direction_status": "UNRESOLVED_FOR_ALL_MOTORS"
   },
   "assembly_sha256": "0cbd1455f3bf9c4acee91a4f5ee997f8fc823cd7817ba7f4a217f9fc029ee202",
   "coordinate_frame": "PX4 body FRD; ROS FLU uses X=-CAD Z, Y=-CAD X, Z=CAD Y",
@@ -251,18 +252,6 @@
   "best_case_thrust_to_weight_nonreversible": 0.9935916481910003,
   "flight_feasibility_nonreversible": "FEASIBLE_WITH_OPPOSITE_PITCH_HYPOTHESIS",
   "flight_feasibility_reason": "Even the optimistic upward-only thrust bound is below vehicle weight; downward-pointing fixed-pitch rotors cannot be used for lift.",
-  "upward_thrust_motors": [
-    1,
-    2,
-    3,
-    6
-  ],
-  "downward_thrust_motors": [
-    4,
-    5,
-    7,
-    8
-  ],
   "rotors": [
     {
       "motor": 1,
@@ -288,10 +277,15 @@
         0.3535533905932739,
         -0.8660254037844385
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 3.274864922277287e-14,
       "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-2",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-2",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": false,
       "wrench_position_m": [
         0.18160588745030426,
         0.07660588745030462,
@@ -323,10 +317,15 @@
         -0.3535533905932737,
         -0.866025403784439
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
       "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-3",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-3",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": false,
       "wrench_position_m": [
         -0.18160588745030434,
         -0.07660588745030457,
@@ -358,10 +357,15 @@
         0.3535533905932736,
         0.8660254037844387
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 1.811234284755796e-14,
       "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-3",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-3",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": false,
       "wrench_position_m": [
         0.07660588745030467,
         0.1816058874503043,
@@ -393,11 +397,15 @@
         0.3535533905932738,
         -0.8660254037844388
       ],
-      "thrust_sign_status": "FLIGHT SCENARIO: opposite-pitch prop makes vertical thrust upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
       "motor_propeller_axis_angle_deg": 0.0,
-      "vertical_thrust_direction": "up",
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-4",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-4",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": true,
       "wrench_position_m": [
         -0.1816058874503042,
         0.07660588745030464,
@@ -429,11 +437,15 @@
         -0.3535533905932735,
         -0.8660254037844385
       ],
-      "thrust_sign_status": "FLIGHT SCENARIO: opposite-pitch prop makes vertical thrust upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "puller",
       "motor_propeller_line_offset_mm": 9.488200048182762e-14,
       "motor_propeller_axis_angle_deg": 0.0,
-      "vertical_thrust_direction": "up",
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-1",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-1",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": true,
       "wrench_position_m": [
         0.18160588745030404,
         -0.07660588745030457,
@@ -465,10 +477,15 @@
         -0.3535533905932736,
         0.8660254037844387
       ],
-      "thrust_sign_status": "CONFIRMED by user rotation/mount table: upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 7.735613448393047e-14,
       "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-2",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-2",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": false,
       "wrench_position_m": [
         -0.07660588745030457,
         -0.18160588745030432,
@@ -500,11 +517,15 @@
         -0.3535533905932741,
         0.8660254037844386
       ],
-      "thrust_sign_status": "FLIGHT SCENARIO: opposite-pitch prop makes vertical thrust upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 2.091245844657973e-14,
       "motor_propeller_axis_angle_deg": 0.0,
-      "vertical_thrust_direction": "up",
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-1",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-1",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": true,
       "wrench_position_m": [
         0.07660588745030462,
         -0.1816058874503041,
@@ -536,11 +557,15 @@
         0.353553390593274,
         0.8660254037844387
       ],
-      "thrust_sign_status": "FLIGHT SCENARIO: opposite-pitch prop makes vertical thrust upward",
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
       "propulsion_mode": "pusher",
       "motor_propeller_line_offset_mm": 2.455281089561238e-14,
       "motor_propeller_axis_angle_deg": 0.0,
-      "vertical_thrust_direction": "up",
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-4",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-4",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": true,
       "wrench_position_m": [
         -0.07660588745030454,
         0.18160588745030415,
@@ -549,13 +574,16 @@
       "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
     }
   ],
+  "axis_assumption": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+  "positive_thrust_direction_status": "UNRESOLVED_FOR_ALL_MOTORS",
   "scenario": "temporary_7p735kg_opposite_pitch_ideal_14p8v_supply",
   "authoritative_source": "config/my_drone_v2_cad.json",
+  "debug_hypothesis_vertical_capacity": "FEASIBLE",
   "reaction_moment_estimate": {
     "formula": "Q = (Q/T) * T",
     "q_over_t_m": 0.001,
-    "status": "enabled as a clean single-bridge closed-loop estimate",
-    "validation": "Q/T=0.001 m passed PX4 DDS translation/yaw/landing regression on 2026-08-06",
+    "status": "initial formal estimate; not a measured propeller parameter",
+    "validation": "the isolated 4 kg debug generator overrides this to its separately tested 0.005 m value",
     "calibration_required": "replace with measured RPM-thrust-torque data or C_Q/C_T and propeller diameter",
     "not_inherited_from_legacy_example": true
   },
@@ -851,31 +879,31 @@
     ]
   },
   "bounded_hover_thrust_n": [
-    10.675140123819938,
-    11.222149903275122,
-    10.675140123819954,
-    11.335425639959883,
-    10.56186438713528,
-    11.222149903275106,
-    10.561864387135282,
-    11.33542563995988
+    10.675140123819961,
+    11.222149903275133,
+    10.67514012381998,
+    11.335425639959894,
+    10.561864387135273,
+    11.222149903275119,
+    10.561864387135287,
+    11.335425639959878
   ],
   "bounded_hover_residual": [
-    6.217248937900877e-15,
-    -2.6645352591003757e-15,
-    -2.842170943040401e-14,
-    3.552713678800501e-15,
-    -3.9968028886505635e-15,
-    -2.886579864025407e-15
+    -3.468541376158044e-15,
+    4.942575062179644e-15,
+    -9.947598300641403e-14,
+    2.0573820425084932e-15,
+    -8.881784197001252e-16,
+    -2.220446049250313e-16
   ],
-  "bounded_hover_residual_norm": 2.9840845339480473e-14,
+  "bounded_hover_residual_norm": 9.968451237878634e-14,
   "actuator_input_model": "hover_scaled_linear_thrust_with_rated_cap",
   "actuator_normalization": {
     "px4_hover_command": 0.85,
-    "physical_hover_thrust_n": 10.948645013547555,
-    "physical_hover_fraction": 0.930375902537866,
-    "linear_thrust_per_command_n": 12.880758839467711,
-    "rated_thrust_command": 0.9136092171791879,
+    "physical_hover_thrust_n": 10.948645013547566,
+    "physical_hover_fraction": 0.9303759025378668,
+    "linear_thrust_per_command_n": 12.880758839467724,
+    "rated_thrust_command": 0.913609217179187,
     "maximum_command": 1.0,
     "maximum_thrust_n": 11.76798,
     "status": "control-interface calibration required because PX4 PositionControl limits its hover state to 0.9; physical thrust endpoints are unchanged"
@@ -891,6 +919,6 @@
     "restore_on_land": true,
     "restore_clearance_m": 0.05,
     "restore_sdf_filename": "../worlds/landing_support.sdf",
-    "status": "Gazebo-only simultaneous release after 95 percent of vehicle weight and a near-balanced COM wrench are held continuously; after an explicit LAND request the same fixture is respawned under the current aircraft XY position only when the aircraft descends near its recorded supported height"
+    "status": "Four thin ground-level pads are released together after 95 percent of vehicle weight and a near-balanced COM wrench are held; the pads are restored near the recorded ground height for landing."
   }
 }

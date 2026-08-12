@@ -134,6 +134,12 @@ def main(args=None) -> None:
             "demo_extended",
             "flight_micro_a",
             "flight_micro_b",
+            "gripper_open",
+            "gripper_closed",
+            "wrist_roll_test",
+            "wrist_roll_home",
+            "shoulder_pan_slow_test",
+            "shoulder_pan_home",
         ),
         required=True,
     )

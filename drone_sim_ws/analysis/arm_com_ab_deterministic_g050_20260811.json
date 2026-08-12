@@ -1,0 +1,51 @@
+{
+  "feedforward_off": {
+    "log": "analysis/arm_flight_full_extend_com_ab_deterministic_off_20260811.log",
+    "horizontal_drift_m": 0.072,
+    "altitude_span_m": 0.174,
+    "samples": 152,
+    "metrics_source": "summary_marker",
+    "pass_marker": true,
+    "failsafe_seen": false,
+    "safety_abort": false,
+    "preset_max_error_rad": {
+      "demo_extended": 0.059975,
+      "retracted": 0.059986
+    },
+    "all_required_presets_reached": true,
+    "within_current_gate": true
+  },
+  "feedforward_on": {
+    "log": "analysis/arm_flight_full_extend_com_ab_deterministic_on_g050_20260811.log",
+    "horizontal_drift_m": 0.151,
+    "altitude_span_m": 0.15,
+    "samples": 154,
+    "metrics_source": "summary_marker",
+    "pass_marker": false,
+    "failsafe_seen": false,
+    "safety_abort": false,
+    "preset_max_error_rad": {
+      "demo_extended": 0.059975,
+      "retracted": 0.059975
+    },
+    "all_required_presets_reached": true,
+    "within_current_gate": false
+  },
+  "delta_on_minus_off": {
+    "horizontal_drift_m": 0.079,
+    "altitude_span_m": -0.023999999999999994
+  },
+  "comparison": {
+    "required_presets": [
+      "demo_extended",
+      "retracted"
+    ],
+    "horizontal_gate_m": 0.15,
+    "altitude_gate_m": 0.3,
+    "same_gate_pass": false,
+    "feedforward_run_accepted": false,
+    "baseline_run_accepted": true,
+    "paired_runs_accepted": false,
+    "interpretation": "feed-forward did not reduce both measured windows"
+  }
+}

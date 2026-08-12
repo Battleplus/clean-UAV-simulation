@@ -9,6 +9,11 @@ import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+import numpy as np
+from scipy.optimize import lsq_linear
+
+from drone_arm_sim.allocation_analysis import allocation_matrix
+
 
 FORMAL_MASS_KG = 7.735
 DEBUG_MASS_KG = 4.0
@@ -45,8 +50,9 @@ def build_config(source: Path, output: Path) -> tuple[dict, float]:
     config = copy.deepcopy(config)
     config["description"] = (
         "Isolated 4.000 kg ideal-control debug profile. Geometry, COM locations, "
-        "per-link mass ratios, inertia ratios, CAD rotor locations and thrust axes "
-        "are retained from the protected 7.735 kg formal model."
+        "per-link mass ratios, inertia ratios and CAD rotor locations are retained "
+        "from the protected 7.735 kg model; axis_body remains the explicit all-up "
+        "debug hypothesis pending propeller handedness or signed thrust tests."
     )
     config["scenario"] = "debug_4kg_ideal_linear_supply"
     config["estimated_all_up_mass_kg"] = DEBUG_MASS_KG
@@ -103,14 +109,39 @@ def build_config(source: Path, output: Path) -> tuple[dict, float]:
     # Yaw authority cannot be validated with zero propeller reaction torque.
     # Retain the small closed-loop bring-up estimate used by the formal
     # profile; it remains explicitly provisional rather than a real C_Q/C_T.
-    config["reaction_moment_ratio_m"] = 0.001
+    config["reaction_moment_ratio_m"] = 0.005
     config["reaction_moment_estimate"] = {
-        "value_m": 0.001,
+        "value_m": 0.005,
         "status": "temporary debug Q/T estimate retained only to validate yaw control",
     }
     config.setdefault("motor_dynamics_table", {}).setdefault(
         "reaction_torque_model", {}
-    )["q_over_t_m"] = 0.001
+    )["q_over_t_m"] = 0.005
+    # The formal hover solution was calculated with its separate 0.001 m
+    # reaction-torque estimate.  Re-solve the 4 kg trim after applying the
+    # debug-only 0.005 m value; scaling the old thrust vector leaves a small
+    # residual body torque and contaminates observer baselines.
+    hover_target = np.array(
+        [0.0, 0.0, -DEBUG_MASS_KG * GRAVITY, 0.0, 0.0, 0.0]
+    )
+    bounded = lsq_linear(
+        allocation_matrix(config),
+        hover_target,
+        bounds=(0.0, maximum_thrust),
+        lsmr_tol="auto",
+    )
+    residual = allocation_matrix(config) @ bounded.x - hover_target
+    if not bounded.success or float(np.linalg.norm(residual)) > 1.0e-8:
+        raise ValueError("4 kg debug allocation cannot trim hover")
+    hover = bounded.x.tolist()
+    config["bounded_hover_thrust_n"] = hover
+    config["bounded_hover_residual"] = residual.tolist()
+    config["bounded_hover_residual_norm"] = float(np.linalg.norm(residual))
+    physical_hover = float(np.mean(bounded.x))
+    hover_command = physical_hover / maximum_thrust
+    config["actuator_normalization"]["px4_hover_command"] = hover_command
+    config["actuator_normalization"]["physical_hover_thrust_n"] = physical_hover
+    config["actuator_normalization"]["physical_hover_fraction"] = hover_command
     release = config.setdefault("takeoff_support_release", {})
     release.update(
         {
@@ -150,15 +181,25 @@ def build_airframe(source: Path, output: Path, hover_command: float) -> None:
         "param set-default MPC_THR_MAX 1.00",
         text,
     )
+    text, km_count = re.subn(
+        r"(param set-default CA_ROTOR\d+_KM\s+)([-+0-9.eE]+)",
+        lambda match: (
+            f"{match.group(1)}"
+            f"{(-0.005 if float(match.group(2)) < 0.0 else 0.005):.9f}"
+        ),
+        text,
+    )
+    if km_count != 8:
+        raise ValueError(f"expected eight CA_ROTORn_KM parameters, found {km_count}")
     # The formal airframe is intentionally sluggish because it has only 7.5%
     # vertical margin.  The isolated 4 kg profile has >2:1 T/W, so use
     # moderate bring-up gains and useful velocity limits.  These remain
     # debug parameters, not a tune for the eventual physical 7.735 kg craft.
     debug_parameters = {
-        "EKF2_HGT_REF": "1",
-        "EKF2_GPS_CTRL": "7",
-        "EKF2_BARO_CTRL": "0",
-        "EKF2_BARO_DELAY": "20",
+        "EKF2_HGT_REF": "0",
+        "EKF2_GPS_CTRL": "5",
+        "EKF2_BARO_CTRL": "1",
+        "EKF2_BARO_DELAY": "0",
         "MPC_XY_P": "2.20",
         "MPC_XY_VEL_P_ACC": "1.00",
         "MPC_XY_VEL_I_ACC": "0.10",
@@ -184,7 +225,7 @@ def build_airframe(source: Path, output: Path, hover_command: float) -> None:
         "MC_YAWRATE_P": "0.120",
         "MC_ROLLRATE_I": "0.060",
         "MC_PITCHRATE_I": "0.060",
-        "MC_YAWRATE_I": "0.060",
+        "MC_YAWRATE_I": "0.030",
     }
     for name, value in debug_parameters.items():
         text, count = re.subn(

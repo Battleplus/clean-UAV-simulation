@@ -27,10 +27,18 @@ def main() -> int:
     parser.add_argument("--payload-urdf", type=Path, required=True)
     parser.add_argument("--output-config", type=Path, required=True)
     parser.add_argument("--output-airframe", type=Path, required=True)
+    parser.add_argument(
+        "--base-airframe",
+        type=Path,
+        help=(
+            "preserve validated controller/estimator parameters and replace "
+            "only payload-dependent rotor positions and hover thrust"
+        ),
+    )
     parser.add_argument("--hover-command-bias", type=float, default=0.0)
     parser.add_argument(
         "--px4-param", action="append", default=[], metavar="NAME=VALUE",
-        help="replace an existing param set-default line in the generated airframe",
+        help="replace an existing param set/set-default line in the generated airframe",
     )
     args = parser.parse_args()
 
@@ -108,6 +116,7 @@ def main() -> int:
         "allocation_residual_norm": float(np.linalg.norm(residual)),
         "status": "temporary payload-specific flight calibration",
         "px4_parameter_overrides": list(args.px4_param),
+        "base_airframe": str(args.base_airframe) if args.base_airframe else None,
     }
 
     args.output_config.parent.mkdir(parents=True, exist_ok=True)
@@ -116,12 +125,44 @@ def main() -> int:
     )
     generate_airframe(args.output_config, args.output_airframe)
     airframe_text = args.output_airframe.read_text(encoding="utf-8")
+    if args.base_airframe is not None:
+        base_airframe_text = args.base_airframe.read_text(encoding="utf-8")
+        payload_dependent_names = [
+            f"CA_ROTOR{index}_P{axis}"
+            for index in range(8)
+            for axis in "XYZ"
+        ] + ["MPC_THR_HOVER"]
+        for name in payload_dependent_names:
+            generated_match = re.search(
+                rf"(?m)^param set-default {re.escape(name)}\s+(\S+)\s*$",
+                airframe_text,
+            )
+            if generated_match is None:
+                raise ValueError(f"generated airframe is missing {name}")
+            # Rotor geometry remains a default, but the payload-specific hover
+            # command is an analyzed property of this disposable airframe.
+            # Force it at boot so a stale parameters.bson value from another
+            # payload/unloaded run cannot silently override the calculation.
+            command = "set" if name == "MPC_THR_HOVER" else "set-default"
+            replacement = f"param {command} {name} {generated_match.group(1)}"
+            base_airframe_text, count = re.subn(
+                rf"(?m)^param set-default {re.escape(name)}\s+\S+\s*$",
+                replacement,
+                base_airframe_text,
+            )
+            if count != 1:
+                raise ValueError(
+                    f"base airframe must contain {name} exactly once, got {count}"
+                )
+        airframe_text = base_airframe_text
     for assignment in args.px4_param:
         if "=" not in assignment:
             raise ValueError(f"invalid --px4-param {assignment!r}; expected NAME=VALUE")
         name, value = assignment.split("=", 1)
-        pattern = rf"(?m)^param set-default {re.escape(name)}\s+\S+\s*$"
-        replacement = f"param set-default {name} {value}"
+        pattern = rf"(?m)^param (set(?:-default)?) {re.escape(name)}\s+\S+\s*$"
+        current_match = re.search(pattern, airframe_text)
+        command = current_match.group(1) if current_match is not None else "set-default"
+        replacement = f"param {command} {name} {value}"
         airframe_text, count = re.subn(pattern, replacement, airframe_text)
         if count != 1:
             raise ValueError(

@@ -1,0 +1,117 @@
+{
+  "result": "ARM_COUPLING_LADDER_EVIDENCE_PASS",
+  "scope": "4 kg debug profile only",
+  "stage_count": 6,
+  "accepted_run_count": 7,
+  "full_tensor_model_evidence": {
+    "report": "analysis/arm_coupling_full_tensor_4kg_modelcheck_20260812.json",
+    "validation": "analysis/arm_coupling_full_tensor_4kg_modelcheck_20260812.validation.json",
+    "report_sha256": "72dd427f8777f78a1735be4020e011d5097a69c289a364e2636162ee46802c6a",
+    "result": "ARM_COUPLING_TENSOR_REPORT_PASS"
+  },
+  "stages": [
+    {
+      "stage": "gripper",
+      "accepted_runs": 2,
+      "logs": [
+        "analysis/reproducible_start_gripper_4kg_20260811.log",
+        "analysis/reproducible_start_gripper_4kg_repeat2_20260811.log"
+      ],
+      "conservative_metrics": {
+        "horizontal_drift_m": 0.092,
+        "altitude_span_m": 0.106,
+        "max_com_shift_m": 0.001429,
+        "max_inertia_diag_change_kg_m2": 0.001150853,
+        "max_arm_force_n": 0.000789,
+        "max_arm_torque_nm": 0.065,
+        "max_truth_tilt_deg": 0.922,
+        "motor_saturation_samples": 0.0
+      }
+    },
+    {
+      "stage": "wrist_roll",
+      "accepted_runs": 1,
+      "logs": [
+        "analysis/arm_flight_wrist_roll_4kg_headless_retry_20260811.log"
+      ],
+      "conservative_metrics": {
+        "horizontal_drift_m": 0.109,
+        "altitude_span_m": 0.075,
+        "max_com_shift_m": 0.000955,
+        "max_inertia_diag_change_kg_m2": 3.0873e-05,
+        "max_arm_force_n": 2.2e-05,
+        "max_arm_torque_nm": 0.035,
+        "max_truth_tilt_deg": 0.806,
+        "motor_saturation_samples": 0.0
+      }
+    },
+    {
+      "stage": "shoulder_pan_single_joint",
+      "accepted_runs": 1,
+      "logs": [
+        "analysis/arm_flight_shoulder_pan_4kg_20260811.log"
+      ],
+      "conservative_metrics": {
+        "horizontal_drift_m": 0.086,
+        "altitude_span_m": 0.114,
+        "max_com_shift_m": 0.000955,
+        "max_inertia_diag_change_kg_m2": 0.000110271,
+        "max_arm_force_n": 0.000637,
+        "max_arm_torque_nm": 0.053,
+        "max_truth_tilt_deg": 0.781,
+        "motor_saturation_samples": 0.0
+      }
+    },
+    {
+      "stage": "multi_joint_slow",
+      "accepted_runs": 1,
+      "logs": [
+        "analysis/arm_flight_multi_joint_slow_4kg_20260811.log"
+      ],
+      "conservative_metrics": {
+        "horizontal_drift_m": 0.108,
+        "altitude_span_m": 0.115,
+        "max_com_shift_m": 0.001897,
+        "max_inertia_diag_change_kg_m2": 0.001275908,
+        "max_arm_force_n": 0.001289,
+        "max_arm_torque_nm": 0.055,
+        "max_truth_tilt_deg": 0.86,
+        "motor_saturation_samples": 0.0
+      }
+    },
+    {
+      "stage": "full_extend_retract",
+      "accepted_runs": 1,
+      "logs": [
+        "analysis/arm_flight_full_extend_slow_4kg_20260811.log"
+      ],
+      "conservative_metrics": {
+        "horizontal_drift_m": 0.108,
+        "altitude_span_m": 0.199,
+        "max_com_shift_m": 0.023003,
+        "max_inertia_diag_change_kg_m2": 0.032068234,
+        "max_arm_force_n": 0.003887,
+        "max_arm_torque_nm": 0.035,
+        "max_truth_tilt_deg": 1.345,
+        "motor_saturation_samples": 0.0
+      }
+    },
+    {
+      "stage": "full_extend_retract_with_rigid_payload",
+      "accepted_runs": 1,
+      "logs": [
+        "analysis/arm_flight_full_extend_payload_0p05_enhanced_20260811.log"
+      ],
+      "conservative_metrics": {
+        "horizontal_drift_m": 0.11,
+        "altitude_span_m": 0.191,
+        "max_com_shift_m": 0.026086,
+        "max_inertia_diag_change_kg_m2": 0.03790906,
+        "max_arm_force_n": 0.004954,
+        "max_arm_torque_nm": 0.035,
+        "max_truth_tilt_deg": 0.943,
+        "motor_saturation_samples": 0.0
+      }
+    }
+  ]
+}

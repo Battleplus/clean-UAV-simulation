@@ -1,0 +1,67 @@
+{
+  "schema": 1,
+  "evidence_status": "SUMMARY_ONLY_RAW_LOG_NOT_LOCATED",
+  "ready_for_automatic_tuning": false,
+  "evidence_note": "The accepted 10 Hz summary is retained as control-chain evidence, but its raw PTY log is not present in the workspace and therefore cannot pass the SHA-256-backed tuning-evidence extractor.",
+  "profile": "W/S/A/D/R/F/Q/E/W/H",
+  "state_report_hz": 10,
+  "control_rate_hz": 20,
+  "mass_hypothesis_kg": 4.0,
+  "valid_run": true,
+  "result": "DDS_VELOCITY_WASD_PASS",
+  "landing_disarmed_confirmed": true,
+  "failsafe_seen": false,
+  "motor_saturation_fraction": 0.0,
+  "global": {
+    "horizontal_speed_overshoot_fraction": 0.08893583373860925,
+    "vertical_speed_overshoot_fraction": 0.06666666666666674,
+    "yaw_rate_overshoot_fraction": 0.02666666666666669,
+    "max_truth_roll_pitch_deg": 2.7
+  },
+  "phase_sample_counts": {
+    "W_0": 31,
+    "S_1": 33,
+    "A_2": 30,
+    "D_3": 32,
+    "R_4": 27,
+    "F_5": 28,
+    "Q_6": 26,
+    "E_7": 28,
+    "H_9": 23
+  },
+  "representative_responses": {
+    "W_0": {
+      "target_m_s": 0.4,
+      "rise_time_s": 1.900838050999937,
+      "settling_time_s": 3.507093319999967,
+      "steady_error_m_s": 0.018082130898338322
+    },
+    "R_4": {
+      "target_m_s": -0.15,
+      "rise_time_s": 1.4438152079997053,
+      "settling_time_s": 1.4438152079997053,
+      "steady_error_m_s": -0.008500000000000008
+    },
+    "Q_6": {
+      "target_deg_s": -15.0,
+      "rise_time_s": 1.3982964309998351,
+      "settling_time_s": 1.3982964309998351,
+      "steady_error_deg_s": 0.40000000000000036
+    }
+  },
+  "hover_H_9": {
+    "horizontal_steady_m_s": 0.029571915955194247,
+    "vertical_steady_m_s": 0.002,
+    "yaw_rate_steady_deg_s": 0.25,
+    "tail_1s_max_truth_roll_pitch_deg": 1.0,
+    "motor_saturation_fraction": 0.0
+  },
+  "acceptance": {
+    "horizontal_overshoot_below_15_percent": true,
+    "vertical_overshoot_below_10_percent": true,
+    "yaw_rate_overshoot_below_10_percent": true,
+    "zero_velocity_truth_tilt_below_2_deg": true,
+    "normal_flight_motor_saturation_near_zero": true
+  },
+  "physical_scope": "4 kg all-up debug thrust-sign hypothesis only; not a formal 7.735 kg physical result"
+}

@@ -1,0 +1,98 @@
+{
+  "feedforward_off": {
+    "log": "/mnt/e/清洁无人机/drone_sim_ws/analysis/arm_dob_ab_20260811_v2_off_flight.log",
+    "log_size_bytes": 159536,
+    "log_sha256": "e20b3fd796f7401185968c8953f97f76e9d217128167d5099f81eae064dee727",
+    "horizontal_drift_m": 0.13,
+    "altitude_span_m": 0.167,
+    "samples": 152,
+    "metrics_source": "summary_marker",
+    "max_com_shift_m": 0.023003,
+    "max_inertia_diag_change_kg_m2": 0.032068234,
+    "max_arm_force_n": 0.005017,
+    "max_arm_torque_nm": 0.035,
+    "motor_saturation_samples": 0,
+    "motor_sample_count": 150,
+    "motor_saturation_rate": 0.0,
+    "max_truth_tilt_deg": 1.703,
+    "rms_truth_tilt_deg": 0.5,
+    "strict_diagnostics_present": true,
+    "strict_diagnostics_ok": true,
+    "pass_marker": true,
+    "failsafe_seen": false,
+    "safety_abort": false,
+    "preset_max_error_rad": {
+      "demo_extended": 0.059975,
+      "retracted": 0.059986
+    },
+    "all_required_presets_reached": true,
+    "within_current_gate": true
+  },
+  "feedforward_on": {
+    "log": "/mnt/e/清洁无人机/drone_sim_ws/analysis/arm_dob_ab_20260811_v2_on_g050_flight.log",
+    "log_size_bytes": 158332,
+    "log_sha256": "83780f0cdfa193ed5ebe511e78fe29f56e2c3e6f320fcfea76699ba703b4793d",
+    "horizontal_drift_m": 0.759,
+    "altitude_span_m": 0.208,
+    "samples": 154,
+    "metrics_source": "summary_marker",
+    "max_com_shift_m": 0.023003,
+    "max_inertia_diag_change_kg_m2": 0.032068234,
+    "max_arm_force_n": 0.001477,
+    "max_arm_torque_nm": 0.034,
+    "motor_saturation_samples": 0,
+    "motor_sample_count": 146,
+    "motor_saturation_rate": 0.0,
+    "max_truth_tilt_deg": 4.342,
+    "rms_truth_tilt_deg": 1.03,
+    "strict_diagnostics_present": true,
+    "strict_diagnostics_ok": false,
+    "pass_marker": false,
+    "failsafe_seen": false,
+    "safety_abort": false,
+    "preset_max_error_rad": {
+      "demo_extended": 0.059975,
+      "retracted": 0.059975
+    },
+    "all_required_presets_reached": true,
+    "within_current_gate": false
+  },
+  "delta_on_minus_off": {
+    "horizontal_drift_m": 0.629,
+    "altitude_span_m": 0.04099999999999998,
+    "max_truth_tilt_deg": 2.6389999999999993,
+    "rms_truth_tilt_deg": 0.53
+  },
+  "candidate_runtime_evidence": {
+    "log": "/mnt/e/清洁无人机/drone_sim_ws/analysis/arm_dob_ab_20260811_v2_on_g050_gazebo.log",
+    "log_size_bytes": 336610,
+    "log_sha256": "9eb6d57014f9a54807be73f64f67e1272eb6c8b5cfc9a5488b1e8b35900f78e2",
+    "required_marker": "ARM_DOB_STATE",
+    "marker_count": 0,
+    "active_marker_count": 0,
+    "maximum_estimated_torque_nm": 0.0,
+    "observer_process_died": true,
+    "cli_argument_failure": true,
+    "valid": false,
+    "interpretation": "candidate runtime was not proven active with nonzero output; flight deltas are not attributable to the observer"
+  },
+  "comparison": {
+    "required_presets": [
+      "demo_extended",
+      "retracted"
+    ],
+    "horizontal_gate_m": 0.15,
+    "altitude_gate_m": 0.3,
+    "tilt_gate_deg": 3.0,
+    "arm_torque_gate_nm": 0.5,
+    "candidate_runtime_valid": false,
+    "effect_evaluated": false,
+    "same_gate_pass": false,
+    "feedforward_run_accepted": false,
+    "baseline_run_accepted": true,
+    "paired_runs_accepted": false,
+    "improves_all_principal_metrics": null,
+    "candidate_accepted": false,
+    "interpretation": "candidate runtime invalid; effect was not evaluated"
+  }
+}

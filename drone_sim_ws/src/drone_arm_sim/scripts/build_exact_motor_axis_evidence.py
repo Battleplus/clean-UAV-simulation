@@ -21,8 +21,7 @@ PX4_MOTOR_MAP = {
     (1, 4): 8,
 }
 PUSHER_MOTORS = {3, 6, 7, 8}
-UPWARD_THRUST_MOTORS = {1, 2, 3, 6}
-DOWNWARD_THRUST_MOTORS = {4, 5, 7, 8}
+LEGACY_ROTATION_MOUNT_UPWARD_MOTORS = {1, 2, 3, 6}
 
 
 def key(instance: str) -> tuple[int, int]:
@@ -93,11 +92,17 @@ def generate(project: Path) -> None:
             ) < 1e-9
         ]
         prop_side_frd = unit(assembly_to_frd(shaft_axis))
-        operational_frd = prop_side_frd.copy()
-        wants_up = motor_number in UPWARD_THRUST_MOTORS
-        is_up = operational_frd[2] < 0.0
-        if wants_up != is_up:
-            operational_frd *= -1.0
+        # A cylindrical axis is signless.  The vector below is oriented only
+        # from the motor shaft toward the CAD propeller instance; it is not a
+        # measured positive-thrust direction.  Keep the all-up vector as an
+        # explicitly named hypothesis for debug/runtime compatibility.
+        all_up_hypothesis_frd = prop_side_frd.copy()
+        if all_up_hypothesis_frd[2] > 0.0:
+            all_up_hypothesis_frd *= -1.0
+        legacy_rotation_mount_hypothesis_frd = prop_side_frd.copy()
+        legacy_wants_up = motor_number in LEGACY_ROTATION_MOUNT_UPWARD_MOTORS
+        if legacy_wants_up != (legacy_rotation_mount_hypothesis_frd[2] < 0.0):
+            legacy_rotation_mount_hypothesis_frd *= -1.0
         position_frd = assembly_to_frd(shaft_origin - bbox_origin)
         prop_position_frd = assembly_to_frd(prop_origin - bbox_origin)
         evidence.append({
@@ -108,18 +113,32 @@ def generate(project: Path) -> None:
             "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
             "assembly_axis_point_mm": (shaft_origin * 1000.0).tolist(),
             "assembly_propeller_axis_point_mm": (prop_origin * 1000.0).tolist(),
+            "assembly_propeller_side_axis": shaft_axis.tolist(),
+            # Retained as a deprecated data alias so older analysis scripts
+            # remain readable.  It must not be interpreted as thrust sign.
             "assembly_thrust_axis": shaft_axis.tolist(),
             "cad_propeller_side_axis_frd": prop_side_frd.tolist(),
-            "ros_flu_thrust_axis": (operational_frd * np.asarray([1.0, -1.0, -1.0])).tolist(),
-            "px4_frd_thrust_axis": operational_frd.tolist(),
+            "all_up_hypothesis_axis_ros_flu": (
+                all_up_hypothesis_frd * np.asarray([1.0, -1.0, -1.0])
+            ).tolist(),
+            "all_up_hypothesis_axis_frd": all_up_hypothesis_frd.tolist(),
+            "legacy_rotation_mount_hypothesis_axis_frd": (
+                legacy_rotation_mount_hypothesis_frd.tolist()
+            ),
             "px4_frd_position_m": position_frd.tolist(),
             "px4_frd_propeller_position_m": prop_position_frd.tolist(),
-            "tilt_deg": angle_degrees(operational_frd, [0.0, 0.0, -1.0]),
-            "azimuth_deg": math.degrees(math.atan2(operational_frd[1], operational_frd[0])),
+            "all_up_hypothesis_tilt_deg": angle_degrees(
+                all_up_hypothesis_frd, [0.0, 0.0, -1.0]
+            ),
+            "all_up_hypothesis_azimuth_deg": math.degrees(
+                math.atan2(all_up_hypothesis_frd[1], all_up_hypothesis_frd[0])
+            ),
             "propeller_side_tilt_deg": angle_degrees(prop_side_frd, [0.0, 0.0, -1.0]),
             "propulsion_mode": "pusher" if motor_number in PUSHER_MOTORS else "puller",
-            "vertical_thrust_direction": "up" if wants_up else "down",
-            "thrust_sign_status": "CONFIRMED by user rotation/mount table: " + ("upward" if wants_up else "downward"),
+            "cad_propeller_side_ray_vertical_component": (
+                "upward" if prop_side_frd[2] < 0.0 else "downward"
+            ),
+            "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
             "motor_propeller_line_offset_mm": float(np.linalg.norm(perpendicular) * 1000.0),
             "motor_propeller_axis_angle_deg": angle_degrees(shaft_axis, prop_axis),
             "coaxial_motor_face_radii_mm": sorted(float(face["radius_m"]) * 1000.0 for face in coaxial_faces),
@@ -139,8 +158,15 @@ def generate(project: Path) -> None:
             "clockwise_motor_order_from_nose_right": [1, 3, 8, 4, 2, 6, 7, 5],
             "pusher_motors": sorted(PUSHER_MOTORS),
             "puller_motors": sorted(set(PX4_MOTOR_MAP.values()) - PUSHER_MOTORS),
-            "upward_thrust_motors": sorted(UPWARD_THRUST_MOTORS),
-            "downward_thrust_motors": sorted(DOWNWARD_THRUST_MOTORS),
+            "cad_propeller_side_ray_upward_component_motors": sorted(
+                item["motor"] for item in evidence
+                if item["cad_propeller_side_ray_vertical_component"] == "upward"
+            ),
+            "cad_propeller_side_ray_downward_component_motors": sorted(
+                item["motor"] for item in evidence
+                if item["cad_propeller_side_ray_vertical_component"] == "downward"
+            ),
+            "positive_thrust_direction_status": "UNRESOLVED_FOR_ALL_MOTORS",
         },
         "assembly_bbox_origin_m": bbox_origin.tolist(),
         "motors": evidence,
@@ -151,15 +177,32 @@ def generate(project: Path) -> None:
     config_path = project / "drone_sim_ws" / "src" / "drone_arm_sim" / "config" / "my_drone_v2_cad.json"
     config = json.loads(config_path.read_text(encoding="utf-8"))
     by_motor = {item["motor"]: item for item in evidence}
-    config["description"] = "Formal CAD rotor geometry extracted from SolidWorks cylindrical faces; no bounding-box centre-to-centre axis estimate is used."
+    config["description"] = (
+        "CAD rotor positions and signless shaft lines extracted from SolidWorks "
+        "cylindrical faces. axis_body preserves the legacy rotation/mount-table "
+        "hypothesis for comparison; it is not a physical thrust-sign fact."
+    )
     config["axis_source"] = "analysis/cad_direct/motor_axis_evidence.json"
     config["axis_extraction_method"] = payload["method"]
+    config["body_frame_frozen"] = payload["body_frame_frozen"]
+    config["axis_assumption"] = (
+        "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT"
+    )
+    config["positive_thrust_direction_status"] = "UNRESOLVED_FOR_ALL_MOTORS"
+    config.pop("upward_thrust_motors", None)
+    config.pop("downward_thrust_motors", None)
     for rotor in config["rotors"]:
         item = by_motor[rotor["motor"]]
         rotor["position_m"] = item["px4_frd_position_m"]
-        rotor["axis_body"] = item["px4_frd_thrust_axis"]
-        rotor["tilt_deg"] = item["tilt_deg"]
-        rotor["azimuth_deg"] = item["azimuth_deg"]
+        axis = np.asarray(
+            item["legacy_rotation_mount_hypothesis_axis_frd"], dtype=float
+        )
+        rotor["axis_body"] = axis.tolist()
+        rotor["axis_role"] = (
+            "LEGACY_ROTATION_MOUNT_HYPOTHESIS_NOT_PHYSICAL_FACT"
+        )
+        rotor["tilt_deg"] = angle_degrees(axis, [0.0, 0.0, -1.0])
+        rotor["azimuth_deg"] = math.degrees(math.atan2(axis[1], axis[0]))
         rotor["axis_source"] = item["axis_source"]
         rotor["cad_propeller_side_axis_body"] = item["cad_propeller_side_axis_frd"]
         rotor["thrust_sign_status"] = item["thrust_sign_status"]
@@ -187,10 +230,10 @@ def generate(project: Path) -> None:
             f"## motor_{item['motor']}", "",
             f"- 轴线来源：{item['axis_source']}",
             f"- 总装轴心（mm）：{item['assembly_axis_point_mm']}",
-            f"- ROS FLU 推力轴：{item['ros_flu_thrust_axis']}",
-            f"- PX4 FRD 推力轴：{item['px4_frd_thrust_axis']}",
-            f"- CAD 螺旋桨所在侧轴：{item['cad_propeller_side_axis_frd']}",
-            f"- 倾角：{item['tilt_deg']:.9f}°", f"- 方位角：{item['azimuth_deg']:.9f}°",
+            f"- CAD 螺旋桨所在侧射线（PX4 FRD）：{item['cad_propeller_side_axis_frd']}",
+            f"- 全向上调试假设轴（PX4 FRD）：{item['all_up_hypothesis_axis_frd']}",
+            f"- 全向上假设倾角：{item['all_up_hypothesis_tilt_deg']:.9f}°",
+            f"- 全向上假设方位角：{item['all_up_hypothesis_azimuth_deg']:.9f}°",
             f"- 电机轴与螺旋桨轴偏差：{item['motor_propeller_line_offset_mm']:.9f} mm / {item['motor_propeller_axis_angle_deg']:.9f}°",
             f"- 推力正负号状态：{item['thrust_sign_status']}",
             f"- 电机同轴圆柱半径（mm）：{item['coaxial_motor_face_radii_mm']}", "",

@@ -1,0 +1,53 @@
+{
+  "result": "ARM_COUPLING_TENSOR_REPORT_PASS",
+  "source": "/mnt/e/清洁无人机/drone_sim_ws/analysis/arm_coupling_full_tensor_4kg_modelcheck_20260812.json",
+  "source_sha256": "72dd427f8777f78a1735be4020e011d5097a69c289a364e2636162ee46802c6a",
+  "base_mass_kg": 4.0,
+  "payload_mass_kg": 0.05,
+  "states": {
+    "retracted": {
+      "mass_kg": 4.0,
+      "com_shift_norm_m": 0.0009551033763079866,
+      "inertia_eigenvalues_kg_m2": [
+        0.20649604782136102,
+        0.20849683824452214,
+        0.21410974933855312
+      ],
+      "off_diagonal_norm_kg_m2": 0.0028054748133243593,
+      "reaction_torque_norm_nm": 0.0
+    },
+    "expanded_static_work_a": {
+      "mass_kg": 4.0,
+      "com_shift_norm_m": 0.009959199829535519,
+      "inertia_eigenvalues_kg_m2": [
+        0.20726357267985968,
+        0.2149624528166999,
+        0.21987703362984315
+      ],
+      "off_diagonal_norm_kg_m2": 0.006354999359397191,
+      "reaction_torque_norm_nm": 0.0
+    },
+    "moving_work_a": {
+      "mass_kg": 4.0,
+      "com_shift_norm_m": 0.009959199829535519,
+      "inertia_eigenvalues_kg_m2": [
+        0.20726357267985968,
+        0.2149624528166999,
+        0.21987703362984315
+      ],
+      "off_diagonal_norm_kg_m2": 0.006354999359397191,
+      "reaction_torque_norm_nm": 0.09634568923127171
+    },
+    "moving_work_a_with_payload": {
+      "mass_kg": 4.050000000000001,
+      "com_shift_norm_m": 0.010718492281718615,
+      "inertia_eigenvalues_kg_m2": [
+        0.20762215192483727,
+        0.21775287975876675,
+        0.2224177870346675
+      ],
+      "off_diagonal_norm_kg_m2": 0.007529939079115456,
+      "reaction_torque_norm_nm": 0.09660395531729622
+    }
+  }
+}

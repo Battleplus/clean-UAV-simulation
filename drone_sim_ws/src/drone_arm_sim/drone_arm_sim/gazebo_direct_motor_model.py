@@ -62,6 +62,42 @@ def first_order_vector_step(
     return current_array + alpha * (target_array - current_array)
 
 
+def arm_compensation_torque_step(
+    filtered_gravity_torque_flu: np.ndarray,
+    reaction_torque_flu: np.ndarray,
+    gravity_shift_torque_flu: np.ndarray,
+    *,
+    reaction_available: bool,
+    gravity_available: bool,
+    gravity_gain: float,
+    dt_s: float,
+    gravity_time_constant_s: float,
+) -> tuple[np.ndarray, np.ndarray, bool]:
+    """Compose transient reaction and persistent COM-shift compensation.
+
+    Dynamic reaction torque is valid only while the arm is moving. Gravity
+    torque caused by the current arm pose remains present after motion stops,
+    so it deliberately has an independent freshness gate.
+    """
+    filtered = np.asarray(filtered_gravity_torque_flu, dtype=float).copy()
+    combined = np.zeros(3)
+    active = False
+    if reaction_available:
+        combined += np.asarray(reaction_torque_flu, dtype=float)
+        active = True
+    gain = float(np.clip(gravity_gain, 0.0, 1.0))
+    if gravity_available and gain > 0.0:
+        filtered = first_order_vector_step(
+            filtered,
+            np.asarray(gravity_shift_torque_flu, dtype=float),
+            dt_s,
+            gravity_time_constant_s,
+        )
+        combined += gain * filtered
+        active = True
+    return combined, filtered, active
+
+
 def command_to_thrust_n(config: dict, normalized_command: float) -> float:
     """Map one normalized command to thrust, preserving legacy configs."""
     command = float(np.clip(normalized_command, 0.0, 1.0))
@@ -498,9 +534,13 @@ class DirectMotorModel(Node):
         battery_dynamics_enabled: bool | None = None,
         battery_overrides: dict[str, float] | None = None,
         arm_torque_feedforward_enabled: bool = False,
+        arm_reaction_torque_feedforward_gain: float = 1.0,
         arm_torque_feedforward_max_delta_n: float = 2.0,
         arm_static_com_feedforward_gain: float = 0.0,
         arm_static_com_feedforward_time_constant_s: float = 5.0,
+        arm_disturbance_observer_enabled: bool = False,
+        arm_disturbance_observer_gain: float = 0.5,
+        arm_disturbance_observer_max_delta_n: float = 1.0,
     ):
         super().__init__("my_drone_gazebo_direct_motor_model")
         self.config = json.loads(config_path.read_text(encoding="utf-8"))
@@ -552,6 +592,9 @@ class DirectMotorModel(Node):
         self.battery_thrust_scale = 1.0
         self.battery_current_a = 0.0
         self.arm_torque_feedforward_enabled = bool(arm_torque_feedforward_enabled)
+        self.arm_reaction_torque_feedforward_gain = float(
+            np.clip(arm_reaction_torque_feedforward_gain, 0.0, 1.0)
+        )
         self.arm_torque_feedforward_max_delta_n = max(
             0.0, float(arm_torque_feedforward_max_delta_n)
         )
@@ -567,6 +610,22 @@ class DirectMotorModel(Node):
         self.arm_static_com_feedforward_time_constant_s = max(
             0.0, float(arm_static_com_feedforward_time_constant_s)
         )
+        self.arm_disturbance_observer_enabled = bool(
+            arm_disturbance_observer_enabled
+        )
+        if self.arm_torque_feedforward_enabled and self.arm_disturbance_observer_enabled:
+            raise ValueError(
+                "predictive arm feed-forward and disturbance observer cannot "
+                "be enabled in the same A/B run"
+            )
+        self.arm_disturbance_observer_gain = float(
+            np.clip(arm_disturbance_observer_gain, 0.0, 1.0)
+        )
+        self.arm_disturbance_observer_max_delta_n = max(
+            0.0, float(arm_disturbance_observer_max_delta_n)
+        )
+        self.arm_observer_torque_frd = np.zeros(3)
+        self.arm_observer_torque_stamp_s: float | None = None
         self.arm_motion_active_stamp_s: float | None = None
         self.arm_torque_matrix_pinv = np.linalg.pinv(
             allocation_matrix(self.config, position_key="wrench_position_m")
@@ -614,8 +673,12 @@ class DirectMotorModel(Node):
         self.rated_thrust_command = float(
             normalization.get("rated_thrust_command", 0.999)
         )
+        # Publish a replaceable latest value. The accompanying Gazebo system
+        # holds this value and applies it during every physics PreUpdate. The
+        # stock /wrench topic consumes each message for one step only, while
+        # /wrench/persistent appends every update and would sum old commands.
         self.publisher = self.create_publisher(
-            EntityWrench, "/world/flight_world/wrench", 10
+            EntityWrench, "/world/flight_world/wrench/latest", 10
         )
         self.create_subscription(
             Odometry,
@@ -642,6 +705,12 @@ class DirectMotorModel(Node):
             10,
         )
         self.create_subscription(
+            WrenchStamped,
+            "/my_drone/arm_observer_disturbance_wrench_body_frd",
+            self.on_arm_observer_wrench,
+            10,
+        )
+        self.create_subscription(
             Bool,
             "/my_drone/arm_motion_active",
             self.on_arm_motion_active,
@@ -656,10 +725,17 @@ class DirectMotorModel(Node):
         if self.arm_torque_feedforward_enabled:
             self.get_logger().info(
                 "arm torque feed-forward enabled: "
+                f"reaction_gain={self.arm_reaction_torque_feedforward_gain:.3f}, "
                 f"max_delta={self.arm_torque_feedforward_max_delta_n:.3f} N, "
                 f"static_com_gain={self.arm_static_com_feedforward_gain:.3f}, "
                 "static_com_tau="
                 f"{self.arm_static_com_feedforward_time_constant_s:.3f} s"
+            )
+        if self.arm_disturbance_observer_enabled:
+            self.get_logger().warning(
+                "experimental arm disturbance-observer trim enabled: "
+                f"gain={self.arm_disturbance_observer_gain:.3f}, "
+                f"max_delta={self.arm_disturbance_observer_max_delta_n:.3f} N"
             )
 
     def on_odometry(self, message) -> None:
@@ -775,11 +851,9 @@ class DirectMotorModel(Node):
         )
         if np.all(np.isfinite(quaternion)) and np.linalg.norm(quaternion) > 1e-9:
             self.rotation_flu_to_world = quaternion_matrix_xyzw(quaternion)
-            # ApplyLinkWrench's non-persistent topic acts for one simulation
-            # update only.  Odometry is emitted at the model update rate, so
-            # publishing here applies thrust on every physics step regardless
-            # of real-time factor.  A wall-clock timer would under-apply force
-            # whenever physics runs faster than the timer.
+            # Update the held world-frame wrench from the newest pose. The
+            # Gazebo LatestWrenchSystem, rather than ROS callback timing,
+            # guarantees that the latest value is applied every physics step.
             self.publish_wrench()
 
     def update_takeoff_support_release(
@@ -968,6 +1042,18 @@ class DirectMotorModel(Node):
             self.arm_gravity_shift_torque_flu = values
             self.arm_gravity_shift_torque_stamp_s = time.monotonic()
 
+    def on_arm_observer_wrench(self, message) -> None:
+        """Cache a sensor-derived disturbance torque in explicit PX4 FRD."""
+        if str(message.header.frame_id) != "px4_frd":
+            return
+        values = np.asarray(
+            [message.wrench.torque.x, message.wrench.torque.y, message.wrench.torque.z],
+            dtype=float,
+        )
+        if values.shape == (3,) and np.all(np.isfinite(values)):
+            self.arm_observer_torque_frd = values
+            self.arm_observer_torque_stamp_s = time.monotonic()
+
     def publish_wrench(self) -> None:
         if rclpy is None or not rclpy.ok() or self.rotation_flu_to_world is None:
             return
@@ -976,46 +1062,69 @@ class DirectMotorModel(Node):
             * self.battery_thrust_scale
         )
         commands_for_wrench = self.filtered_commands
-        if (
-            self.arm_torque_feedforward_enabled
-            and self.arm_motion_active_stamp_s is not None
-            and time.monotonic() - self.arm_motion_active_stamp_s < 1.0
-            and self.arm_reaction_torque_stamp_s is not None
-            and time.monotonic() - self.arm_reaction_torque_stamp_s < 0.6
-        ):
+        if self.arm_torque_feedforward_enabled:
             # FRD/FLU share x and invert y/z.  The rotor allocator is in FRD,
             # while the coupled-dynamics monitor publishes base_link FLU.
             now_s = time.monotonic()
-            combined_torque_flu = self.arm_reaction_torque_flu.copy()
-            if (
+            reaction_available = bool(
+                self.arm_reaction_torque_feedforward_gain > 0.0
+                and self.arm_motion_active_stamp_s is not None
+                and now_s - self.arm_motion_active_stamp_s < 1.0
+                and self.arm_reaction_torque_stamp_s is not None
+                and now_s - self.arm_reaction_torque_stamp_s < 0.6
+            )
+            gravity_available = bool(
                 self.arm_static_com_feedforward_gain > 0.0
                 and self.arm_gravity_shift_torque_stamp_s is not None
                 and now_s - self.arm_gravity_shift_torque_stamp_s < 0.6
-            ):
+            )
+            if gravity_available:
                 dt_s = (
                     0.0
                     if self.arm_static_com_filter_stamp_s is None
                     else min(max(now_s - self.arm_static_com_filter_stamp_s, 0.0), 0.1)
                 )
                 self.arm_static_com_filter_stamp_s = now_s
-                self.arm_gravity_shift_torque_filtered_flu = first_order_vector_step(
+            combined_torque_flu, filtered_gravity, compensation_active = (
+                arm_compensation_torque_step(
                     self.arm_gravity_shift_torque_filtered_flu,
+                    self.arm_reaction_torque_feedforward_gain
+                    * self.arm_reaction_torque_flu,
                     self.arm_gravity_shift_torque_flu,
-                    dt_s,
-                    self.arm_static_com_feedforward_time_constant_s,
+                    reaction_available=reaction_available,
+                    gravity_available=gravity_available,
+                    gravity_gain=self.arm_static_com_feedforward_gain,
+                    dt_s=dt_s if gravity_available else 0.0,
+                    gravity_time_constant_s=(
+                        self.arm_static_com_feedforward_time_constant_s
+                    ),
                 )
-                combined_torque_flu += (
-                    self.arm_static_com_feedforward_gain
-                    * self.arm_gravity_shift_torque_filtered_flu
-                )
-            reaction_frd = FRD_TO_FLU @ combined_torque_flu
-            commands_for_wrench, _ = torque_feedforward_command_delta(
-                self.config,
-                self.filtered_commands,
-                reaction_frd,
-                self.arm_torque_matrix_pinv,
-                self.arm_torque_feedforward_max_delta_n,
             )
+            self.arm_gravity_shift_torque_filtered_flu = filtered_gravity
+            if compensation_active:
+                reaction_frd = FRD_TO_FLU @ combined_torque_flu
+                commands_for_wrench, _ = torque_feedforward_command_delta(
+                    self.config,
+                    self.filtered_commands,
+                    reaction_frd,
+                    self.arm_torque_matrix_pinv,
+                    self.arm_torque_feedforward_max_delta_n,
+                )
+        if self.arm_disturbance_observer_enabled:
+            now_s = time.monotonic()
+            observer_available = bool(
+                self.arm_observer_torque_stamp_s is not None
+                and now_s - self.arm_observer_torque_stamp_s < 0.2
+            )
+            if observer_available:
+                commands_for_wrench, _ = torque_feedforward_command_delta(
+                    self.config,
+                    commands_for_wrench,
+                    self.arm_disturbance_observer_gain
+                    * self.arm_observer_torque_frd,
+                    self.arm_torque_matrix_pinv,
+                    self.arm_disturbance_observer_max_delta_n,
+                )
         force_body, torque_body = direct_wrench_flu(
             self.config, commands_for_wrench, thrust_scale=thrust_scale
         )
@@ -1080,14 +1189,26 @@ def main() -> None:
         "--arm-torque-feedforward-enabled",
         default="false",
         choices=("true", "false"),
-        help="counter fresh SO101 reaction torque through rotor allocation",
+        help="enable independently gated SO101 reaction/COM rotor compensation",
     )
     parser.add_argument(
         "--arm-torque-feedforward-max-delta-n", type=float, default=2.0
     )
+    parser.add_argument(
+        "--arm-reaction-torque-feedforward-gain", type=float, default=1.0
+    )
     parser.add_argument("--arm-static-com-feedforward-gain", type=float, default=0.0)
     parser.add_argument(
         "--arm-static-com-feedforward-time-constant-s", type=float, default=5.0
+    )
+    parser.add_argument(
+        "--arm-disturbance-observer-enabled",
+        default="false",
+        choices=("true", "false"),
+    )
+    parser.add_argument("--arm-disturbance-observer-gain", type=float, default=0.5)
+    parser.add_argument(
+        "--arm-disturbance-observer-max-delta-n", type=float, default=1.0
     )
     parsed, ros_arguments = parser.parse_known_args()
     if rclpy is None:
@@ -1110,9 +1231,13 @@ def main() -> None:
             "thrust_voltage_exponent": parsed.battery_thrust_voltage_exponent,
         },
         parsed.arm_torque_feedforward_enabled == "true",
+        parsed.arm_reaction_torque_feedforward_gain,
         parsed.arm_torque_feedforward_max_delta_n,
         parsed.arm_static_com_feedforward_gain,
         parsed.arm_static_com_feedforward_time_constant_s,
+        parsed.arm_disturbance_observer_enabled == "true",
+        parsed.arm_disturbance_observer_gain,
+        parsed.arm_disturbance_observer_max_delta_n,
     )
     try:
         rclpy.spin(node)

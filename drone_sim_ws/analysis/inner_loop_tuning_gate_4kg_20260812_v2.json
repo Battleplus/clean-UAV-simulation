@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "source_report": "E:\\清洁无人机\\drone_sim_ws\\analysis\\inner_loop_identification_4kg_20260812_v2_loops.json",
+  "source_airframe": "E:\\清洁无人机\\drone_sim_ws\\px4\\airframes\\4027_gz_my_drone_octorotor_debug_4kg",
+  "source_velocity_evidence": "E:\\清洁无人机\\drone_sim_ws\\analysis\\velocity_identification_1hz_evidence_audit_20260812.json",
+  "decision": "HOLD_INCOMPLETE_IDENTIFICATION",
+  "active_layer": "body_rate",
+  "passed_layers": [],
+  "reasons": [
+    "body_rate.roll: missing step_evaluable, actual_peak, rise_time_s, overshoot_fraction, settling_time_s, steady_error",
+    "body_rate.pitch: missing rise_time_s, settling_time_s",
+    "body_rate.yaw: missing rise_time_s, settling_time_s"
+  ],
+  "parameter_changes": []
+}

@@ -1,0 +1,36 @@
+{
+  "schema": 2,
+  "status": "GEOMETRY_FROZEN_PROP_PITCH_UNRESOLVED",
+  "authoritative_geometry_source": "E:/清洁无人机/零件/完整零件/组合无人机.SLDASM",
+  "axis_evidence": "analysis/cad_direct/motor_axis_evidence.json",
+  "pitch_evidence": "analysis/cad_direct/propeller_pitch_geometry_evidence.json",
+  "configuration_evidence": "analysis/cad_direct/propeller_configuration_evidence.json",
+  "metadata_evidence": "analysis/cad_direct/propeller_metadata_evidence.json",
+  "maximum_thrust_per_motor_n": 11.76798,
+  "maximum_thrust_source": "user supplied 1.2 kgf converted with standard gravity",
+  "coordinate_frame": "Per-row position_m is PX4 FRD relative to the CAD motor-layout/base_link origin; the provisional CAD-density-COM allocation positions are kept separately in my_drone_v3_cad_7p735_flight.json",
+  "formal_allocation_config": "src/drone_arm_sim/config/my_drone_v3_cad_7p735_flight.json",
+  "formal_allocation_reference": "PX4 FRD relative to provisional CAD-density-derived vehicle COM",
+  "pitch_geometry_conclusion": "All eight instances reuse one non-mirrored flat propeller CAD part. It has no measurable signed pitch and contains no opposite-pitch part/instance; manufacturer handedness or a thrust-stand test is required.",
+  "metadata_conclusion": "The sole propeller part contains no CW/CCW, normal/reverse, left/right-hand or signed-pitch designation in its SolidWorks summary, custom properties, configuration metadata, equations or feature names.",
+  "reaction_torque_status": "UNRESOLVED; debug 4 kg yaw-authority tests use an explicitly experimental 0.005 m moment-to-thrust ratio. This is not a formal motor/propeller parameter.",
+  "motors": [
+    {"motor": 1, "px4_rotor": 0, "esc_function": 1, "position_m": [0.181606, 0.076606, 0.008314], "cad_propeller_side_axis": [0.353553, 0.353553, -0.866025], "legacy_rotation_mount_hypothesis_axis": [0.353553, 0.353553, -0.866025], "all_up_hypothesis_axis": [0.353553, 0.353553, -0.866025], "tilt_deg": 30.0, "installation": "puller", "rotation": "CW", "pitch_type": "UNRESOLVED", "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED"},
+    {"motor": 2, "px4_rotor": 1, "esc_function": 2, "position_m": [-0.181606, -0.076606, 0.008314], "cad_propeller_side_axis": [-0.353553, -0.353553, -0.866025], "legacy_rotation_mount_hypothesis_axis": [-0.353553, -0.353553, -0.866025], "all_up_hypothesis_axis": [-0.353553, -0.353553, -0.866025], "tilt_deg": 30.0, "installation": "puller", "rotation": "CW", "pitch_type": "UNRESOLVED", "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED"},
+    {"motor": 3, "px4_rotor": 2, "esc_function": 3, "position_m": [0.076606, 0.181606, -0.008314], "cad_propeller_side_axis": [0.353553, 0.353553, 0.866025], "legacy_rotation_mount_hypothesis_axis": [-0.353553, -0.353553, -0.866025], "all_up_hypothesis_axis": [-0.353553, -0.353553, -0.866025], "tilt_deg": 30.0, "installation": "pusher", "rotation": "CCW", "pitch_type": "UNRESOLVED", "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED"},
+    {"motor": 4, "px4_rotor": 3, "esc_function": 4, "position_m": [-0.181606, 0.076606, 0.008314], "cad_propeller_side_axis": [-0.353553, 0.353553, -0.866025], "legacy_rotation_mount_hypothesis_axis": [0.353553, -0.353553, 0.866025], "all_up_hypothesis_axis": [-0.353553, 0.353553, -0.866025], "tilt_deg": 30.0, "installation": "puller", "rotation": "CCW", "pitch_type": "UNRESOLVED_OPPOSITE_PITCH_REQUIRED_FOR_ALL_UP", "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED"},
+    {"motor": 5, "px4_rotor": 4, "esc_function": 5, "position_m": [0.181606, -0.076606, 0.008314], "cad_propeller_side_axis": [0.353553, -0.353553, -0.866025], "legacy_rotation_mount_hypothesis_axis": [-0.353553, 0.353553, 0.866025], "all_up_hypothesis_axis": [0.353553, -0.353553, -0.866025], "tilt_deg": 30.0, "installation": "puller", "rotation": "CCW", "pitch_type": "UNRESOLVED_OPPOSITE_PITCH_REQUIRED_FOR_ALL_UP", "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED"},
+    {"motor": 6, "px4_rotor": 5, "esc_function": 6, "position_m": [-0.076606, -0.181606, -0.008314], "cad_propeller_side_axis": [-0.353553, -0.353553, 0.866025], "legacy_rotation_mount_hypothesis_axis": [0.353553, 0.353553, -0.866025], "all_up_hypothesis_axis": [0.353553, 0.353553, -0.866025], "tilt_deg": 30.0, "installation": "pusher", "rotation": "CCW", "pitch_type": "UNRESOLVED", "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED"},
+    {"motor": 7, "px4_rotor": 6, "esc_function": 7, "position_m": [0.076606, -0.181606, -0.008314], "cad_propeller_side_axis": [0.353553, -0.353553, 0.866025], "legacy_rotation_mount_hypothesis_axis": [0.353553, -0.353553, 0.866025], "all_up_hypothesis_axis": [-0.353553, 0.353553, -0.866025], "tilt_deg": 30.0, "installation": "pusher", "rotation": "CW", "pitch_type": "UNRESOLVED_OPPOSITE_PITCH_REQUIRED_FOR_ALL_UP", "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED"},
+    {"motor": 8, "px4_rotor": 7, "esc_function": 8, "position_m": [-0.076606, 0.181606, -0.008314], "cad_propeller_side_axis": [-0.353553, 0.353553, 0.866025], "legacy_rotation_mount_hypothesis_axis": [-0.353553, 0.353553, 0.866025], "all_up_hypothesis_axis": [0.353553, -0.353553, -0.866025], "tilt_deg": 30.0, "installation": "pusher", "rotation": "CW", "pitch_type": "UNRESOLVED_OPPOSITE_PITCH_REQUIRED_FOR_ALL_UP", "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED"}
+  ],
+  "thrust_to_weight_hypotheses": {
+    "debug_4kg_four_up_only_recomputed": 1.0392,
+    "debug_4kg_legacy_reported_value": 0.9936,
+    "debug_4kg_legacy_value_status": "INCONSISTENT_WITH_40.7654785N_DIVIDED_BY_4KG_WEIGHT",
+    "debug_4kg_opposite_pitch_all_up": 2.0785,
+    "formal_7p735kg_four_up_only": 0.5374,
+    "formal_7p735kg_opposite_pitch_all_up": 1.0748
+  },
+  "closure_test": "For motors 4/5/7/8, record propeller part/handedness or bench-test signed axial force at known rotation and RPM. Until then neither thrust-sign hypothesis is a physical fact."
+}

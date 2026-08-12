@@ -1,10 +1,18 @@
 {
-  "schema": 1,
-  "source_assembly": "/mnt/e/清洁无人机/零件/完整零件/组合无人机.SLDASM",
+  "schema": 2,
+  "source_assembly": "E:\\清洁无人机\\零件\\完整零件\\组合无人机.SLDASM",
   "method": "binary STL face normals cross-checked against SolidWorks hub-cylinder axes",
   "result": "PITCH_GEOMETRY_UNRESOLVED",
-  "maximum_p95_abs_pitch_angle_deg": 0.0031439817951088135,
-  "formal_conclusion": "The CAD preserves hub axes and puller/pusher placement, but its simplified flat propeller solids do not encode usable blade pitch. CW/CCW plus this geometry cannot determine thrust sign.",
+  "maximum_p95_abs_pitch_angle_deg": 0.0031439817951156523,
+  "component_reuse_evidence": {
+    "unique_source_part_count": 1,
+    "unique_source_part_sha256": [
+      "16530ab1bed2fc7da12afb352ef913e86f4e35af6badd40e38cf455750675388"
+    ],
+    "mirrored_motor_instances": [],
+    "all_instance_transform_determinants_positive": true
+  },
+  "formal_conclusion": "All eight instances reuse one non-mirrored source part, and its simplified flat blades do not encode usable signed pitch. The CAD therefore contains neither a distinct opposite-pitch part nor measurable pitch geometry; CW/CCW plus this geometry cannot determine thrust sign.",
   "required_replacement": "pitch-accurate propeller CAD or manufacturer blade handedness/pitch designation",
   "motors": [
     {
@@ -13,7 +21,11 @@
         2,
         2
       ],
-      "mesh": "/mnt/e/清洁无人机/drone_sim_ws/src/drone_arm_sim/meshes/my_drone_v2/visual/full_assembly - f机架总成-2 f螺旋桨-2.STL",
+      "mesh": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\meshes\\my_drone_v2\\visual\\full_assembly - f机架总成-2 f螺旋桨-2.STL",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "source_part_sha256": "16530ab1bed2fc7da12afb352ef913e86f4e35af6badd40e38cf455750675388",
+      "assembly_transform_determinant": 0.9999999999999999,
+      "mirrored_instance": false,
       "triangle_count": 248,
       "cad_cylinder_axis": [
         0.3535533905932739,
@@ -21,16 +33,16 @@
         -0.3535533905932742
       ],
       "mesh_smallest_variance_axis": [
-        0.35355698356199955,
-        0.866044323629946,
-        -0.35350344960536045
+        0.35355698356199966,
+        0.8660443236299458,
+        -0.35350344960536106
       ],
       "mesh_axis_vs_cad_axis_unsigned_deg": 0.0030667814397480966,
-      "mesh_axis_variance_m2": 2.5033641281511694e-05,
+      "mesh_axis_variance_m2": 2.5033641281513998e-05,
       "blade_surface_triangle_count": 124,
-      "geometric_pitch_angle_abs_median_deg": 0.0021920889962570786,
-      "geometric_pitch_angle_abs_p95_deg": 0.003128828558456172,
-      "geometric_pitch_angle_abs_max_deg": 0.003276141885792481,
+      "geometric_pitch_angle_abs_median_deg": 0.0021920889962316337,
+      "geometric_pitch_angle_abs_p95_deg": 0.003128828558415302,
+      "geometric_pitch_angle_abs_max_deg": 0.0032761418857511332,
       "pitch_sign_resolved": false,
       "reason": "blade surfaces are effectively normal to the hub axis; no signed helical pitch is encoded"
     },
@@ -40,7 +52,11 @@
         2,
         3
       ],
-      "mesh": "/mnt/e/清洁无人机/drone_sim_ws/src/drone_arm_sim/meshes/my_drone_v2/visual/full_assembly - f机架总成-2 f螺旋桨-3.STL",
+      "mesh": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\meshes\\my_drone_v2\\visual\\full_assembly - f机架总成-2 f螺旋桨-3.STL",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "source_part_sha256": "16530ab1bed2fc7da12afb352ef913e86f4e35af6badd40e38cf455750675388",
+      "assembly_transform_determinant": 1.0,
+      "mirrored_instance": false,
       "triangle_count": 248,
       "cad_cylinder_axis": [
         -0.3535533905932737,
@@ -48,16 +64,16 @@
         0.35355339059327323
       ],
       "mesh_smallest_variance_axis": [
-        -0.35354979115648233,
-        0.8660064791458767,
-        0.3536033416846774
+        -0.3535497911564816,
+        0.8660064791458761,
+        0.35360334168467833
       ],
-      "mesh_axis_vs_cad_axis_unsigned_deg": 0.0030674434412210775,
-      "mesh_axis_variance_m2": 2.5033651734370775e-05,
+      "mesh_axis_vs_cad_axis_unsigned_deg": 0.0030674435600381708,
+      "mesh_axis_variance_m2": 2.503365173437011e-05,
       "blade_surface_triangle_count": 124,
-      "geometric_pitch_angle_abs_median_deg": 0.0022046640668193966,
-      "geometric_pitch_angle_abs_p95_deg": 0.003087040515222165,
-      "geometric_pitch_angle_abs_max_deg": 0.0032795720432847596,
+      "geometric_pitch_angle_abs_median_deg": 0.0022046640668663114,
+      "geometric_pitch_angle_abs_p95_deg": 0.003087040515278462,
+      "geometric_pitch_angle_abs_max_deg": 0.003279572043354733,
       "pitch_sign_resolved": false,
       "reason": "blade surfaces are effectively normal to the hub axis; no signed helical pitch is encoded"
     },
@@ -67,7 +83,11 @@
         1,
         3
       ],
-      "mesh": "/mnt/e/清洁无人机/drone_sim_ws/src/drone_arm_sim/meshes/my_drone_v2/visual/full_assembly - f机架总成-1 f螺旋桨-3.STL",
+      "mesh": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\meshes\\my_drone_v2\\visual\\full_assembly - f机架总成-1 f螺旋桨-3.STL",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "source_part_sha256": "16530ab1bed2fc7da12afb352ef913e86f4e35af6badd40e38cf455750675388",
+      "assembly_transform_determinant": 1.0000000000000002,
+      "mirrored_instance": false,
       "triangle_count": 248,
       "cad_cylinder_axis": [
         0.3535533905932736,
@@ -75,16 +95,16 @@
         -0.35355339059327384
       ],
       "mesh_smallest_variance_axis": [
-        0.3536033400432845,
-        -0.8660064748108223,
-        -0.3535498034166706
+        0.3536033400432833,
+        -0.8660064748108218,
+        -0.35354980341667214
       ],
       "mesh_axis_vs_cad_axis_unsigned_deg": 0.003067396626928296,
-      "mesh_axis_variance_m2": 2.5033645272390624e-05,
+      "mesh_axis_variance_m2": 2.503364527239163e-05,
       "blade_surface_triangle_count": 124,
-      "geometric_pitch_angle_abs_median_deg": 0.0021873591823338397,
-      "geometric_pitch_angle_abs_p95_deg": 0.003109487639905931,
-      "geometric_pitch_angle_abs_max_deg": 0.0032794427612176506,
+      "geometric_pitch_angle_abs_median_deg": 0.002187359182295673,
+      "geometric_pitch_angle_abs_p95_deg": 0.003109487639838663,
+      "geometric_pitch_angle_abs_max_deg": 0.0032794427611480773,
       "pitch_sign_resolved": false,
       "reason": "blade surfaces are effectively normal to the hub axis; no signed helical pitch is encoded"
     },
@@ -94,7 +114,11 @@
         2,
         4
       ],
-      "mesh": "/mnt/e/清洁无人机/drone_sim_ws/src/drone_arm_sim/meshes/my_drone_v2/visual/full_assembly - f机架总成-2 f螺旋桨-4.STL",
+      "mesh": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\meshes\\my_drone_v2\\visual\\full_assembly - f机架总成-2 f螺旋桨-4.STL",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "source_part_sha256": "16530ab1bed2fc7da12afb352ef913e86f4e35af6badd40e38cf455750675388",
+      "assembly_transform_determinant": 1.0000000000000002,
+      "mirrored_instance": false,
       "triangle_count": 248,
       "cad_cylinder_axis": [
         0.3535533905932738,
@@ -102,16 +126,16 @@
         0.3535533905932735
       ],
       "mesh_smallest_variance_axis": [
-        0.3535575772378335,
-        0.8660037663254678,
-        0.353602200626378
+        0.3535575772378347,
+        0.8660037663254674,
+        0.35360220062637754
       ],
-      "mesh_axis_vs_cad_axis_unsigned_deg": 0.0030684693740900704,
-      "mesh_axis_variance_m2": 2.5033632514575254e-05,
+      "mesh_axis_vs_cad_axis_unsigned_deg": 0.0030684696116448,
+      "mesh_axis_variance_m2": 2.503363251457225e-05,
       "blade_surface_triangle_count": 124,
-      "geometric_pitch_angle_abs_median_deg": 0.002121290279863853,
-      "geometric_pitch_angle_abs_p95_deg": 0.0031439817951088135,
-      "geometric_pitch_angle_abs_max_deg": 0.0032472771700380585,
+      "geometric_pitch_angle_abs_median_deg": 0.002121290279909176,
+      "geometric_pitch_angle_abs_p95_deg": 0.0031439817951156523,
+      "geometric_pitch_angle_abs_max_deg": 0.0032472771700221567,
       "pitch_sign_resolved": false,
       "reason": "blade surfaces are effectively normal to the hub axis; no signed helical pitch is encoded"
     },
@@ -121,7 +145,11 @@
         2,
         1
       ],
-      "mesh": "/mnt/e/清洁无人机/drone_sim_ws/src/drone_arm_sim/meshes/my_drone_v2/visual/full_assembly - f机架总成-2 f螺旋桨-1.STL",
+      "mesh": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\meshes\\my_drone_v2\\visual\\full_assembly - f机架总成-2 f螺旋桨-1.STL",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "source_part_sha256": "16530ab1bed2fc7da12afb352ef913e86f4e35af6badd40e38cf455750675388",
+      "assembly_transform_determinant": 0.9999999999999998,
+      "mirrored_instance": false,
       "triangle_count": 248,
       "cad_cylinder_axis": [
         -0.3535533905932735,
@@ -129,16 +157,16 @@
         -0.3535533905932745
       ],
       "mesh_smallest_variance_axis": [
-        -0.3535569709356328,
-        0.8660443369956671,
-        -0.35350342948910113
+        -0.35355697093563215,
+        0.8660443369956672,
+        -0.3535034294891012
       ],
-      "mesh_axis_vs_cad_axis_unsigned_deg": 0.0030680792844139117,
-      "mesh_axis_variance_m2": 2.503364792964453e-05,
+      "mesh_axis_vs_cad_axis_unsigned_deg": 0.00306807904682896,
+      "mesh_axis_variance_m2": 2.5033647929645675e-05,
       "blade_surface_triangle_count": 124,
-      "geometric_pitch_angle_abs_median_deg": 0.00224372045724653,
-      "geometric_pitch_angle_abs_p95_deg": 0.0030721917391917366,
-      "geometric_pitch_angle_abs_max_deg": 0.0035218851580777915,
+      "geometric_pitch_angle_abs_median_deg": 0.0022437204572441456,
+      "geometric_pitch_angle_abs_p95_deg": 0.0030721917391939636,
+      "geometric_pitch_angle_abs_max_deg": 0.0035218851580746118,
       "pitch_sign_resolved": false,
       "reason": "blade surfaces are effectively normal to the hub axis; no signed helical pitch is encoded"
     },
@@ -148,7 +176,11 @@
         1,
         2
       ],
-      "mesh": "/mnt/e/清洁无人机/drone_sim_ws/src/drone_arm_sim/meshes/my_drone_v2/visual/full_assembly - f机架总成-1 f螺旋桨-2.STL",
+      "mesh": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\meshes\\my_drone_v2\\visual\\full_assembly - f机架总成-1 f螺旋桨-2.STL",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "source_part_sha256": "16530ab1bed2fc7da12afb352ef913e86f4e35af6badd40e38cf455750675388",
+      "assembly_transform_determinant": 1.0,
+      "mirrored_instance": false,
       "triangle_count": 248,
       "cad_cylinder_axis": [
         -0.3535533905932736,
@@ -156,16 +188,16 @@
         0.35355339059327373
       ],
       "mesh_smallest_variance_axis": [
-        -0.3535034498229471,
-        -0.866044325940097,
-        0.35355697768568833
+        -0.3535034498229479,
+        -0.8660443259400974,
+        0.3535569776856869
       ],
-      "mesh_axis_vs_cad_axis_unsigned_deg": 0.0030667940370530237,
-      "mesh_axis_variance_m2": 2.5033642558910975e-05,
+      "mesh_axis_vs_cad_axis_unsigned_deg": 0.003066794155895277,
+      "mesh_axis_variance_m2": 2.5033642558914414e-05,
       "blade_surface_triangle_count": 124,
-      "geometric_pitch_angle_abs_median_deg": 0.0022396942822027737,
-      "geometric_pitch_angle_abs_p95_deg": 0.003103012981597439,
-      "geometric_pitch_angle_abs_max_deg": 0.003463740947350999,
+      "geometric_pitch_angle_abs_median_deg": 0.0022396942822313984,
+      "geometric_pitch_angle_abs_p95_deg": 0.003103012981566821,
+      "geometric_pitch_angle_abs_max_deg": 0.003463740947312634,
       "pitch_sign_resolved": false,
       "reason": "blade surfaces are effectively normal to the hub axis; no signed helical pitch is encoded"
     },
@@ -175,7 +207,11 @@
         1,
         1
       ],
-      "mesh": "/mnt/e/清洁无人机/drone_sim_ws/src/drone_arm_sim/meshes/my_drone_v2/visual/full_assembly - f机架总成-1 f螺旋桨-1.STL",
+      "mesh": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\meshes\\my_drone_v2\\visual\\full_assembly - f机架总成-1 f螺旋桨-1.STL",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "source_part_sha256": "16530ab1bed2fc7da12afb352ef913e86f4e35af6badd40e38cf455750675388",
+      "assembly_transform_determinant": 1.0,
+      "mirrored_instance": false,
       "triangle_count": 248,
       "cad_cylinder_axis": [
         -0.3535533905932741,
@@ -183,16 +219,16 @@
         -0.3535533905932736
       ],
       "mesh_smallest_variance_axis": [
-        -0.35350342687679004,
-        -0.8660443375228569,
-        -0.35355697225618704
+        -0.3535034268767904,
+        -0.8660443375228566,
+        -0.3535569722561874
       ],
-      "mesh_axis_vs_cad_axis_unsigned_deg": 0.0030682346610317293,
-      "mesh_axis_variance_m2": 2.5033647395948244e-05,
+      "mesh_axis_vs_cad_axis_unsigned_deg": 0.0030682344234588092,
+      "mesh_axis_variance_m2": 2.5033647395947017e-05,
       "blade_surface_triangle_count": 124,
-      "geometric_pitch_angle_abs_median_deg": 0.0022408936858129298,
-      "geometric_pitch_angle_abs_p95_deg": 0.0030723348127474058,
-      "geometric_pitch_angle_abs_max_deg": 0.0035220423404797732,
+      "geometric_pitch_angle_abs_median_deg": 0.0022408936857938465,
+      "geometric_pitch_angle_abs_p95_deg": 0.003072334812717102,
+      "geometric_pitch_angle_abs_max_deg": 0.0035220423404590997,
       "pitch_sign_resolved": false,
       "reason": "blade surfaces are effectively normal to the hub axis; no signed helical pitch is encoded"
     },
@@ -202,7 +238,11 @@
         1,
         4
       ],
-      "mesh": "/mnt/e/清洁无人机/drone_sim_ws/src/drone_arm_sim/meshes/my_drone_v2/visual/full_assembly - f机架总成-1 f螺旋桨-4.STL",
+      "mesh": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\meshes\\my_drone_v2\\visual\\full_assembly - f机架总成-1 f螺旋桨-4.STL",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "source_part_sha256": "16530ab1bed2fc7da12afb352ef913e86f4e35af6badd40e38cf455750675388",
+      "assembly_transform_determinant": 1.0000000000000002,
+      "mirrored_instance": false,
       "triangle_count": 248,
       "cad_cylinder_axis": [
         0.353553390593274,
@@ -210,16 +250,16 @@
         0.3535533905932736
       ],
       "mesh_smallest_variance_axis": [
-        0.35360220154006233,
-        -0.8660037662141087,
-        0.3535575765967988
+        0.3536022015400642,
+        -0.8660037662141082,
+        0.3535575765967972
       ],
-      "mesh_axis_vs_cad_axis_unsigned_deg": 0.0030685168846699314,
-      "mesh_axis_variance_m2": 2.503363977525529e-05,
+      "mesh_axis_vs_cad_axis_unsigned_deg": 0.003068516765894399,
+      "mesh_axis_variance_m2": 2.5033639775254573e-05,
       "blade_surface_triangle_count": 124,
-      "geometric_pitch_angle_abs_median_deg": 0.0021888230473135675,
-      "geometric_pitch_angle_abs_p95_deg": 0.003069539208234008,
-      "geometric_pitch_angle_abs_max_deg": 0.003269497909146813,
+      "geometric_pitch_angle_abs_median_deg": 0.0021888230473859262,
+      "geometric_pitch_angle_abs_p95_deg": 0.003069539208357434,
+      "geometric_pitch_angle_abs_max_deg": 0.0032694979092394477,
       "pitch_sign_resolved": false,
       "reason": "blade surfaces are effectively normal to the hub axis; no signed helical pitch is encoded"
     }

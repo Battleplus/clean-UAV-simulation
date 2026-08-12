@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "source_assembly": "E:\\清洁无人机\\零件\\完整零件\\组合无人机.SLDASM",
+  "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+  "configuration_names": [
+    "默认"
+  ],
+  "configuration_count": 1,
+  "design_table_present": "API_UNAVAILABLE",
+  "instances": [
+    {
+      "instance": "f机架总成-1/f螺旋桨-1",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "referenced_configuration": "默认"
+    },
+    {
+      "instance": "f机架总成-1/f螺旋桨-2",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "referenced_configuration": "默认"
+    },
+    {
+      "instance": "f机架总成-1/f螺旋桨-3",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "referenced_configuration": "默认"
+    },
+    {
+      "instance": "f机架总成-1/f螺旋桨-4",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "referenced_configuration": "默认"
+    },
+    {
+      "instance": "f机架总成-2/f螺旋桨-1",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "referenced_configuration": "默认"
+    },
+    {
+      "instance": "f机架总成-2/f螺旋桨-2",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "referenced_configuration": "默认"
+    },
+    {
+      "instance": "f机架总成-2/f螺旋桨-3",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "referenced_configuration": "默认"
+    },
+    {
+      "instance": "f机架总成-2/f螺旋桨-4",
+      "source_part": "E:\\清洁无人机\\零件\\完整零件\\f螺旋桨.SLDPRT",
+      "referenced_configuration": "默认"
+    }
+  ],
+  "conclusion": "SINGLE_CONFIGURATION_NO_HIDDEN_HANDEDNESS"
+}

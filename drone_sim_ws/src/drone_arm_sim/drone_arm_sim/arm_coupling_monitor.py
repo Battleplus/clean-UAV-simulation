@@ -18,8 +18,9 @@ try:
     import rclpy
     from rclpy.node import Node
     from sensor_msgs.msg import JointState
+    from std_msgs.msg import String
 except ModuleNotFoundError:  # Pure numerical tests do not require ROS.
-    AccelStamped = WrenchStamped = Odometry = JointState = None
+    AccelStamped = WrenchStamped = Odometry = JointState = String = None
     rclpy = None
     Node = object
 
@@ -104,6 +105,9 @@ class ArmCouplingMonitor(Node):
         )
         self.feedforward_publisher = self.create_publisher(
             AccelStamped, "/my_drone/arm_feedforward_acceleration_ned", 10
+        )
+        self.state_publisher = self.create_publisher(
+            String, "/my_drone/arm_coupling_state", 10
         )
         self.create_subscription(JointState, "/joint_states", self.on_joint_state, 10)
         self.create_subscription(
@@ -203,23 +207,28 @@ class ArmCouplingMonitor(Node):
         )
         self.feedforward_publisher.publish(feedforward)
 
+        report = {
+            "mass_kg": state.mass_kg,
+            "com_body_flu_m": state.center_of_mass_m.tolist(),
+            "com_shift_m": state.com_shift_m.tolist(),
+            "inertia_diag_kg_m2": np.diag(state.inertia_at_com_kg_m2).tolist(),
+            "inertia_tensor_kg_m2": state.inertia_at_com_kg_m2.tolist(),
+            "inertia_tensor_frame": "base_link_flu",
+            "reaction_force_body_n": state.reaction_force_body_n.tolist(),
+            "reaction_torque_body_nm": state.reaction_torque_body_nm.tolist(),
+            "raw_joint_acceleration_peak_rad_s2": self.raw_joint_acceleration_peak_rad_s2,
+            "filtered_joint_acceleration_peak_rad_s2": max(
+                (abs(value) for value in self.accelerations.values()), default=0.0
+            ),
+            "feedforward_acceleration_ned_m_s2": acceleration.tolist(),
+        }
+        encoded_report = json.dumps(report, sort_keys=True)
+        self.state_publisher.publish(String(data=encoded_report))
+
         monotonic = time.monotonic()
         if monotonic - self.last_log_time >= 1.0:
             self.last_log_time = monotonic
-            report = {
-                "mass_kg": state.mass_kg,
-                "com_body_flu_m": state.center_of_mass_m.tolist(),
-                "com_shift_m": state.com_shift_m.tolist(),
-                "inertia_diag_kg_m2": np.diag(state.inertia_at_com_kg_m2).tolist(),
-                "reaction_force_body_n": state.reaction_force_body_n.tolist(),
-                "reaction_torque_body_nm": state.reaction_torque_body_nm.tolist(),
-                "raw_joint_acceleration_peak_rad_s2": self.raw_joint_acceleration_peak_rad_s2,
-                "filtered_joint_acceleration_peak_rad_s2": max(
-                    (abs(value) for value in self.accelerations.values()), default=0.0
-                ),
-                "feedforward_acceleration_ned_m_s2": acceleration.tolist(),
-            }
-            self.get_logger().info("ARM_COUPLING_STATE " + json.dumps(report, sort_keys=True))
+            self.get_logger().info("ARM_COUPLING_STATE " + encoded_report)
             self.raw_joint_acceleration_peak_rad_s2 = 0.0
 
 

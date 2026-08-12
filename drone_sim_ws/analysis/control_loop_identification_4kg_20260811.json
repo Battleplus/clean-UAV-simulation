@@ -1,0 +1,169 @@
+{
+  "acceptance": {
+    "attitude_overshoot_below_10_percent": null,
+    "body_rate_overshoot_below_10_percent": null,
+    "horizontal_velocity_overshoot_below_15_percent": true,
+    "motor_saturation_near_zero": true,
+    "vertical_velocity_overshoot_below_10_percent": null,
+    "zero_velocity_tilt_below_2_deg": true
+  },
+  "coverage": {
+    "all_acceptance_metrics_evaluable": false,
+    "all_evaluable_metrics_pass": true,
+    "dedicated_inner_loop_step_protocol": false,
+    "interpretation": "Inner-loop metrics use naturally generated setpoints from the outer-loop flight. Null step metrics require a dedicated bounded excitation before tuning."
+  },
+  "loops": {
+    "attitude_rad": {
+      "pitch": {
+        "actual_peak": 0.04338167979131499,
+        "command_amplitude": 0.07627048455907222,
+        "overshoot_fraction": 0.0,
+        "plateau_duration_s": 0.4959999999999951,
+        "reason": "ok",
+        "rise_time_s": null,
+        "rms_tracking_error": 0.011176851304222517,
+        "sample_count": 686,
+        "settling_time_s": null,
+        "steady_error": -0.005508867492466671,
+        "step_evaluable": true,
+        "target_value": 0.035890841353749765
+      },
+      "roll": {
+        "actual_peak": 0.03950309242437445,
+        "command_amplitude": 0.035732076967920426,
+        "overshoot_fraction": 0.07791364652069001,
+        "plateau_duration_s": 0.40400000000000347,
+        "reason": "ok",
+        "rise_time_s": null,
+        "rms_tracking_error": 0.0072661227193186444,
+        "sample_count": 686,
+        "settling_time_s": null,
+        "steady_error": -0.012228863740543735,
+        "step_evaluable": true,
+        "target_value": 0.03566769680929041
+      },
+      "yaw": {
+        "actual_peak": 0.8132805763687927,
+        "command_amplitude": 0.8824608442418668,
+        "overshoot_fraction": 0.0012334920206604058,
+        "plateau_duration_s": 0.8000000000000043,
+        "reason": "ok",
+        "rise_time_s": 0.0,
+        "rms_tracking_error": 0.03480483095315414,
+        "sample_count": 686,
+        "settling_time_s": 0.0,
+        "steady_error": -9.974721378499159e-08,
+        "step_evaluable": true,
+        "target_value": 0.8132807216467214
+      }
+    },
+    "body_rate_rad_s": {
+      "pitch": {
+        "actual_peak": 0.10303950061400731,
+        "command_amplitude": 0.19151737540960312,
+        "overshoot_fraction": 0.0,
+        "plateau_duration_s": 0.4399999999999977,
+        "reason": "ok",
+        "rise_time_s": null,
+        "rms_tracking_error": 0.021788627575448437,
+        "sample_count": 1713,
+        "settling_time_s": null,
+        "steady_error": -0.020804529885450996,
+        "step_evaluable": true,
+        "target_value": 0.11240531504154205
+      },
+      "roll": {
+        "actual_peak": null,
+        "command_amplitude": 0.09284864948131144,
+        "overshoot_fraction": null,
+        "plateau_duration_s": 0.1039999999999992,
+        "reason": "dominant_command_has_no_stable_plateau",
+        "rise_time_s": null,
+        "rms_tracking_error": 0.014022747742721385,
+        "sample_count": 1713,
+        "settling_time_s": null,
+        "steady_error": null,
+        "step_evaluable": false,
+        "target_value": 0.0894678458571434
+      },
+      "yaw": {
+        "actual_peak": null,
+        "command_amplitude": 0.6683876514434814,
+        "overshoot_fraction": null,
+        "plateau_duration_s": 0.0,
+        "reason": "dominant_command_has_no_stable_plateau",
+        "rise_time_s": null,
+        "rms_tracking_error": 0.05941683763954253,
+        "sample_count": 1713,
+        "settling_time_s": null,
+        "steady_error": null,
+        "step_evaluable": false,
+        "target_value": 0.6667389869689941
+      }
+    },
+    "velocity_m_s": {
+      "down": {
+        "actual_peak": null,
+        "command_amplitude": 0.25,
+        "overshoot_fraction": null,
+        "plateau_duration_s": 0.20000000000000284,
+        "reason": "dominant_command_has_no_stable_plateau",
+        "rise_time_s": null,
+        "rms_tracking_error": 0.022237727677495708,
+        "sample_count": 343,
+        "settling_time_s": null,
+        "steady_error": null,
+        "step_evaluable": false,
+        "target_value": 0.25
+      },
+      "east": {
+        "actual_peak": -0.4223487973213196,
+        "command_amplitude": 0.5248222202062607,
+        "overshoot_fraction": 0.0,
+        "plateau_duration_s": 1.8079999999999998,
+        "reason": "ok",
+        "rise_time_s": null,
+        "rms_tracking_error": 0.046451208127796115,
+        "sample_count": 343,
+        "settling_time_s": null,
+        "steady_error": -0.02028220295906067,
+        "step_evaluable": true,
+        "target_value": -0.39779794216156006
+      },
+      "north": {
+        "actual_peak": 0.41313743591308594,
+        "command_amplitude": 0.4134873766452074,
+        "overshoot_fraction": 0.03541334157276783,
+        "plateau_duration_s": 2.2919999999999945,
+        "reason": "ok",
+        "rise_time_s": 3.9919999999999973,
+        "rms_tracking_error": 0.03854461399773292,
+        "sample_count": 343,
+        "settling_time_s": 3.9919999999999973,
+        "steady_error": 0.002556741237640381,
+        "step_evaluable": true,
+        "target_value": 0.3974606990814209
+      }
+    }
+  },
+  "motors": {
+    "maximum": 0.5566235184669495,
+    "minimum": 0.40817663073539734,
+    "sample_count": 2744,
+    "saturation_fraction": 0.0
+  },
+  "schema": 1,
+  "source_ulog": "/home/asus/PX4-Autopilot/build/px4_sitl_default/rootfs/log/2026-08-11/11_36_08.ulg",
+  "window": {
+    "duration_s": 64.908,
+    "end_log_s": 250.676,
+    "start_log_s": 185.768
+  },
+  "zero_velocity_hold": {
+    "duration_s": 6.196000000000005,
+    "end_s": 52.728,
+    "max_roll_pitch_tilt_deg": 0.34764005678030907,
+    "start_s": 46.532
+  }
+}

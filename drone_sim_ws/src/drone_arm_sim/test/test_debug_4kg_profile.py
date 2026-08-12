@@ -50,12 +50,12 @@ class Debug4kgProfileTest(unittest.TestCase):
         self.assertIn("MPC_Z_VEL_MAX_UP 0.25", airframe)
         self.assertIn("MPC_Z_VEL_MAX_DN 0.25", airframe)
         self.assertIn("MPC_XY_P 2.20", airframe)
-        self.assertIn("CA_ROTOR0_KM -0.001000000", airframe)
-        self.assertIn("CA_ROTOR2_KM 0.001000000", airframe)
-        self.assertIn("EKF2_HGT_REF 1", airframe)
-        self.assertIn("EKF2_GPS_CTRL 7", airframe)
-        self.assertIn("EKF2_BARO_CTRL 0", airframe)
-        self.assertIn("EKF2_BARO_DELAY 20", airframe)
+        self.assertIn("CA_ROTOR0_KM -0.005000000", airframe)
+        self.assertIn("CA_ROTOR2_KM 0.005000000", airframe)
+        self.assertIn("EKF2_BARO_DELAY 0", airframe)
+        self.assertIn("EKF2_BARO_CTRL 1", airframe)
+        self.assertIn("EKF2_GPS_CTRL 5", airframe)
+        self.assertIn("EKF2_HGT_REF 0", airframe)
         self.assertIn("MC_ROLL_P 3.00", airframe)
 
     def test_ideal_linear_mapping_is_used_in_both_directions(self):

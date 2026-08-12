@@ -12,12 +12,22 @@ from rclpy.qos import DurabilityPolicy, HistoryPolicy, QoSProfile, ReliabilityPo
 
 
 class StabilityGate(Node):
-    def __init__(self, horizontal: float, vertical: float, hold: float) -> None:
+    def __init__(
+        self,
+        horizontal: float,
+        vertical: float,
+        hold: float,
+        horizontal_drift: float,
+        vertical_drift: float,
+    ) -> None:
         super().__init__("my_drone_stability_gate")
         self.horizontal = horizontal
         self.vertical = vertical
         self.hold = hold
+        self.horizontal_drift = horizontal_drift
+        self.vertical_drift = vertical_drift
         self.stable_since = None
+        self.reference_position = None
         self.last_sample = None
         qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
@@ -36,18 +46,38 @@ class StabilityGate(Node):
         now = time.monotonic()
         horizontal_speed = math.hypot(float(message.vx), float(message.vy))
         vertical_speed = abs(float(message.vz))
-        self.last_sample = (now, horizontal_speed, vertical_speed)
+        position = (float(message.x), float(message.y), float(message.z))
+        if self.reference_position is None and all(math.isfinite(v) for v in position):
+            self.reference_position = position
+        horizontal_position_drift = math.inf
+        vertical_position_drift = math.inf
+        if self.reference_position is not None:
+            horizontal_position_drift = math.hypot(
+                position[0] - self.reference_position[0],
+                position[1] - self.reference_position[1],
+            )
+            vertical_position_drift = abs(position[2] - self.reference_position[2])
+        self.last_sample = (
+            now,
+            horizontal_speed,
+            vertical_speed,
+            horizontal_position_drift,
+            vertical_position_drift,
+        )
         inside = (
             math.isfinite(horizontal_speed)
             and math.isfinite(vertical_speed)
             and horizontal_speed < self.horizontal
             and vertical_speed < self.vertical
+            and horizontal_position_drift < self.horizontal_drift
+            and vertical_position_drift < self.vertical_drift
         )
         if inside:
             if self.stable_since is None:
                 self.stable_since = now
         else:
             self.stable_since = None
+            self.reference_position = position
 
     def accepted(self) -> bool:
         return bool(
@@ -61,25 +91,35 @@ def main() -> int:
     parser.add_argument("--horizontal", type=float, default=0.10)
     parser.add_argument("--vertical", type=float, default=0.08)
     parser.add_argument("--hold", type=float, default=5.0)
+    parser.add_argument("--horizontal-drift", type=float, default=0.15)
+    parser.add_argument("--vertical-drift", type=float, default=0.10)
     parser.add_argument("--timeout", type=float, default=90.0)
     args = parser.parse_args()
     rclpy.init()
-    node = StabilityGate(args.horizontal, args.vertical, args.hold)
+    node = StabilityGate(
+        args.horizontal,
+        args.vertical,
+        args.hold,
+        args.horizontal_drift,
+        args.vertical_drift,
+    )
     started = time.monotonic()
     last_report = 0.0
     try:
         while time.monotonic() - started < args.timeout:
             rclpy.spin_once(node, timeout_sec=0.1)
             if node.accepted():
-                _, horizontal, vertical = node.last_sample
+                _, horizontal, vertical, horizontal_drift, vertical_drift = node.last_sample
                 print(
                     "PX4_STABILITY_GATE_PASS "
                     f"horizontal_speed={horizontal:.3f}m/s "
-                    f"vertical_speed={vertical:.3f}m/s hold={args.hold:.1f}s"
+                    f"vertical_speed={vertical:.3f}m/s "
+                    f"horizontal_drift={horizontal_drift:.3f}m "
+                    f"vertical_drift={vertical_drift:.3f}m hold={args.hold:.1f}s"
                 )
                 return 0
             if node.last_sample and time.monotonic() - last_report >= 1.0:
-                _, horizontal, vertical = node.last_sample
+                _, horizontal, vertical, horizontal_drift, vertical_drift = node.last_sample
                 stable_for = (
                     0.0 if node.stable_since is None
                     else time.monotonic() - node.stable_since
@@ -87,7 +127,9 @@ def main() -> int:
                 print(
                     "PX4_STABILITY_GATE_WAIT "
                     f"horizontal_speed={horizontal:.3f}m/s "
-                    f"vertical_speed={vertical:.3f}m/s stable_for={stable_for:.1f}s",
+                    f"vertical_speed={vertical:.3f}m/s "
+                    f"horizontal_drift={horizontal_drift:.3f}m "
+                    f"vertical_drift={vertical_drift:.3f}m stable_for={stable_for:.1f}s",
                     flush=True,
                 )
                 last_report = time.monotonic()

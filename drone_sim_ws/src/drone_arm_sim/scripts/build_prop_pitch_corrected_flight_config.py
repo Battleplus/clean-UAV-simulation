@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
-"""Create a flyable scenario by fitting opposite-pitch props to motors 4/5/7/8.
+"""Create the explicit all-up flight hypothesis used for controller debugging.
 
-The authoritative as-installed thrust-sign evidence remains untouched.
+The CAD contains no signed blade pitch.  This script must therefore preserve
+the distinction between a flyable numerical hypothesis and physical evidence.
 """
 
 from __future__ import annotations
@@ -13,37 +14,52 @@ from pathlib import Path
 PACKAGE = Path(__file__).resolve().parents[1]
 SOURCE = PACKAGE / "config" / "my_drone_v2_cad.json"
 OUTPUT = PACKAGE / "config" / "my_drone_v2_cad_flight_pitch_corrected.json"
-FLIPPED = {4, 5, 7, 8}
+OPPOSITE_PITCH_REQUIRED_IF_ALL_UP = {4, 5, 7, 8}
 
 
 def main() -> None:
     config = json.loads(SOURCE.read_text(encoding="utf-8"))
     config["description"] = (
-        "Flight scenario derived from the authoritative CAD config by fitting "
-        "opposite-pitch propellers to motors 4, 5, 7 and 8. CAD positions, "
-        "shaft lines, tilt, mass and arm dynamics are unchanged."
+        "All-up controller-debug hypothesis derived from CAD positions and "
+        "signless shaft lines. Positive thrust direction and opposite-pitch "
+        "propellers on motors 4, 5, 7 and 8 remain unverified."
     )
-    config["scenario"] = "opposite_pitch_props_on_4_5_7_8"
+    config["scenario"] = "all_up_axis_hypothesis_4_5_7_8_pitch_unverified"
     config["authoritative_source"] = "config/my_drone_v2_cad.json"
+    config["axis_assumption"] = "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT"
+    config["positive_thrust_direction_status"] = "UNRESOLVED_FOR_ALL_MOTORS"
+    config.pop("upward_thrust_motors", None)
+    config.pop("downward_thrust_motors", None)
+    body_frame = config.get("body_frame_frozen", {})
+    body_frame.pop("upward_thrust_motors", None)
+    body_frame.pop("downward_thrust_motors", None)
+    body_frame["positive_thrust_direction_status"] = "UNRESOLVED_FOR_ALL_MOTORS"
     for rotor in config["rotors"]:
         motor = int(rotor["motor"])
-        if motor in FLIPPED:
+        if motor in OPPOSITE_PITCH_REQUIRED_IF_ALL_UP:
             rotor["axis_body"] = [-float(value) for value in rotor["axis_body"]]
-            rotor["thrust_sign_status"] = "FLIGHT SCENARIO: opposite-pitch prop makes vertical thrust upward"
-            rotor["vertical_thrust_direction"] = "up"
+        rotor["axis_role"] = "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT"
+        rotor["thrust_sign_status"] = (
+            "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED"
+        )
+        rotor["vertical_thrust_direction"] = "upward_in_debug_hypothesis"
+        rotor["opposite_pitch_required_if_all_up"] = (
+            motor in OPPOSITE_PITCH_REQUIRED_IF_ALL_UP
+        )
     maximum = float(config["maximum_thrust_n"])
     vertical = maximum * sum(-float(r["axis_body"][2]) for r in config["rotors"])
     mass = float(config["estimated_all_up_mass_kg"])
     config["maximum_vertical_force_n"] = vertical
     config["maximum_supported_mass_kg"] = vertical / 9.80665
     config["estimated_vertical_thrust_to_weight"] = vertical / (mass * 9.80665)
-    config["flight_feasibility_nonreversible"] = "FEASIBLE"
+    config["flight_feasibility_nonreversible"] = "UNRESOLVED_PROP_PITCH"
+    config["debug_hypothesis_vertical_capacity"] = "FEASIBLE"
     config["reaction_moment_ratio_m"] = 0.001
     config["reaction_moment_estimate"] = {
         "formula": "Q = (Q/T) * T",
         "q_over_t_m": 0.001,
-        "status": "enabled as a clean single-bridge closed-loop estimate",
-        "validation": "Q/T=0.001 m passed PX4 DDS translation/yaw/landing regression on 2026-08-06",
+        "status": "initial formal estimate; not a measured propeller parameter",
+        "validation": "the isolated 4 kg debug generator overrides this to its separately tested 0.005 m value",
         "calibration_required": "replace with measured RPM-thrust-torque data or C_Q/C_T and propeller diameter",
         "not_inherited_from_legacy_example": True,
     }

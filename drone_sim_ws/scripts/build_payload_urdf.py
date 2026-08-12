@@ -144,7 +144,8 @@ def main() -> int:
     )
     print(
         f"PAYLOAD_URDF_READY path={args.output} "
-        f"total_mass_kg={7.735 + args.mass_kg:.6f} mode={args.attachment_mode}"
+        f"payload_mass_kg={args.mass_kg:.6f} mode={args.attachment_mode} "
+        "total_mass_must_be_recomputed_from_output_urdf=true"
     )
     return 0
 

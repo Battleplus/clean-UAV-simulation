@@ -19,6 +19,7 @@ setup(
     entry_points={
         "console_scripts": [
             "dds_wasd_control = px4_ros2_control.dds_wasd_control:main",
+            "inner_loop_identification = px4_ros2_control.inner_loop_identification:main",
         ]
     },
 )

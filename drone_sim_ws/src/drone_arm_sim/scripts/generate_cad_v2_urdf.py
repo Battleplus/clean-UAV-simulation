@@ -244,11 +244,16 @@ def generate(package: Path) -> None:
         item = exact_by_motor[record["motor"]]
         position_frd = np.asarray(item["px4_frd_position_m"], dtype=float)
         prop_position_frd = np.asarray(item["px4_frd_propeller_position_m"], dtype=float)
-        axis_frd = np.asarray(item["px4_frd_thrust_axis"], dtype=float)
+        # Runtime axis_body is deliberately an all-up hypothesis.  The CAD
+        # cylinder only supplies a signless line plus a propeller-side ray;
+        # it cannot determine positive thrust without handedness or a signed
+        # force test.
+        axis_frd = np.asarray(item["all_up_hypothesis_axis_frd"], dtype=float)
         record["position_m"] = position_frd.tolist()
         record["axis_body"] = axis_frd.tolist()
-        record["tilt_deg"] = item["tilt_deg"]
-        record["azimuth_deg"] = item["azimuth_deg"]
+        record["axis_role"] = "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT"
+        record["tilt_deg"] = item["all_up_hypothesis_tilt_deg"]
+        record["azimuth_deg"] = item["all_up_hypothesis_azimuth_deg"]
         record["axis_source"] = item["axis_source"]
         record["cad_propeller_side_axis_body"] = item["cad_propeller_side_axis_frd"]
         record["thrust_sign_status"] = item["thrust_sign_status"]
@@ -264,13 +269,8 @@ def generate(package: Path) -> None:
     }
     total_volume = sum(component_volumes.values())
     estimated_mass = total_volume * DENSITY_KG_M3
-    # The exact CAD evidence contains four upward and four downward thrust
-    # axes.  Commands are non-negative for ordinary fixed-pitch propellers, so
-    # the signed all-motors-at-maximum sum is not a useful lift-capacity
-    # metric.  Keep it as an audit value, and separately compute the optimistic
-    # upper bound obtained by turning every downward-pointing rotor off.  If
-    # even that bound is below weight, a hover solution is mathematically
-    # impossible regardless of moment balancing or controller tuning.
+    # These capacity values belong to the explicit all-up debug hypothesis;
+    # they are not physical conclusions about the real propellers.
     full_throttle_signed_vertical_force = MAXIMUM_THRUST_N * sum(
         float(record["_axis_flu"][2]) for record in rotor_records
     )
@@ -283,10 +283,12 @@ def generate(package: Path) -> None:
         "INFEASIBLE" if best_case_upward_force <= weight else "UNPROVEN"
     )
     config = {
-        "description": "Formal rotor lines extracted from SolidWorks cylindrical faces; bounding-box centre-to-centre axes are not used.",
+        "description": "CAD rotor positions and signless shaft lines extracted from SolidWorks cylindrical faces; runtime axis_body is an explicit all-up hypothesis pending propeller handedness or signed thrust tests.",
         "source_manifest": "analysis/cad_direct/assembly_manifest.json",
         "axis_source": "analysis/cad_direct/motor_axis_evidence.json",
         "axis_extraction_method": exact_payload["method"],
+        "axis_assumption": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+        "positive_thrust_direction_status": "UNRESOLVED_FOR_ALL_MOTORS",
         "body_frame_frozen": exact_payload["body_frame_frozen"],
         "assembly_sha256": "0cbd1455f3bf9c4acee91a4f5ee997f8fc823cd7817ba7f4a217f9fc029ee202",
         "coordinate_frame": "PX4 body FRD; ROS FLU uses X=-CAD Z, Y=-CAD X, Z=CAD Y",
@@ -342,12 +344,12 @@ def generate(package: Path) -> None:
             else "Vertical capacity alone is sufficient, but full six-axis hover "
             "allocation still requires a bounded feasibility solve."
         ),
-        "upward_thrust_motors": [
+        "all_up_hypothesis_upward_motors": [
             int(record["motor"])
             for record in rotor_records
             if float(record["_axis_flu"][2]) > 0.0
         ],
-        "downward_thrust_motors": [
+        "all_up_hypothesis_downward_motors": [
             int(record["motor"])
             for record in rotor_records
             if float(record["_axis_flu"][2]) < 0.0

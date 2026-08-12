@@ -28,6 +28,11 @@ if [[ "${CLEAN_STALE_RUNTIME:-1}" == "1" ]]; then
   pkill -f '/arm_coupling_monitor' 2>/dev/null || true
   pkill -x px4 2>/dev/null || true
   pkill -x MicroXRCEAgent 2>/dev/null || true
+  # Gazebo Sim 8 is launched by a Ruby wrapper.  Depending on how ros2 launch
+  # was interrupted, the wrapper may ignore SIGTERM or be re-parented, so its
+  # process name alone is not a reliable cleanup key.  Match the actual server
+  # command line; the bracketed pattern deliberately does not match this shell.
+  pkill -TERM -f '[g]z sim -s -r' 2>/dev/null || true
   pkill -x ruby 2>/dev/null || true
   # ROS launch and the DDS keyboard controller both have process name ros2.
   pkill -x ros2 2>/dev/null || true
@@ -40,6 +45,10 @@ if [[ "${CLEAN_STALE_RUNTIME:-1}" == "1" ]]; then
   # two operator consoles on screen.
   pkill -f '/run_ros2_arm_keyboard.sh' 2>/dev/null || true
   sleep 1
+  # Do not let an unresponsive old physics server keep publishing /clock and
+  # /stats into the new run.  This is intentionally scoped to headless
+  # `gz sim -s -r` servers rather than all Gazebo processes/GUI windows.
+  pkill -KILL -f '[g]z sim -s -r' 2>/dev/null || true
 fi
 
 source /opt/ros/jazzy/setup.bash
@@ -76,6 +85,7 @@ export MY_DRONE_URDF="${ROBOT_FILE:-${default_robot_file}}"
 setsid ros2 launch drone_arm_sim cad_direct_thrust.launch.py \
   headless:="${HEADLESS:-false}" enable_controller:=false \
   enable_arm_control:="${ENABLE_ARM_CONTROL:-false}" \
+  gz_seed:="${GZ_RANDOM_SEED:-4027}" \
   spawn_z:="${SPAWN_Z:-0.289}" \
   reaction_moment_ratio_m:="${REACTION_MOMENT_RATIO_M:--1}" \
   wind_enu_x:="${WIND_ENU_X:-nan}" wind_enu_y:="${WIND_ENU_Y:-nan}" \
@@ -93,9 +103,14 @@ setsid ros2 launch drone_arm_sim cad_direct_thrust.launch.py \
   battery_minimum_loaded_voltage_v:="${BATTERY_MINIMUM_LOADED_VOLTAGE_V:-nan}" \
   battery_thrust_voltage_exponent:="${BATTERY_THRUST_VOLTAGE_EXPONENT:-nan}" \
   arm_torque_feedforward_enabled:="${ARM_TORQUE_FEEDFORWARD_ENABLED:-false}" \
+  arm_reaction_torque_feedforward_gain:="${ARM_REACTION_TORQUE_FEEDFORWARD_GAIN:-1.0}" \
   arm_torque_feedforward_max_delta_n:="${ARM_TORQUE_FEEDFORWARD_MAX_DELTA_N:-2.0}" \
   arm_static_com_feedforward_gain:="${ARM_STATIC_COM_FEEDFORWARD_GAIN:-0.0}" \
   arm_static_com_feedforward_time_constant_s:="${ARM_STATIC_COM_FEEDFORWARD_TIME_CONSTANT_S:-5.0}" \
+  arm_disturbance_observer_enabled:="${ARM_DISTURBANCE_OBSERVER_ENABLED:-false}" \
+  arm_disturbance_observer_gain:="${ARM_DISTURBANCE_OBSERVER_GAIN:-0.5}" \
+  arm_disturbance_observer_max_torque_nm:="${ARM_DISTURBANCE_OBSERVER_MAX_TORQUE_NM:-0.08}" \
+  arm_disturbance_observer_max_delta_n:="${ARM_DISTURBANCE_OBSERVER_MAX_DELTA_N:-1.0}" \
   arm_coupling_target_mass_kg:="${ARM_COUPLING_TARGET_MASS_KG:-7.735}" \
   arm_payload_mass_kg:="${ARM_PAYLOAD_MASS_KG:-0.0}" \
   config_file:="${CONFIG_FILE:-${default_config_file}}" \
@@ -130,9 +145,18 @@ if ! python3 "${workspace_dir}/scripts/wait_model_settled.py" \
 fi
 
 cd "${px4_dir}"
+px4_command=(./build/px4_sitl_default/bin/px4 -d)
+if [[ "${PX4_FRESH_WORKDIR:-0}" == "1" ]]; then
+  px4_fresh_workdir="$(mktemp -d /tmp/my_drone_px4_work.XXXXXX)"
+  printf '%s\n' "${px4_fresh_workdir}" >"${runtime_dir}/px4_workdir.path"
+  px4_command+=(
+    -w "${px4_fresh_workdir}"
+    "${px4_dir}/build/px4_sitl_default/etc"
+  )
+fi
 setsid env PX4_GZ_STANDALONE=1 PX4_GZ_WORLD=flight_world \
   PX4_GZ_MODEL_NAME=my_drone PX4_SYS_AUTOSTART="${AIRFRAME_ID:-4026}" \
-  ./build/px4_sitl_default/bin/px4 -d >"${px4_log}" 2>&1 &
+  "${px4_command[@]}" >"${px4_log}" 2>&1 &
 echo $! >"${runtime_dir}/px4.pid"
 
 for _ in $(seq 1 90); do
@@ -141,9 +165,54 @@ for _ in $(seq 1 90); do
       # Position interfaces do not hold a gravity-loaded arm until the first
       # trajectory is received.  Freeze the documented CAD retracted pose
       # before any flight controller is allowed to arm.
+      # On a slow GUI start the joint-state broadcaster can time out while the
+      # arm trajectory controller is still activating.  In that case Gazebo,
+      # PX4 and the raw joint bridge are healthy, but /joint_states is absent
+      # and the preset command would terminate this launcher with status 1.
+      # Retry the already loaded broadcaster through controller_manager, then
+      # require one real /joint_states sample before sending any trajectory.
+      arm_joint_state_topic="${ARM_JOINT_STATE_TOPIC:-/joint_states}"
+      if ! timeout 5 ros2 topic echo --once "${arm_joint_state_topic}" \
+        >/dev/null 2>&1; then
+        echo "ARM_INIT_RETRY activating joint_state_broadcaster" \
+          >>"${arm_init_log}"
+        timeout 20 ros2 service call \
+          /controller_manager/switch_controller \
+          controller_manager_msgs/srv/SwitchController \
+          "{activate_controllers: [joint_state_broadcaster], deactivate_controllers: [], strictness: 2, activate_asap: true, timeout: {sec: 15, nanosec: 0}}" \
+          >>"${arm_init_log}" 2>&1 || true
+      fi
+      arm_joint_state_ready=false
+      for _ in $(seq 1 20); do
+        if timeout 3 ros2 topic echo --once "${arm_joint_state_topic}" \
+          >/dev/null 2>&1; then
+          arm_joint_state_ready=true
+          break
+        fi
+        sleep 1
+      done
+      if [[ "${arm_joint_state_ready}" != "true" ]]; then
+        echo "ARM_INIT_FAIL joint state unavailable: ${arm_joint_state_topic}" \
+          >"${arm_init_log}"
+        cat "${arm_init_log}" >&2
+        exit 1
+      fi
       ros2 run drone_arm_sim arm_preset_control \
         --preset retracted --duration 8 --wait --tolerance 0.08 \
-        >"${arm_init_log}" 2>&1
+        >>"${arm_init_log}" 2>&1
+      # Reaching a position tolerance is not enough for base-airframe
+      # identification: a still-settling arm would contaminate the measured
+      # body-rate and attitude response.  Require every SO101 joint to remain
+      # near the retracted target and below the velocity limit continuously.
+      python3 "${workspace_dir}/scripts/wait_arm_static.py" \
+        --reference "${workspace_dir}/src/drone_arm_sim/config/so101_motion_reference.json" \
+        --preset retracted \
+        --topic "${arm_joint_state_topic}" \
+        --position-tolerance "${ARM_STATIC_POSITION_TOLERANCE_RAD:-0.08}" \
+        --velocity-limit "${ARM_STATIC_VELOCITY_LIMIT_RAD_S:-0.03}" \
+        --hold "${ARM_STATIC_HOLD_S:-2}" \
+        --timeout "${ARM_STATIC_TIMEOUT_S:-30}" \
+        >>"${arm_init_log}" 2>&1
     fi
     # DDS topic discovery is not evidence that the estimator is ready.  In
     # particular, the formal 7.735 kg setup has occasionally reported a false
