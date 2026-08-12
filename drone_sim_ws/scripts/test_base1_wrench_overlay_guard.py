@@ -23,6 +23,15 @@ class Base1WrenchOverlayGuardTest(unittest.TestCase):
         self.assertIn("--arm-torque-feedforward-enabled false", text)
         self.assertIn("--arm-disturbance-observer-enabled false", text)
 
+    def test_overlay_uses_current_px4_vehicle_status_version(self):
+        source = (
+            Path(__file__).resolve().parents[1]
+            / "src/drone_arm_sim/drone_arm_sim/base1_wrench_reallocator.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("/fmu/out/vehicle_status_v4", source)
+        self.assertIn("ReliabilityPolicy.BEST_EFFORT", source)
+        self.assertIn("DurabilityPolicy.TRANSIENT_LOCAL", source)
+
 
 if __name__ == "__main__":
     unittest.main()

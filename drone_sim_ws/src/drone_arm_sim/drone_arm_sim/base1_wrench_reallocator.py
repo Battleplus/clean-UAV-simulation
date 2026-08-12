@@ -31,9 +31,16 @@ try:
     import rclpy
     from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
+    from rclpy.qos import (
+        DurabilityPolicy,
+        HistoryPolicy,
+        QoSProfile,
+        ReliabilityPolicy,
+    )
     from std_msgs.msg import String
 except ModuleNotFoundError:  # Pure numerical tests do not require ROS 2.
     Actuators = WrenchStamped = VehicleStatus = String = None
+    DurabilityPolicy = HistoryPolicy = QoSProfile = ReliabilityPolicy = None
     rclpy = None
     ExternalShutdownException = RuntimeError
     Node = object
@@ -285,11 +292,17 @@ class Base1WrenchReallocator(Node):
             WrenchStamped, arguments.gravity_topic, self.on_gravity, 20
         )
         self.create_subscription(String, arguments.state_topic, self.on_state, 20)
+        px4_qos = QoSProfile(
+            reliability=ReliabilityPolicy.BEST_EFFORT,
+            durability=DurabilityPolicy.TRANSIENT_LOCAL,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
         self.create_subscription(
             VehicleStatus,
             arguments.vehicle_status_topic,
             self.on_vehicle_status,
-            20,
+            px4_qos,
         )
         self.get_logger().info(
             "BASE1_REALLOCATOR_READY "
@@ -475,7 +488,7 @@ def main() -> None:
     parser.add_argument("--source-timeout-s", type=float, default=0.12)
     parser.add_argument("--flight-state-timeout-s", type=float, default=0.50)
     parser.add_argument(
-        "--vehicle-status-topic", default="/fmu/out/vehicle_status_v1"
+        "--vehicle-status-topic", default="/fmu/out/vehicle_status_v4"
     )
     parser.add_argument("--reaction-force-gain", type=float, default=0.0)
     parser.add_argument("--reaction-torque-gain", type=float, default=0.0)

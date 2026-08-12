@@ -1,0 +1,56 @@
+# Base 1 Phase E：单通道补偿配对测试审计
+
+日期：2026-08-13
+
+## 范围
+
+本阶段只测试 Git 标签 `base-1`（提交 `b340ed6`）派生的 4 kg 配置。7.735 kg 配置保持冻结，不读取其增益，也不把 4 kg 结果迁移过去。
+
+补偿始终位于基础飞行 wrench 与 6×8 分配之间；Base 1 的 PX4、WASD、H 悬停、起降和飞行参数保持不动。每个候选先以单通道 `0.05` 增益做相同轨迹的 off/on 配对，任一侧不满足严格门限即整组无效。
+
+## 已排除的无效试验
+
+### `phasee_g005_pair1`
+
+- 通道：静态重力矩；增益：`0.05`。
+- off/on 飞行均安全结束，但补偿覆盖层订阅了不存在的 `/fmu/out/vehicle_status_v1`。
+- 运行状态门因此一直 fail-closed，on 侧没有产生有效非零补偿。
+- 分析器正确给出 `effect_evaluated=false`、`candidate_accepted=false`。
+- 该试验只能证明 fail-closed 行为，不能证明候选有效或无效。
+
+证据：`base1_comp_gravity_torque_g0p05_phasee_g005_pair1_comparison.json` 及同前缀原始日志。
+
+### `phasee_g005_pair2`
+
+- 修复话题后，覆盖层启动造成 ROS 图和估计器的冷启动等待。
+- 初次后台稳定门通过，但覆盖层启动后 PX4 估计状态发生变化。
+- 已增加第二次、完全相同且不放宽的解锁前稳定门；未通过时禁止 ARM。
+- 此轮属于启动流程诊断，不构成配对结果。
+
+### `phasee_g005_pair3`
+
+- off 侧两次解锁前稳定门均通过。
+- 飞行驱动随后触发 Base 1 原有的 `0.5 s vehicle_status` DDS 超时/悬停前解除武装。
+- 该侧没有形成可用基线，整组无效；不允许启动 on 侧，也不允许分析补偿效果。
+- 旧编排器错误地继续进入 on 侧启动流程，任务已立即停止，所有 Gazebo/PX4/覆盖层进程已清理，飞机未再次解锁。
+
+证据：`base1_comp_gravity_torque_g0p05_phasee_g005_pair3_off_flight.log`。
+
+## 已修复的测试基础设施
+
+1. VehicleStatus 改为实际发布的 `/fmu/out/vehicle_status_v4`。
+2. 使用 PX4 兼容 QoS：BEST_EFFORT、TRANSIENT_LOCAL、KEEP_LAST depth 1。
+3. 覆盖层启动后重新执行原严格 PX4 稳定门，不放宽阈值。
+4. 后台、覆盖层、第二稳定门或任一飞行侧失败时立即终止整组；OFF 失败后绝不启动 ON。
+5. 只有 off/on 都通过且 on 日志证明非零补偿真正激活，分析器才评价效果。
+
+静态回归结果：包内 `80 passed`、脚本 `33 passed`，合计 `113 passed`。
+
+## 下一步决策
+
+1. 干净启动后重做静态重力矩 `gain=0.05` 配对。
+2. 若仍出现 DDS 超时，先诊断调度与消息链路，不修改 Base 1 的 `0.5 s` 安全门。
+3. 只有水平漂移、高度跨度、最大倾角和 RMS 倾角均不恶化，且无饱和、无 failsafe、无 DDS 中断时才接受候选。
+4. 候选未被接受时不升到 `0.10`，也不与其他补偿通道组合。
+5. 单通道确认后才进入 `90 s → 60 s → 30 s → 按键 6` 的速度阶梯。
+

@@ -44,6 +44,7 @@ Base 1 原 `gazebo_direct_motor_model.py` 和原 launch 均未修改。旧的分
 5. 求解失败、结果非有限或总 wrench 残差超过 0.02 时，立即清零内部补偿并转发 Base 1 原命令；
 6. 单电机推力变化默认限制为 ±0.50 N，且始终受 `[0, maximum_thrust_n]` 物理边界约束；
 7. 启动脚本要求原始电机话题、Gazebo odometry 和唯一原电机节点都存在；替代输出话题建立后才停止原节点，最终只允许一个 Gazebo 施力节点。
+8. PX4 飞行状态使用当前 `/fmu/out/vehicle_status_v4`，并匹配 PX4 的 BEST_EFFORT、TRANSIENT_LOCAL QoS；没有实际发布者的版本化话题不会被误认为状态有效。
 
 ## 数值验证
 

@@ -1,0 +1,83 @@
+{
+  "schema": "my_drone.base1-single-channel-compensation-ab.v1",
+  "scope": "Base 1 4kg only; 7.735kg not exercised",
+  "channel": "gravity_torque",
+  "gain": 0.05,
+  "off": {
+    "log": "/mnt/e/清洁无人机/drone_sim_ws/analysis/base1/base1_comp_gravity_torque_g0p05_phasee_g005_pair1_off_flight.log",
+    "pass": true,
+    "accepted_pass": true,
+    "full_sequence_gate_pass": true,
+    "relative_climb_pass": true,
+    "dynamic_gate_pass": true,
+    "failsafe_seen": false,
+    "internal_land_seen": false,
+    "metrics": {
+      "horizontal_drift_m": 0.1,
+      "altitude_span_m": 0.138,
+      "max_com_shift_m": 0.023003,
+      "max_inertia_diag_change_kg_m2": 0.032068234,
+      "max_arm_force_n": 0.008337,
+      "max_arm_torque_nm": 0.035,
+      "motor_saturation_samples": "0/152",
+      "motor_saturation_rate": 0,
+      "rated_motor_output": 1000,
+      "max_truth_tilt_deg": 1.14,
+      "rms_truth_tilt_deg": 0.523,
+      "samples": 157
+    }
+  },
+  "on": {
+    "log": "/mnt/e/清洁无人机/drone_sim_ws/analysis/base1/base1_comp_gravity_torque_g0p05_phasee_g005_pair1_on_flight.log",
+    "pass": true,
+    "accepted_pass": true,
+    "full_sequence_gate_pass": true,
+    "relative_climb_pass": true,
+    "dynamic_gate_pass": true,
+    "failsafe_seen": false,
+    "internal_land_seen": false,
+    "metrics": {
+      "horizontal_drift_m": 0.149,
+      "altitude_span_m": 0.165,
+      "max_com_shift_m": 0.023003,
+      "max_inertia_diag_change_kg_m2": 0.032068234,
+      "max_arm_force_n": 0.002669,
+      "max_arm_torque_nm": 0.035,
+      "motor_saturation_samples": "0/153",
+      "motor_saturation_rate": 0,
+      "rated_motor_output": 1000,
+      "max_truth_tilt_deg": 1.17,
+      "rms_truth_tilt_deg": 0.52,
+      "samples": 157
+    }
+  },
+  "candidate_runtime": {
+    "log": "/mnt/e/清洁无人机/drone_sim_ws/analysis/base1/base1_comp_gravity_torque_g0p05_phasee_g005_pair1_on_reallocator.log",
+    "state_count": 0,
+    "active_state_count": 0,
+    "maximum_wrench_norm": 0.0,
+    "maximum_residual_norm": null,
+    "maximum_saturated_motors": null,
+    "all_active_states_flight_allowed": false,
+    "all_active_states_source_fresh": false,
+    "all_active_states_headroom_ok": false,
+    "runtime_proven_active": false
+  },
+  "on_minus_off": {
+    "horizontal_drift_m": 0.04899999999999999,
+    "altitude_span_m": 0.026999999999999996,
+    "max_truth_tilt_deg": 0.030000000000000027,
+    "rms_truth_tilt_deg": -0.0030000000000000027
+  },
+  "on_over_off": {
+    "horizontal_drift_m": 1.4899999999999998,
+    "altitude_span_m": 1.1956521739130435,
+    "max_truth_tilt_deg": 1.0263157894736843,
+    "rms_truth_tilt_deg": 0.9942638623326959
+  },
+  "both_runs_accepted": true,
+  "improves_drift_and_rms": false,
+  "no_principal_metric_worsened": false,
+  "candidate_accepted_for_repeat": false,
+  "interpretation": "candidate is not accepted; do not combine or increase gain"
+}
