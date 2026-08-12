@@ -40,10 +40,18 @@ def parse_reallocator_log(path: Path) -> dict:
                 state["wrench_norm"] = math.sqrt(sum(value * value for value in values))
                 states.append(state)
     active = [state for state in states if state["wrench_norm"] > 1.0e-8]
+    eligible_active = [
+        state for state in active
+        if state.get("flight_allowed") is True
+        and state.get("source_fresh") is True
+        and state.get("headroom_ok") is True
+    ]
     return {
         "log": str(path.resolve()),
         "state_count": len(states),
         "active_state_count": len(active),
+        "eligible_active_state_count": len(eligible_active),
+        "gated_slewdown_state_count": len(active) - len(eligible_active),
         "maximum_wrench_norm": max(
             (state["wrench_norm"] for state in active), default=0.0
         ),
@@ -61,6 +69,7 @@ def parse_reallocator_log(path: Path) -> dict:
         "all_active_states_headroom_ok": bool(active)
         and all(state.get("headroom_ok") is True for state in active),
         "runtime_proven_active": bool(active),
+        "runtime_proven_eligible_active": bool(eligible_active),
     }
 
 
@@ -82,16 +91,18 @@ def compare(
         delta[metric] = on_value - off_value
         ratios[metric] = on_value / off_value if off_value > 1.0e-12 else None
     both_accepted = bool(off["accepted_pass"] and on["accepted_pass"])
+    effect_evaluated = bool(
+        both_accepted
+        and runtime["runtime_proven_eligible_active"]
+        and runtime["all_active_states_source_fresh"]
+        and runtime["all_active_states_headroom_ok"]
+    )
     improves_drift_and_rms = bool(
         delta["horizontal_drift_m"] < 0.0 and delta["rms_truth_tilt_deg"] < 0.0
     )
     no_principal_worsening = all(value <= 0.0 for value in delta.values())
     candidate_accepted = bool(
-        both_accepted
-        and runtime["runtime_proven_active"]
-        and runtime["all_active_states_flight_allowed"]
-        and runtime["all_active_states_source_fresh"]
-        and runtime["all_active_states_headroom_ok"]
+        effect_evaluated
         and improves_drift_and_rms
         and no_principal_worsening
     )
@@ -106,13 +117,18 @@ def compare(
         "on_minus_off": delta,
         "on_over_off": ratios,
         "both_runs_accepted": both_accepted,
+        "effect_evaluated": effect_evaluated,
         "improves_drift_and_rms": improves_drift_and_rms,
         "no_principal_metric_worsened": no_principal_worsening,
         "candidate_accepted_for_repeat": candidate_accepted,
         "interpretation": (
             "candidate may proceed to an independent repeat pair"
             if candidate_accepted
-            else "candidate is not accepted; do not combine or increase gain"
+            else (
+                "candidate was evaluated and rejected; do not combine or increase gain"
+                if effect_evaluated
+                else "pair or runtime evidence is invalid; candidate effect was not evaluated"
+            )
         ),
     }
 

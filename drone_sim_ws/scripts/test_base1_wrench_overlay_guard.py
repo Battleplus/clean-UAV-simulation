@@ -32,6 +32,13 @@ class Base1WrenchOverlayGuardTest(unittest.TestCase):
         self.assertIn("ReliabilityPolicy.BEST_EFFORT", source)
         self.assertIn("DurabilityPolicy.TRANSIENT_LOCAL", source)
 
+    def test_estimator_requires_stable_joint_stream_and_real_output(self):
+        script = (
+            WORKSPACE / "scripts/run_base1_readonly_estimator_overlay.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn("joint_state_samples >= 3", script)
+        self.assertIn("/my_drone/base1_estimator/coupling_state >/dev/null", script)
+
 
 if __name__ == "__main__":
     unittest.main()

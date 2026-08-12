@@ -3,6 +3,7 @@ import unittest
 
 
 SCRIPT = Path(__file__).resolve().parent / "run_base1_compensation_ab.sh"
+FLIGHT_DRIVER = Path(__file__).resolve().parent / "test_ros2_dds_arm_flight_pty.py"
 
 
 class Base1CompensationABGuardTest(unittest.TestCase):
@@ -26,6 +27,11 @@ class Base1CompensationABGuardTest(unittest.TestCase):
         self.assertIn("BASE1_COMP_AB_ABORT", text)
         self.assertIn("if (( flight_status != 0 )); then", text)
         self.assertNotIn("(( flight_status != 0 )) && overall=1", text)
+
+    def test_px4_status_timeout_aborts_driver_without_waiting_full_timeout(self):
+        text = FLIGHT_DRIVER.read_text(encoding="utf-8")
+        self.assertIn("PX4 status timeout: stopping Offboard stream", text)
+        self.assertIn("ARM_FLIGHT_CONTROLLER_STREAM_STOPPED", text)
 
 
 if __name__ == "__main__":

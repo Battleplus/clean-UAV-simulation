@@ -314,6 +314,7 @@ def main() -> int:
     safety_abort_reason = ""
     internal_land = False
     controller_timed_out = False
+    controller_stream_stopped = False
     landing_disarmed_time = None
     flight_key_schedule = []
     if profile == "combined_4kg":
@@ -384,6 +385,8 @@ def main() -> int:
                 sys.stdout.write(data)
                 sys.stdout.flush()
                 output += data
+                if "PX4 status timeout: stopping Offboard stream" in data:
+                    controller_stream_stopped = True
                 if (
                     "LANDING_DISARMED_CONFIRMED" in output
                     and landing_disarmed_time is None
@@ -450,6 +453,15 @@ def main() -> int:
                 print(
                     "ARM_FLIGHT_PREHOVER_DISARM "
                     "vehicle disarmed after arming but before hover-ready gate",
+                    flush=True,
+                )
+                break
+
+            if controller_stream_stopped:
+                controller_timed_out = True
+                print(
+                    "ARM_FLIGHT_CONTROLLER_STREAM_STOPPED "
+                    "PX4 status timed out; aborting before further flight actions",
                     flush=True,
                 )
                 break

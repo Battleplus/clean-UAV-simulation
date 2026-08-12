@@ -12,8 +12,23 @@ source /home/asus/ros2_px4_build_ws/install/setup.bash
 source "${workspace_dir}/install/setup.bash"
 set -u
 
-if ! timeout 5 ros2 topic echo --once /joint_states >/dev/null 2>&1; then
-  echo "REFUSED: /joint_states is unavailable; start the Base 1 arm runtime first" >&2
+# ROS graph discovery can briefly retain or lose a topic while the Base 1
+# launcher finishes activating ros2_control. Require three real samples over
+# time instead of treating one graph appearance as a stable arm-state source.
+joint_state_samples=0
+for _ in $(seq 1 30); do
+  if timeout 3 ros2 topic echo --once /joint_states >/dev/null 2>&1; then
+    joint_state_samples=$((joint_state_samples + 1))
+    if (( joint_state_samples >= 3 )); then
+      break
+    fi
+  else
+    joint_state_samples=0
+  fi
+  sleep 0.5
+done
+if (( joint_state_samples < 3 )); then
+  echo "REFUSED: /joint_states did not remain continuously available; start the Base 1 arm runtime first" >&2
   exit 2
 fi
 
@@ -43,8 +58,12 @@ echo "${pid}" >"${runtime_dir}/base1_estimator.pid"
 for _ in $(seq 1 30); do
   if ros2 topic list 2>/dev/null | \
       grep -qx /my_drone/base1_estimator/coupling_state; then
-    echo "BASE1_READONLY_ESTIMATOR_READY pid=${pid} rate_hz=100 mass_kg=4.0"
-    exit 0
+    if timeout 3 ros2 topic echo --once \
+        /my_drone/base1_estimator/coupling_state >/dev/null 2>&1 \
+        && timeout 3 ros2 topic echo --once /joint_states >/dev/null 2>&1; then
+      echo "BASE1_READONLY_ESTIMATOR_READY pid=${pid} rate_hz=100 mass_kg=4.0"
+      exit 0
+    fi
   fi
   if ! kill -0 "${pid}" 2>/dev/null; then
     cat "${runtime_dir}/base1_estimator.log" >&2 || true

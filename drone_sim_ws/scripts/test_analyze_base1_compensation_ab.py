@@ -36,6 +36,7 @@ class Base1CompensationABTest(unittest.TestCase):
             report = parse_reallocator_log(path)
             self.assertTrue(report["runtime_proven_active"])
             self.assertEqual(report["active_state_count"], 1)
+            self.assertEqual(report["eligible_active_state_count"], 1)
 
     def test_pair_is_accepted_only_when_all_metrics_improve(self):
         with tempfile.TemporaryDirectory() as temporary:
@@ -56,9 +57,23 @@ class Base1CompensationABTest(unittest.TestCase):
             runtime.write_text(MARKER + json.dumps(state) + "\n", encoding="utf-8")
             report = compare(off, on, runtime, "gravity_torque", 0.05)
             self.assertTrue(report["candidate_accepted_for_repeat"])
+            self.assertTrue(report["effect_evaluated"])
             on.write_text(flight_log(0.08, 0.22, 0.9, 0.4), encoding="utf-8")
             report = compare(off, on, runtime, "gravity_torque", 0.05)
             self.assertFalse(report["candidate_accepted_for_repeat"])
+
+    def test_failed_on_side_is_not_mislabeled_as_rejected_effect(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            off = root / "off.log"
+            on = root / "on.log"
+            runtime = root / "runtime.log"
+            off.write_text(flight_log(0.10, 0.20, 1.0, 0.5), encoding="utf-8")
+            on.write_text("ARM_FLIGHT_CONTROLLER_STREAM_STOPPED\n", encoding="utf-8")
+            runtime.write_text("", encoding="utf-8")
+            report = compare(off, on, runtime, "reaction_force", 0.05)
+            self.assertFalse(report["effect_evaluated"])
+            self.assertIn("not evaluated", report["interpretation"])
 
 
 MARKER = "BASE1_COMPENSATION_STATE "
