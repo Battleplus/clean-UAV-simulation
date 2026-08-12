@@ -40,7 +40,11 @@ for mode in disabled static; do
   export ENABLE_ARM_CONTROL=false
   [[ "${mode}" == "static" ]] && export ENABLE_ARM_CONTROL=true
   export GZ_RANDOM_SEED=4027 MODEL_SETTLE_S=8 MODEL_SETTLE_HOLD_S=2
-  export PX4_READY_SETTLE_S=5 PX4_READY_STABLE_HOLD_S=5
+  # A 5 s gate occasionally passed before the barometric EKF completed a
+  # delayed reset, after which a stationary vehicle reported several m/s of
+  # vertical motion.  Wait longer before sampling and require ten continuous
+  # seconds at the original strict velocity limits.  Thresholds are unchanged.
+  export PX4_READY_SETTLE_S=20 PX4_READY_STABLE_HOLD_S=10
   # Keep the same strict velocity gate, but allow the PX4 estimator longer to
   # converge after the arm controller initializes.  This changes no flight
   # threshold and the aircraft remains disarmed throughout the wait.
