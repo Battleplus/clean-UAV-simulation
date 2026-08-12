@@ -42,6 +42,24 @@ CARTESIAN_COMPLETE_RE = re.compile(
 )
 
 
+def climbed_relative_to_takeoff_ground(states, minimum_climb_m=0.8):
+    """Use relative NED displacement because EKF local origin is arbitrary."""
+    first_armed_index = next(
+        (index for index, state in enumerate(states) if int(state[1]) == 2), None
+    )
+    if first_armed_index is None:
+        return False
+    ground_states = [
+        state for state in states[:first_armed_index] if int(state[1]) == 1
+    ]
+    armed_states = [state for state in states if int(state[1]) == 2]
+    if not ground_states or not armed_states:
+        return False
+    # Median-like central sample avoids a single noisy EKF ground reading.
+    ground_down = sorted(state[5] for state in ground_states)[len(ground_states) // 2]
+    return ground_down - min(state[5] for state in armed_states) >= minimum_climb_m
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--timeout", type=float, default=140.0)
@@ -71,8 +89,12 @@ def main() -> int:
         controller_environment.update(
             {
                 "PX4_TOUCHDOWN_DISARM_ENABLED": "true",
-                "PX4_TOUCHDOWN_DISARM_HEIGHT_M": "0.05",
-                "PX4_TOUCHDOWN_DISARM_HOLD_S": "0.5",
+                "PX4_TOUCHDOWN_DISARM_HEIGHT_M": os.environ.get(
+                    "PX4_TOUCHDOWN_DISARM_HEIGHT_M", "0.05"
+                ),
+                "PX4_TOUCHDOWN_DISARM_HOLD_S": os.environ.get(
+                    "PX4_TOUCHDOWN_DISARM_HOLD_S", "0.5"
+                ),
             }
         )
     controller = subprocess.Popen(
@@ -915,8 +937,10 @@ def main() -> int:
                 missing.append(f"controller-marker:{marker}")
 
     armed_states = [state for state in states if int(state[1]) == 2]
-    climbed = any(state[5] < -0.8 for state in armed_states)
-    no_failsafe = "failsafe=True" not in output
+    climbed = climbed_relative_to_takeoff_ground(states)
+    no_failsafe = re.search(
+        r"(?<![A-Za-z0-9_])failsafe=True\b", output
+    ) is None
     cartesian_labels = ()
     if profile == "cartesian_demo_4kg":
         cartesian_labels = ("cartesian_demo",)

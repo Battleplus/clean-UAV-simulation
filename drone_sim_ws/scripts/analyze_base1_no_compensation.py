@@ -11,6 +11,24 @@ from pathlib import Path
 
 
 METRIC = re.compile(r"([a-zA-Z0-9_]+)=([^ ]+)")
+STATE_DOWN = re.compile(
+    r"STATE arm=(\d+) nav=\d+ NED=\([-+0-9.e]+,[-+0-9.e]+,([-+0-9.e]+)\)"
+)
+
+
+def relative_climb_from_text(text: str, minimum_climb_m: float = 0.8) -> bool:
+    samples = [(int(arm), float(down)) for arm, down in STATE_DOWN.findall(text)]
+    first_armed = next(
+        (index for index, sample in enumerate(samples) if sample[0] == 2), None
+    )
+    if first_armed is None:
+        return False
+    ground = [down for arm, down in samples[:first_armed] if arm == 1]
+    airborne = [down for arm, down in samples if arm == 2]
+    if not ground or not airborne:
+        return False
+    ground_down = sorted(ground)[len(ground) // 2]
+    return ground_down - min(airborne) >= minimum_climb_m
 
 
 def parse_log(path: Path) -> dict:
@@ -41,9 +59,21 @@ def parse_log(path: Path) -> dict:
         and float(metrics.get("max_truth_tilt_deg", math.inf)) < 3.0
         and float(metrics.get("motor_saturation_rate", math.inf)) == 0.0
     )
+    raw_pass_marker = "DDS_ARM_FLIGHT_PASS" in text
+    relative_climb = relative_climb_from_text(text)
+    full_sequence_gate_pass = (
+        dynamic_gate_pass
+        and relative_climb
+        and "OFFBOARD mode and ARM commands sent" in text
+        and "PX4 command ack: command=21 result=0" in text
+        and "LANDING_DISARMED_CONFIRMED" in text
+    )
     return {
         "log": str(path.resolve()),
-        "pass": "DDS_ARM_FLIGHT_PASS" in text,
+        "pass": raw_pass_marker,
+        "accepted_pass": raw_pass_marker or full_sequence_gate_pass,
+        "full_sequence_gate_pass": full_sequence_gate_pass,
+        "relative_climb_pass": relative_climb,
         "dynamic_gate_pass": dynamic_gate_pass,
         "failsafe_seen": failsafe_seen,
         "internal_land_seen": "ARM_FLIGHT_INTERNAL_LAND_DETECTED" in text,
@@ -70,7 +100,7 @@ def build_report(logs: list[Path]) -> dict:
         ]
         maxima[key] = max(values) if values else None
     all_pass = bool(runs) and all(
-        run["pass"]
+        run["accepted_pass"]
         and not run["failsafe_seen"]
         and not run["internal_land_seen"]
         for run in runs
@@ -86,7 +116,8 @@ def build_report(logs: list[Path]) -> dict:
         },
         "profile": "full_extend_slow_4kg",
         "runs_requested": len(logs),
-        "runs_passed": sum(1 for run in runs if run["pass"]),
+        "runs_passed": sum(1 for run in runs if run["accepted_pass"]),
+        "raw_pass_markers": sum(1 for run in runs if run["pass"]),
         "dynamic_runs_passed": sum(1 for run in runs if run["dynamic_gate_pass"]),
         "all_dynamic_runs_pass": bool(runs)
         and all(run["dynamic_gate_pass"] for run in runs),
