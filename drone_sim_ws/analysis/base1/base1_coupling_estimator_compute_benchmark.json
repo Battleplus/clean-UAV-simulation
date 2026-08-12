@@ -1,0 +1,27 @@
+{
+  "schema": "my_drone.base1-coupling-estimator-benchmark.v1",
+  "scope": "Base 1 4kg only; read-only estimator; 7.735kg not exercised",
+  "requested_runtime_rate_hz": 100.0,
+  "trial_ms_per_call": [
+    4.395525469954009,
+    4.419525890043587,
+    4.27016632995219,
+    4.531079840016901,
+    5.38750526997319
+  ],
+  "worst_trial_hz": 185.61466762239962,
+  "legacy_equivalence_max_abs_error": {
+    "com_m": 0.0,
+    "inertia_kg_m2": 0.0,
+    "reaction_force_n": 6.300897664734961e-09,
+    "reaction_torque_nm": 1.637694563294545e-09
+  },
+  "gates": {
+    "worst_trial_at_least_125_hz": true,
+    "com_equivalent": true,
+    "inertia_equivalent": true,
+    "force_equivalent": true,
+    "torque_equivalent": true
+  },
+  "pass": true
+}

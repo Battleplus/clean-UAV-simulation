@@ -18,6 +18,7 @@ from drone_arm_sim.floating_base_reaction import reaction_twist
 from drone_arm_sim.coupled_dynamics import CoupledArmDynamics, JOINT_NAMES, Payload
 from drone_arm_sim.arm_coupling_monitor import (
     bounded_compensation_ned,
+    estimator_source_is_fresh,
     filtered_joint_acceleration_step,
 )
 from drone_arm_sim.arm_disturbance_observer import (
@@ -992,6 +993,35 @@ class CoreRegressionTest(unittest.TestCase):
         impulse_twist = dynamics.contact_delta_twist(work, np.array([0.0, 0.0, -1.0]), Payload(0.25))
         self.assertGreater(float(np.linalg.norm(impulse_twist)), 1.0e-4)
 
+    def test_optimized_coupled_state_matches_finite_difference_reference(self):
+        reference = json.loads(SO101_MOTION_REFERENCE_PATH.read_text(encoding="utf-8"))
+        dynamics = CoupledArmDynamics(CAD_V3_FORMAL_URDF, reference, target_mass_kg=4.0)
+        positions = dict(zip(JOINT_NAMES, [0.2, -0.4, 0.6, -0.3, 0.2, 0.4]))
+        velocities = dict(zip(JOINT_NAMES, [0.1, -0.08, 0.06, -0.04, 0.02, 0.01]))
+        accelerations = dict(zip(JOINT_NAMES, [0.2, -0.15, 0.1, -0.08, 0.05, 0.02]))
+        optimized = dynamics.state(positions, velocities, accelerations)
+        finite = dynamics._state_finite_difference_reference(
+            positions, velocities, accelerations
+        )
+        np.testing.assert_allclose(
+            optimized.center_of_mass_m, finite.center_of_mass_m, atol=1.0e-12
+        )
+        np.testing.assert_allclose(
+            optimized.inertia_at_com_kg_m2,
+            finite.inertia_at_com_kg_m2,
+            atol=1.0e-12,
+        )
+        np.testing.assert_allclose(
+            optimized.reaction_force_body_n,
+            finite.reaction_force_body_n,
+            atol=1.0e-7,
+        )
+        np.testing.assert_allclose(
+            optimized.reaction_torque_body_nm,
+            finite.reaction_torque_body_nm,
+            atol=1.0e-7,
+        )
+
     def test_formal_gripper_has_cad_collision_geometry_for_contact_bringup(self):
         root = ET.parse(CAD_V3_FORMAL_URDF).getroot()
         for link_name in ("gripper_link", "moving_jaw_link"):
@@ -1140,6 +1170,14 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertEqual(clipped, 4.0)
         unchanged = filtered_joint_acceleration_step(1.25, float("nan"), 0.01, 0.20, 4.0)
         self.assertEqual(unchanged, 1.25)
+
+    def test_arm_coupling_estimator_source_freshness_is_fail_closed(self):
+        self.assertTrue(estimator_source_is_fresh(0.0))
+        self.assertTrue(estimator_source_is_fresh(0.10))
+        self.assertFalse(estimator_source_is_fresh(0.100001))
+        self.assertFalse(estimator_source_is_fresh(-0.01))
+        self.assertFalse(estimator_source_is_fresh(float("nan")))
+        self.assertFalse(estimator_source_is_fresh(float("inf")))
 
     def test_arm_dob_motor_model_matches_balanced_4kg_hover(self):
         config = json.loads(CAD_V3_DEBUG_4KG_CONFIG_PATH.read_text(encoding="utf-8"))

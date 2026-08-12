@@ -52,13 +52,13 @@ def main() -> int:
     controller_environment = ros2_child_environment()
     profile = os.environ.get("ARM_FLIGHT_PROFILE", "")
     if profile.endswith("_4kg") or profile == "cartesian_formal_7p735":
-        controller_environment.update(
-            {
-                "PX4_TOUCHDOWN_DISARM_ENABLED": "true",
-                "PX4_TOUCHDOWN_DISARM_HEIGHT_M": "0.05",
-                "PX4_TOUCHDOWN_DISARM_HOLD_S": "0.5",
-            }
-        )
+        # Keep the test harness configurable.  PX4 local NED can retain a
+        # small ground offset after a real Gazebo touchdown; callers may use
+        # a larger end-of-test-only threshold without changing flight or
+        # hover control.  Never overwrite an explicitly supplied value.
+        controller_environment.setdefault("PX4_TOUCHDOWN_DISARM_ENABLED", "true")
+        controller_environment.setdefault("PX4_TOUCHDOWN_DISARM_HEIGHT_M", "0.05")
+        controller_environment.setdefault("PX4_TOUCHDOWN_DISARM_HOLD_S", "0.5")
     controller = subprocess.Popen(
         ["ros2", "run", "px4_ros2_control", "dds_wasd_control"],
         stdin=slave,
