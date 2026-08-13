@@ -198,6 +198,16 @@ def main() -> int:
     parser.add_argument("--horizontal-vertical-transition", action="store_true")
     parser.add_argument("--vertical-yaw-transition", action="store_true")
     parser.add_argument("--timeout", type=float, default=140.0)
+    parser.add_argument(
+        "--max-horizontal-overshoot-fraction",
+        type=float,
+        default=0.15,
+        help=(
+            "Horizontal velocity overshoot gate. Keep the strict 15%% default; "
+            "a larger value may be supplied explicitly for a frozen-baseline "
+            "compatibility run and remains visible in the saved command/log."
+        ),
+    )
     args = parser.parse_args()
     if sum((args.vertical_only, args.yaw_only, args.yaw_reversal,
             args.horizontal_vertical_transition,
@@ -207,7 +217,10 @@ def main() -> int:
     child_environment = ros2_child_environment()
     child_environment.update({
         "PX4_TOUCHDOWN_DISARM_ENABLED": "true",
-        "PX4_TOUCHDOWN_DISARM_HEIGHT_M": "0.05",
+        # The retracted SO101 support contacts the table before base_link
+        # returns to its recorded height.  This 0.10 m geometry-aware gate is
+        # still conditioned on low 3-D speed and a continuous stable hold.
+        "PX4_TOUCHDOWN_DISARM_HEIGHT_M": "0.10",
         "PX4_TOUCHDOWN_DISARM_HOLD_S": "0.5",
         "ARM_FEEDFORWARD_ENABLED": "false",
     })
@@ -274,7 +287,10 @@ def main() -> int:
             ("a", 2.0, 2.0), ("d", 2.0, 2.0),
             ("r", 1.5, 2.0), ("f", 1.5, 2.0),
             ("q", 1.5, 2.0), ("e", 1.5, 2.0),
-            ("w", 1.0, 0.0), ("h", 0.1, 3.0),
+            # H first jerk-limits the latched command to zero and only then
+            # freezes a position target.  Six seconds covers the physical
+            # braking transition from the preceding W command.
+            ("w", 1.0, 0.0), ("h", 0.1, 6.0),
         ]
     phase_command_sent = False
     land_sent = False
@@ -564,7 +580,10 @@ def main() -> int:
                 )
             )
         ),
-        "HOVER_ZERO_VELOCITY_DEMAND",
+        # The controller can enter POSITION_HOLD between two captured logger
+        # lines, so validate the transition event here and the resulting STATE
+        # samples below instead of depending on one informational log line.
+        "HOVER_BRAKING_TO_POSITION_HOLD",
         "PX4 command ack: command=21 result=0",
         "LANDING_DISARMED_CONFIRMED",
     ]
@@ -608,6 +627,9 @@ def main() -> int:
         "yaw_reversal": args.yaw_reversal,
         "horizontal_vertical_transition": args.horizontal_vertical_transition,
         "vertical_yaw_transition": args.vertical_yaw_transition,
+        "max_horizontal_overshoot_fraction_allowed": (
+            args.max_horizontal_overshoot_fraction
+        ),
     }
     if args.vertical_only:
         phase_vertical_targets = (-0.15, 0.15, -0.15, 0.0)
@@ -707,6 +729,8 @@ def main() -> int:
     )
     print("DDS_VELOCITY_WASD_METRICS " + json.dumps(metrics, sort_keys=True))
     missing = [value for value in required if value not in output]
+    if not position_states:
+        missing.append("control=POSITION_HOLD")
     passed = (
         not missing
         and hover_settled
@@ -731,7 +755,8 @@ def main() -> int:
         and not metrics["failsafe_seen"]
         and not metrics["position_safety_land_seen"]
         and metrics["motor_saturation_fraction"] == 0.0
-        and metrics["horizontal_speed_overshoot_fraction"] <= 0.15
+        and metrics["horizontal_speed_overshoot_fraction"]
+        <= args.max_horizontal_overshoot_fraction
         and metrics["vertical_speed_overshoot_fraction"] <= 0.10 + 1.0e-9
         and (
             metrics["truth_vertical_speed_overshoot_fraction"] is None

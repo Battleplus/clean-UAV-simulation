@@ -46,8 +46,8 @@ reallocator_args=(
   --config "${config_file}"
   --input-topic /my_drone/command/motor_speed
   --output-topic "${output_topic}"
-  --source-timeout-s "${BASE1_COMP_SOURCE_TIMEOUT_S:-0.12}"
-  --flight-state-timeout-s "${BASE1_COMP_FLIGHT_STATE_TIMEOUT_S:-0.50}"
+  --source-timeout-s "${BASE1_COMP_SOURCE_TIMEOUT_S:-0.50}"
+  --flight-state-timeout-s "${BASE1_COMP_FLIGHT_STATE_TIMEOUT_S:-5.0}"
   --reaction-force-gain "${BASE1_REACTION_FORCE_GAIN:-0.0}"
   --reaction-torque-gain "${BASE1_REACTION_TORQUE_GAIN:-0.0}"
   --gravity-torque-gain "${BASE1_GRAVITY_TORQUE_GAIN:-0.0}"
@@ -59,9 +59,18 @@ reallocator_args=(
   --maximum-motor-delta-n "${BASE1_COMP_MAX_MOTOR_DELTA_N:-0.50}"
   --minimum-headroom-n "${BASE1_COMP_MIN_HEADROOM_N:-0.25}"
   --maximum-residual-norm "${BASE1_COMP_MAX_RESIDUAL_NORM:-0.02}"
+  --truth-timeout-s "${BASE1_COMP_TRUTH_TIMEOUT_S:-0.50}"
+  --arm-motion-timeout-s "${BASE1_COMP_ARM_MOTION_TIMEOUT_S:-1.0}"
+  --position-gain-n-m "${BASE1_POSITION_GAIN_N_M:-4.0}"
+  --velocity-gain-n-s-m "${BASE1_VELOCITY_GAIN_N_S_M:-2.0}"
+  --position-horizontal-limit-n "${BASE1_POSITION_HORIZONTAL_LIMIT_N:-0.20}"
+  --position-vertical-limit-n "${BASE1_POSITION_VERTICAL_LIMIT_N:-0.15}"
 )
 if [[ "${BASE1_COMPENSATION_ENABLED:-false}" == "true" ]]; then
   reallocator_args+=(--enabled)
+fi
+if [[ "${BASE1_POSITION_FEEDBACK_ENABLED:-false}" == "true" ]]; then
+  reallocator_args+=(--position-feedback-enabled)
 fi
 setsid ros2 run drone_arm_sim base1_wrench_reallocator "${reallocator_args[@]}" \
   >"${runtime_dir}/base1_reallocator.log" 2>&1 &

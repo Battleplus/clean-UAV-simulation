@@ -27,6 +27,7 @@ from drone_arm_sim.gazebo_direct_motor_model import (
 try:
     from actuator_msgs.msg import Actuators
     from geometry_msgs.msg import WrenchStamped
+    from nav_msgs.msg import Odometry
     from px4_msgs.msg import VehicleStatus
     import rclpy
     from rclpy.executors import ExternalShutdownException
@@ -37,9 +38,9 @@ try:
         QoSProfile,
         ReliabilityPolicy,
     )
-    from std_msgs.msg import String
+    from std_msgs.msg import Bool, String
 except ModuleNotFoundError:  # Pure numerical tests do not require ROS 2.
-    Actuators = WrenchStamped = VehicleStatus = String = None
+    Actuators = WrenchStamped = Odometry = VehicleStatus = Bool = String = None
     DurabilityPolicy = HistoryPolicy = QoSProfile = ReliabilityPolicy = None
     rclpy = None
     ExternalShutdownException = RuntimeError
@@ -178,6 +179,94 @@ def compensation_wrench_frd(
     )
 
 
+def relative_gravity_wrench(
+    gravity_wrench_flu: np.ndarray,
+    reference_wrench_flu: np.ndarray | None,
+) -> np.ndarray:
+    """Return only the arm-pose gravity increment relative to takeoff trim.
+
+    Base 1 already trims the gravity moment of the pose present before arming.
+    Feeding that constant moment forward again changes a proven hover trim and
+    caused the earlier A/B overlay to degrade.  Compensation therefore starts
+    at zero and follows only pose-induced changes.
+    """
+    current = np.asarray(gravity_wrench_flu, dtype=float)
+    if current.shape != (6,) or not np.all(np.isfinite(current)):
+        raise ValueError("gravity wrench must contain six finite values")
+    if reference_wrench_flu is None:
+        return np.zeros(6)
+    reference = np.asarray(reference_wrench_flu, dtype=float)
+    if reference.shape != (6,) or not np.all(np.isfinite(reference)):
+        raise ValueError("gravity reference must contain six finite values")
+    return current - reference
+
+
+def position_feedback_force_frd(
+    target_world_enu: np.ndarray,
+    position_world_enu: np.ndarray,
+    velocity_body_flu: np.ndarray,
+    rotation_body_to_world: np.ndarray,
+    *,
+    position_gain_n_m: float,
+    velocity_gain_n_s_m: float,
+    horizontal_limit_n: float,
+    vertical_limit_n: float,
+) -> np.ndarray:
+    """Return a bounded body-FRD restoring force for an arm-motion snapshot.
+
+    Gazebo odometry provides pose in ``world`` and twist in ``base_link``.
+    The PD law is formed in the world ENU frame, limited there so horizontal
+    and vertical authority stay explicit, and then rotated into body FLU/FRD
+    for the 6D rotor allocator.
+    """
+    target = np.asarray(target_world_enu, dtype=float)
+    position = np.asarray(position_world_enu, dtype=float)
+    velocity_body = np.asarray(velocity_body_flu, dtype=float)
+    rotation = np.asarray(rotation_body_to_world, dtype=float)
+    if target.shape != (3,) or position.shape != (3,) or velocity_body.shape != (3,):
+        raise ValueError("position feedback vectors must be three dimensional")
+    if rotation.shape != (3, 3):
+        raise ValueError("body-to-world rotation must be 3x3")
+    if not all(
+        np.all(np.isfinite(value))
+        for value in (target, position, velocity_body, rotation)
+    ):
+        raise ValueError("position feedback inputs must be finite")
+    velocity_world = rotation @ velocity_body
+    force_world = (
+        max(0.0, float(position_gain_n_m)) * (target - position)
+        - max(0.0, float(velocity_gain_n_s_m)) * velocity_world
+    )
+    force_world[:2] = bounded_vector(force_world[:2].tolist() + [0.0], horizontal_limit_n)[:2]
+    force_world[2] = float(
+        np.clip(
+            force_world[2],
+            -max(0.0, float(vertical_limit_n)),
+            max(0.0, float(vertical_limit_n)),
+        )
+    )
+    force_body_flu = rotation.T @ force_world
+    return FLU_TO_FRD @ force_body_flu
+
+
+def quaternion_xyzw_to_rotation_body_to_world(values: np.ndarray) -> np.ndarray:
+    quaternion = np.asarray(values, dtype=float)
+    if quaternion.shape != (4,) or not np.all(np.isfinite(quaternion)):
+        raise ValueError("quaternion must contain four finite values")
+    norm = float(np.linalg.norm(quaternion))
+    if norm <= ZERO_EPSILON:
+        raise ValueError("quaternion norm must be positive")
+    x, y, z, w = quaternion / norm
+    return np.asarray(
+        [
+            [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+        ],
+        dtype=float,
+    )
+
+
 def allocate_total_wrench(
     config: dict,
     base_commands_motor_order: np.ndarray,
@@ -272,15 +361,34 @@ class Base1WrenchReallocator(Node):
         self.maximum_residual_norm = max(
             0.0, float(arguments.maximum_residual_norm)
         )
+        self.position_feedback_enabled = bool(arguments.position_feedback_enabled)
+        self.position_gain_n_m = max(0.0, float(arguments.position_gain_n_m))
+        self.velocity_gain_n_s_m = max(0.0, float(arguments.velocity_gain_n_s_m))
+        self.position_horizontal_limit_n = max(
+            0.0, float(arguments.position_horizontal_limit_n)
+        )
+        self.position_vertical_limit_n = max(
+            0.0, float(arguments.position_vertical_limit_n)
+        )
+        self.truth_timeout_s = max(0.01, float(arguments.truth_timeout_s))
+        self.arm_motion_timeout_s = max(0.05, float(arguments.arm_motion_timeout_s))
         self.current_compensation = np.zeros(6)
         self.reaction_wrench_flu = np.zeros(6)
         self.gravity_wrench_flu = np.zeros(6)
+        self.gravity_reference_flu: np.ndarray | None = None
         self.reaction_stamp_s: float | None = None
         self.gravity_stamp_s: float | None = None
         self.valid_state_stamp_s: float | None = None
         self.flight_state_stamp_s: float | None = None
         self.flight_armed = False
         self.flight_offboard = False
+        self.truth_position_world_enu: np.ndarray | None = None
+        self.truth_velocity_body_flu: np.ndarray | None = None
+        self.rotation_body_to_world: np.ndarray | None = None
+        self.truth_stamp_s: float | None = None
+        self.arm_motion_active = False
+        self.arm_motion_stamp_s: float | None = None
+        self.position_target_world_enu: np.ndarray | None = None
         self.last_command_s: float | None = None
         self.last_log_s = 0.0
         self.publisher = self.create_publisher(Actuators, arguments.output_topic, 20)
@@ -292,6 +400,10 @@ class Base1WrenchReallocator(Node):
             WrenchStamped, arguments.gravity_topic, self.on_gravity, 20
         )
         self.create_subscription(String, arguments.state_topic, self.on_state, 20)
+        self.create_subscription(Odometry, arguments.truth_topic, self.on_truth, 20)
+        self.create_subscription(
+            Bool, arguments.arm_motion_topic, self.on_arm_motion, 20
+        )
         px4_qos = QoSProfile(
             reliability=ReliabilityPolicy.BEST_EFFORT,
             durability=DurabilityPolicy.TRANSIENT_LOCAL,
@@ -312,6 +424,7 @@ class Base1WrenchReallocator(Node):
                     "reaction_force_gain": self.reaction_force_gain,
                     "reaction_torque_gain": self.reaction_torque_gain,
                     "gravity_torque_gain": self.gravity_torque_gain,
+                    "position_feedback_enabled": self.position_feedback_enabled,
                     "input_topic": arguments.input_topic,
                     "output_topic": arguments.output_topic,
                 },
@@ -330,6 +443,10 @@ class Base1WrenchReallocator(Node):
         if str(message.header.frame_id) == "base_link" and np.all(np.isfinite(values)):
             self.gravity_wrench_flu = values
             self.gravity_stamp_s = time.monotonic()
+            # Continuously learn the exact trim pose only while disarmed.  The
+            # last ground sample is then frozen for the entire armed flight.
+            if not self.flight_armed:
+                self.gravity_reference_flu = values.copy()
 
     def on_state(self, message) -> None:
         try:
@@ -350,6 +467,46 @@ class Base1WrenchReallocator(Node):
             int(message.nav_state) == int(VehicleStatus.NAVIGATION_STATE_OFFBOARD)
         )
         self.flight_state_stamp_s = time.monotonic()
+
+    def on_truth(self, message) -> None:
+        pose = message.pose.pose
+        twist = message.twist.twist
+        position = np.asarray(
+            [pose.position.x, pose.position.y, pose.position.z], dtype=float
+        )
+        velocity = np.asarray(
+            [twist.linear.x, twist.linear.y, twist.linear.z], dtype=float
+        )
+        quaternion = np.asarray(
+            [pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w],
+            dtype=float,
+        )
+        if not np.all(np.isfinite(position)) or not np.all(np.isfinite(velocity)):
+            return
+        try:
+            rotation = quaternion_xyzw_to_rotation_body_to_world(quaternion)
+        except ValueError:
+            return
+        self.truth_position_world_enu = position
+        self.truth_velocity_body_flu = velocity
+        self.rotation_body_to_world = rotation
+        self.truth_stamp_s = time.monotonic()
+        if self.arm_motion_active and self.position_target_world_enu is None:
+            self.position_target_world_enu = position.copy()
+
+    def on_arm_motion(self, message) -> None:
+        active = bool(message.data)
+        now_s = time.monotonic()
+        if active and not self.arm_motion_active:
+            self.position_target_world_enu = (
+                None
+                if self.truth_position_world_enu is None
+                else self.truth_position_world_enu.copy()
+            )
+        elif not active:
+            self.position_target_world_enu = None
+        self.arm_motion_active = active
+        self.arm_motion_stamp_s = now_s if active else None
 
     def _fresh(self, stamp_s: float | None, now_s: float) -> bool:
         return bool(stamp_s is not None and 0.0 <= now_s - stamp_s <= self.source_timeout_s)
@@ -382,6 +539,15 @@ class Base1WrenchReallocator(Node):
         if self.gravity_torque_gain > 0.0:
             source_stamps.append(self.gravity_stamp_s)
         source_fresh = all(self._fresh(stamp, now_s) for stamp in source_stamps)
+        motion_active = bool(
+            self.arm_motion_active
+            and self.arm_motion_stamp_s is not None
+            and 0.0 <= now_s - self.arm_motion_stamp_s <= self.arm_motion_timeout_s
+        )
+        truth_fresh = bool(
+            self.truth_stamp_s is not None
+            and 0.0 <= now_s - self.truth_stamp_s <= self.truth_timeout_s
+        )
         flight_allowed = flight_state_allows_compensation(
             self.flight_armed,
             self.flight_offboard,
@@ -398,9 +564,12 @@ class Base1WrenchReallocator(Node):
         )
         target = np.zeros(6)
         if source_fresh and flight_allowed and has_headroom:
+            gravity_delta = relative_gravity_wrench(
+                self.gravity_wrench_flu, self.gravity_reference_flu
+            )
             target = compensation_wrench_frd(
                 self.reaction_wrench_flu,
-                self.gravity_wrench_flu,
+                gravity_delta,
                 reaction_force_gain=self.reaction_force_gain,
                 reaction_torque_gain=self.reaction_torque_gain,
                 gravity_torque_gain=self.gravity_torque_gain,
@@ -408,6 +577,29 @@ class Base1WrenchReallocator(Node):
                 reaction_torque_limit_nm=self.reaction_torque_limit_nm,
                 gravity_torque_limit_nm=self.gravity_torque_limit_nm,
             )
+        position_force_frd = np.zeros(3)
+        if (
+            self.position_feedback_enabled
+            and motion_active
+            and truth_fresh
+            and flight_allowed
+            and has_headroom
+            and self.position_target_world_enu is not None
+            and self.truth_position_world_enu is not None
+            and self.truth_velocity_body_flu is not None
+            and self.rotation_body_to_world is not None
+        ):
+            position_force_frd = position_feedback_force_frd(
+                self.position_target_world_enu,
+                self.truth_position_world_enu,
+                self.truth_velocity_body_flu,
+                self.rotation_body_to_world,
+                position_gain_n_m=self.position_gain_n_m,
+                velocity_gain_n_s_m=self.velocity_gain_n_s_m,
+                horizontal_limit_n=self.position_horizontal_limit_n,
+                vertical_limit_n=self.position_vertical_limit_n,
+            )
+            target[:3] += position_force_frd
         self.current_compensation = slew_vector(
             self.current_compensation,
             target,
@@ -449,6 +641,16 @@ class Base1WrenchReallocator(Node):
                         "source_fresh": source_fresh,
                         "flight_allowed": flight_allowed,
                         "headroom_ok": has_headroom,
+                        "motion_active": motion_active,
+                        "truth_fresh": truth_fresh,
+                        "position_target_world_enu": None
+                        if self.position_target_world_enu is None
+                        else self.position_target_world_enu.tolist(),
+                        "position_feedback_force_frd": position_force_frd.tolist(),
+                        "gravity_reference_ready": self.gravity_reference_flu is not None,
+                        "gravity_delta_wrench_flu": relative_gravity_wrench(
+                            self.gravity_wrench_flu, self.gravity_reference_flu
+                        ).tolist(),
                         "compensation_wrench_frd": self.current_compensation.tolist(),
                         "residual_norm": allocation["residual_norm"],
                         "saturated": int(
@@ -485,8 +687,8 @@ def main() -> None:
         "--state-topic", default="/my_drone/base1_estimator/coupling_state"
     )
     parser.add_argument("--velocity-command-scale", type=float, default=1000.0)
-    parser.add_argument("--source-timeout-s", type=float, default=0.12)
-    parser.add_argument("--flight-state-timeout-s", type=float, default=0.50)
+    parser.add_argument("--source-timeout-s", type=float, default=0.50)
+    parser.add_argument("--flight-state-timeout-s", type=float, default=5.0)
     parser.add_argument(
         "--vehicle-status-topic", default="/fmu/out/vehicle_status_v4"
     )
@@ -501,6 +703,15 @@ def main() -> None:
     parser.add_argument("--maximum-motor-delta-n", type=float, default=0.50)
     parser.add_argument("--minimum-headroom-n", type=float, default=0.25)
     parser.add_argument("--maximum-residual-norm", type=float, default=0.02)
+    parser.add_argument("--position-feedback-enabled", action="store_true")
+    parser.add_argument("--truth-topic", default="/model/my_drone/odometry")
+    parser.add_argument("--arm-motion-topic", default="/my_drone/arm_motion_active")
+    parser.add_argument("--truth-timeout-s", type=float, default=0.50)
+    parser.add_argument("--arm-motion-timeout-s", type=float, default=1.0)
+    parser.add_argument("--position-gain-n-m", type=float, default=4.0)
+    parser.add_argument("--velocity-gain-n-s-m", type=float, default=2.0)
+    parser.add_argument("--position-horizontal-limit-n", type=float, default=0.20)
+    parser.add_argument("--position-vertical-limit-n", type=float, default=0.15)
     parsed, ros_arguments = parser.parse_known_args()
     if rclpy is None:
         raise SystemExit("ROS 2 Python packages are not available")

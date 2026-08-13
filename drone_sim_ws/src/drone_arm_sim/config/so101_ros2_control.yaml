@@ -23,6 +23,10 @@ arm_controller:
       - position
       - velocity
     allow_partial_joints_goal: false
+    # Positions + velocities + accelerations from cartesian_arm_demo are
+    # intentionally interpolated as quintic splines.  Keep this explicit so a
+    # controller default change cannot reintroduce acceleration steps.
+    interpolation_method: splines
     action_monitor_rate: 20.0
     state_publish_rate: 100.0
     constraints:

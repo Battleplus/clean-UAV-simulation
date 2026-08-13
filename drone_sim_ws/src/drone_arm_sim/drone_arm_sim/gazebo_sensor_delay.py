@@ -62,9 +62,7 @@ class SensorDelayRelay(Node):
             for name, msg_type, raw, output in definitions
         ]
         self.queues = {spec.name: deque(maxlen=5000) for spec in self.specs}
-        self.zero_delay_pending = {spec.name: None for spec in self.specs}
         self.last_published_source_time = {spec.name: -math.inf for spec in self.specs}
-        self.last_published_clock_time = {spec.name: -math.inf for spec in self.specs}
         self.gz_publishers = {
             spec.name: self.gz_node.advertise(spec.output_topic, spec.message_type)
             for spec in self.specs
@@ -86,21 +84,20 @@ class SensorDelayRelay(Node):
                 return
             copied = spec.message_type()
             copied.CopyFrom(message)
-            # PX4's Gazebo IMU bridge timestamps a sample with
-            # hrt_absolute_time() when this publication is received; it does
-            # not consume the protobuf header stamp.  Releasing multiple
-            # queued IMU messages from one /clock callback consequently gives
-            # them the same PX4 timestamp and vehicle_imu rejects the second
-            # sample.  For a zero-delay stream, retain only the newest source
-            # sample until the next /clock callback.  on_clock publishes at
-            # most one sample per simulation tick, preserving the 250 Hz
-            # source bandwidth without ever releasing a same-tick batch.
+            # A zero-delay relay must not depend on the ROS /clock executor.
+            # Starting a joint trajectory can briefly delay ROS callbacks;
+            # holding Gazebo sensor samples until on_clock then starves PX4's
+            # barometer/magnetometer bridge and can make the vehicle reduce
+            # thrust.  Forward each newly stamped raw sample immediately from
+            # the Gazebo transport callback.  This also avoids releasing a
+            # batch with identical PX4 receive timestamps.
             if spec.delay_s <= 0.0:
                 source_time = message_stamp_seconds(message, self.simulation_time_s)
                 with self.lock:
-                    pending = self.zero_delay_pending[spec.name]
-                    if pending is None or source_time > pending[0]:
-                        self.zero_delay_pending[spec.name] = (source_time, copied)
+                    if source_time <= self.last_published_source_time[spec.name]:
+                        return
+                    self.last_published_source_time[spec.name] = source_time
+                self._publish_sensor(spec.name, copied)
                 return
             with self.lock:
                 source_time = message_stamp_seconds(message, self.simulation_time_s)
@@ -116,20 +113,6 @@ class SensorDelayRelay(Node):
             self.simulation_time_s = now
             for spec in self.specs:
                 if spec.delay_s <= 0.0:
-                    pending = self.zero_delay_pending[spec.name]
-                    if (
-                        pending is not None
-                        and pending[0] > self.last_published_source_time[spec.name]
-                        and (
-                            spec.name != "imu"
-                            or now - self.last_published_clock_time[spec.name] >= 0.0035
-                        )
-                    ):
-                        source_time, sensor_message = pending
-                        due.append((spec.name, sensor_message))
-                        self.last_published_source_time[spec.name] = source_time
-                        self.last_published_clock_time[spec.name] = now
-                        self.zero_delay_pending[spec.name] = None
                     continue
                 queue = self.queues[spec.name]
                 newest_due = None
@@ -138,14 +121,17 @@ class SensorDelayRelay(Node):
                 if newest_due is not None:
                     due.append((spec.name, newest_due))
         for name, sensor_message in due:
-            if rclpy is None or not rclpy.ok():
+            self._publish_sensor(name, sensor_message)
+
+    def _publish_sensor(self, name: str, sensor_message) -> None:
+        if rclpy is None or not rclpy.ok():
+            return
+        try:
+            self.gz_publishers[name].publish(sensor_message)
+        except Exception as exc:  # Gazebo callbacks can race ROS shutdown.
+            if rclpy is None or not rclpy.ok() or "context is invalid" in str(exc).lower():
                 return
-            try:
-                self.gz_publishers[name].publish(sensor_message)
-            except Exception as exc:  # Gazebo callbacks can race ROS shutdown.
-                if rclpy is None or not rclpy.ok() or "context is invalid" in str(exc).lower():
-                    return
-                raise
+            raise
 
 
 def main() -> None:

@@ -15,9 +15,14 @@ set -u
 # ROS graph discovery can briefly retain or lose a topic while the Base 1
 # launcher finishes activating ros2_control. Require three real samples over
 # time instead of treating one graph appearance as a stable arm-state source.
+# Starting a fresh `ros2 topic echo` process can spend several seconds in DDS
+# discovery on WSL even while the publisher is healthy.  This timeout is only
+# for startup probing; it does not relax the estimator's 0.1 s runtime source
+# freshness gate.
+startup_sample_timeout_s="${BASE1_STARTUP_SAMPLE_TIMEOUT_S:-8}"
 joint_state_samples=0
 for _ in $(seq 1 30); do
-  if timeout 3 ros2 topic echo --once /joint_states >/dev/null 2>&1; then
+  if timeout "${startup_sample_timeout_s}" ros2 topic echo --once /joint_states >/dev/null 2>&1; then
     joint_state_samples=$((joint_state_samples + 1))
     if (( joint_state_samples >= 3 )); then
       break
@@ -58,9 +63,9 @@ echo "${pid}" >"${runtime_dir}/base1_estimator.pid"
 for _ in $(seq 1 30); do
   if ros2 topic list 2>/dev/null | \
       grep -qx /my_drone/base1_estimator/coupling_state; then
-    if timeout 3 ros2 topic echo --once \
+    if timeout "${startup_sample_timeout_s}" ros2 topic echo --once \
         /my_drone/base1_estimator/coupling_state >/dev/null 2>&1 \
-        && timeout 3 ros2 topic echo --once /joint_states >/dev/null 2>&1; then
+        && timeout "${startup_sample_timeout_s}" ros2 topic echo --once /joint_states >/dev/null 2>&1; then
       echo "BASE1_READONLY_ESTIMATOR_READY pid=${pid} rate_hz=100 mass_kg=4.0"
       exit 0
     fi

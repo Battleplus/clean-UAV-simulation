@@ -34,12 +34,64 @@ DIAGNOSTIC_RE = re.compile(
 TRUTH_RPY_RE = re.compile(
     r"truth_rpy_deg=\(([-+0-9.e]+),([-+0-9.e]+),([-+0-9.e]+)\)"
 )
+TRUTH_ENU_RE = re.compile(
+    r"truth_enu=\(([-+0-9.e]+),([-+0-9.e]+),([-+0-9.e]+)\)"
+)
 CARTESIAN_BEGIN_RE = re.compile(
     r"CARTESIAN_DEMO_BEGIN cycle=(\d+) monotonic=([-+0-9.e]+)"
 )
 CARTESIAN_COMPLETE_RE = re.compile(
     r"CARTESIAN_DEMO_COMPLETE cycle=(\d+) monotonic=([-+0-9.e]+)"
 )
+
+
+def _ros_topic_sample(topic: str, timeout_s: float) -> str:
+    """Return one live ROS sample or raise before an automated flight can arm."""
+    result = subprocess.run(
+        ["ros2", "topic", "echo", "--once", topic],
+        capture_output=True,
+        text=True,
+        timeout=max(0.1, timeout_s),
+        env=ros2_child_environment(),
+        check=False,
+    )
+    if result.returncode != 0 or not result.stdout.strip():
+        detail = (result.stderr or result.stdout).strip().replace("\n", " ")
+        raise RuntimeError(f"no live sample on {topic}: {detail[:240]}")
+    return result.stdout
+
+
+def require_live_backend(timeout_s: float = 8.0) -> None:
+    """Reject a stale ROS graph left behind after Gazebo or PX4 exited.
+
+    Topic names alone are insufficient because bridges and overlay nodes can
+    survive a crashed Gazebo server.  Every automated arm-flight run therefore
+    requires fresh physics, arm, truth-odometry and PX4 samples before it opens
+    the Offboard controller PTY.
+    """
+    for topic in (
+        "/clock",
+        "/joint_states",
+        "/model/my_drone/odometry",
+        "/fmu/out/vehicle_status_v4",
+    ):
+        deadline = time.monotonic() + max(timeout_s, 1.0)
+        last_error = None
+        while time.monotonic() < deadline:
+            try:
+                # A fresh `ros2 topic echo` process can spend several seconds
+                # in DDS discovery on WSL even while a high-rate publisher is
+                # healthy.  Retry bounded probes inside one overall startup
+                # deadline; this does not relax any in-flight freshness gate.
+                _ros_topic_sample(topic, min(8.0, deadline - time.monotonic()))
+                break
+            except (RuntimeError, subprocess.TimeoutExpired) as exc:
+                last_error = exc
+                time.sleep(0.25)
+        else:
+            if last_error is not None:
+                raise last_error
+            raise RuntimeError(f"no live sample on {topic}")
 
 
 def climbed_relative_to_takeoff_ground(states, minimum_climb_m=0.8):
@@ -67,8 +119,19 @@ def main() -> int:
     master, slave = pty.openpty()
     profile = os.environ.get("ARM_FLIGHT_PROFILE", "safe")
     cartesian_distance_m = float(os.environ.get("ARM_CARTESIAN_DISTANCE_M", "0.10"))
+    cartesian_hold_s = float(os.environ.get("ARM_CARTESIAN_HOLD_S", "3.0"))
     if not 0.0 < cartesian_distance_m <= 0.25:
         parser.error("ARM_CARTESIAN_DISTANCE_M must be in (0, 0.25]")
+    if not 0.0 <= cartesian_hold_s <= 30.0:
+        parser.error("ARM_CARTESIAN_HOLD_S must be in [0, 30]")
+    try:
+        require_live_backend(
+            float(os.environ.get("ARM_FLIGHT_BACKEND_SAMPLE_TIMEOUT_S", "30"))
+        )
+    except (RuntimeError, subprocess.TimeoutExpired) as exc:
+        print(f"ARM_FLIGHT_BACKEND_NOT_READY {exc}", file=sys.stderr, flush=True)
+        return 2
+    print("ARM_FLIGHT_BACKEND_READY clock joint_states odometry px4_status", flush=True)
     rated_motor_output = 999.0
     if profile.endswith("_4kg") or profile == "cartesian_formal_7p735":
         config_name = (
@@ -97,6 +160,14 @@ def main() -> int:
                 ),
             }
         )
+    if profile.endswith("_4kg"):
+        # The Base 1 backend and this PTY controller are separate processes;
+        # exports made by the backend launcher do not reach this child.  Keep
+        # the ideal-motion-capture H hold explicit for Base 1 while allowing
+        # callers to disable it for an A/B run.
+        controller_environment["PX4_TRUTH_HOLD_ENABLED"] = os.environ.get(
+            "PX4_TRUTH_HOLD_ENABLED", "true"
+        )
     controller = subprocess.Popen(
         ["ros2", "run", "px4_ros2_control", "dds_wasd_control"],
         stdin=slave,
@@ -112,6 +183,7 @@ def main() -> int:
     states = []
     diagnostics = []
     truth_attitudes = []
+    truth_positions = []
     initialized = False
     seen_armed = False
     prehover_disarm = False
@@ -273,8 +345,10 @@ def main() -> int:
         land_after_s = 96.0
     elif profile == "cartesian_demo_4kg":
         arm_schedule = [(6.0, "cartesian_demo")]
-        arm_duration = "30"
-        land_after_s = 95.0
+        arm_duration = os.environ.get("ARM_CARTESIAN_DURATION_S", "30")
+        if float(arm_duration) <= 0.0:
+            parser.error("ARM_CARTESIAN_DURATION_S must be positive")
+        land_after_s = 2.0 * float(arm_duration) + cartesian_hold_s + 35.0
     elif profile == "cartesian_demo_twice_4kg":
         arm_schedule = [(6.0, "cartesian_sequence", "cartesian_sequence_twice")]
         arm_duration = "30"
@@ -437,6 +511,12 @@ def main() -> int:
                         })
                 for match in TRUTH_RPY_RE.finditer(data):
                     truth_attitudes.append(
+                        (time.monotonic(),) + tuple(
+                            float(value) for value in match.groups()
+                        )
+                    )
+                for match in TRUTH_ENU_RE.finditer(data):
+                    truth_positions.append(
                         (time.monotonic(),) + tuple(
                             float(value) for value in match.groups()
                         )
@@ -724,7 +804,8 @@ def main() -> int:
                                 "ros2", "run", "drone_arm_sim", "cartesian_arm_demo",
                                 "--distance", f"{cartesian_distance_m:.6f}",
                                 "--step", "0.005",
-                                "--duration", arm_duration, "--hold", "3",
+                                "--duration", arm_duration,
+                                "--hold", f"{cartesian_hold_s:.6f}",
                             ]
                         elif preset == "cartesian_sequence":
                             cartesian_sequence_event_file.unlink(missing_ok=True)
@@ -1119,6 +1200,33 @@ def main() -> int:
         if truth_tilt_deg
         else float("inf")
     )
+    if action_intervals:
+        truth_position_window = [
+            sample for sample in truth_positions
+            if any(start <= sample[0] <= end for _, start, end in action_intervals)
+        ]
+    elif flight_ready_time is not None:
+        truth_position_window = [
+            sample for sample in truth_positions
+            if 0.0 <= sample[0] - flight_ready_time <= land_after_s
+        ]
+    else:
+        truth_position_window = []
+    if truth_position_window:
+        truth_x = [sample[1] for sample in truth_position_window]
+        truth_y = [sample[2] for sample in truth_position_window]
+        truth_z = [sample[3] for sample in truth_position_window]
+        truth_x_peak_to_peak_m = max(truth_x) - min(truth_x)
+        truth_y_peak_to_peak_m = max(truth_y) - min(truth_y)
+        truth_xy_peak_to_peak_m = max(
+            truth_x_peak_to_peak_m, truth_y_peak_to_peak_m
+        )
+        truth_altitude_peak_to_peak_m = max(truth_z) - min(truth_z)
+    else:
+        truth_x_peak_to_peak_m = float("inf")
+        truth_y_peak_to_peak_m = float("inf")
+        truth_xy_peak_to_peak_m = float("inf")
+        truth_altitude_peak_to_peak_m = float("inf")
     stable = max_horizontal_drift < 1.5 and altitude_span < 1.5
     if profile in {
         "cartesian_demo_4kg", "cartesian_demo_twice_4kg",
@@ -1126,12 +1234,21 @@ def main() -> int:
         "wrist_roll_4kg", "shoulder_pan_4kg", "multi_joint_slow_4kg",
         "full_extend_slow_4kg",
     }:
+        acceptance_horizontal_m = float(
+            os.environ.get("ARM_FLIGHT_ACCEPT_HORIZONTAL_M", "0.15")
+        )
+        acceptance_altitude_m = float(
+            os.environ.get("ARM_FLIGHT_ACCEPT_ALTITUDE_M", "0.30")
+        )
+        acceptance_tilt_deg = float(
+            os.environ.get("ARM_FLIGHT_ACCEPT_TILT_DEG", "3.0")
+        )
         stable = (
-            max_horizontal_drift < 0.15
-            and altitude_span < 0.30
+            truth_xy_peak_to_peak_m <= acceptance_horizontal_m
+            and truth_altitude_peak_to_peak_m <= acceptance_altitude_m
             and max_arm_torque < 0.50
             and saturation_samples == 0
-            and max_truth_tilt_deg < 3.0
+            and max_truth_tilt_deg <= acceptance_tilt_deg
             and math.isfinite(max_arm_force)
             and math.isfinite(max_com_shift)
             and math.isfinite(max_inertia_diag_change)
@@ -1151,6 +1268,13 @@ def main() -> int:
         f"max_truth_tilt_deg={max_truth_tilt_deg:.3f} "
         f"rms_truth_tilt_deg={rms_truth_tilt_deg:.3f} "
         f"samples={len(arm_window)}"
+    )
+    print(
+        "ARM_FLIGHT_TRUTH_METRICS "
+        f"x_peak_to_peak_m={truth_x_peak_to_peak_m:.3f} "
+        f"y_peak_to_peak_m={truth_y_peak_to_peak_m:.3f} "
+        f"xy_peak_to_peak_m={truth_xy_peak_to_peak_m:.3f} "
+        f"altitude_peak_to_peak_m={truth_altitude_peak_to_peak_m:.3f}"
     )
     if safety_abort:
         print(f"ARM_FLIGHT_ABORTED reason={safety_abort_reason}")

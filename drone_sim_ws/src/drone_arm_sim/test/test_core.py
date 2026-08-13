@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections import deque
+import math
 from pathlib import Path
 import re
 import sys
@@ -55,7 +56,8 @@ from drone_arm_sim.cartesian_arm_demo import (
     _trajectory_points,
     plan_tool_forward_path,
 )
-from drone_arm_sim.gazebo_sensor_delay import message_stamp_seconds
+import drone_arm_sim.gazebo_sensor_delay as sensor_delay_module
+from drone_arm_sim.gazebo_sensor_delay import RelaySpec, SensorDelayRelay, message_stamp_seconds
 from drone_arm_sim.model_analysis import UrdfModel, _rpy_matrix
 from drone_arm_sim.motor_evidence import validate_motor_thrust_evidence
 from drone_arm_sim.rl_env import make_default_env
@@ -363,6 +365,45 @@ class CoreRegressionTest(unittest.TestCase):
             header = Header()
         self.assertAlmostEqual(message_stamp_seconds(Message()), 12.345)
         self.assertAlmostEqual(message_stamp_seconds(object(), 7.5), 7.5)
+
+    def test_zero_delay_sensor_sample_is_forwarded_without_clock_callback(self):
+        class FakeMessage:
+            def __init__(self, stamp=0.0):
+                self.header = type("Header", (), {})()
+                self.header.stamp = type(
+                    "Stamp",
+                    (),
+                    {"sec": int(stamp), "nsec": int((stamp % 1.0) * 1e9)},
+                )()
+
+            def CopyFrom(self, other):
+                self.header = other.header
+
+        class FakePublisher:
+            def __init__(self):
+                self.messages = []
+
+            def publish(self, message):
+                self.messages.append(message)
+
+        original_rclpy = sensor_delay_module.rclpy
+        sensor_delay_module.rclpy = type("FakeRclpy", (), {"ok": staticmethod(lambda: True)})
+        try:
+            relay = SensorDelayRelay.__new__(SensorDelayRelay)
+            relay.simulation_time_s = 0.0
+            relay.lock = __import__("threading").Lock()
+            relay.last_published_source_time = {"imu": -math.inf}
+            relay.gz_publishers = {"imu": FakePublisher()}
+            spec = RelaySpec("imu", FakeMessage, "/raw", "/out", 0.0)
+            callback = relay._make_callback(spec)
+            callback(FakeMessage(1.004))
+            self.assertEqual(len(relay.gz_publishers["imu"].messages), 1)
+            callback(FakeMessage(1.004))
+            self.assertEqual(len(relay.gz_publishers["imu"].messages), 1)
+            callback(FakeMessage(1.008))
+            self.assertEqual(len(relay.gz_publishers["imu"].messages), 2)
+        finally:
+            sensor_delay_module.rclpy = original_rclpy
 
     def test_reachable_inverse_kinematics(self):
         source = {
@@ -987,6 +1028,15 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertAlmostEqual(home.mass_kg, 7.735, places=8)
         self.assertGreater(float(np.linalg.norm(moving.com_shift_m)), 1.0e-4)
         self.assertGreater(float(np.linalg.norm(moving.reaction_torque_body_nm)), 1.0e-4)
+        # Damping/friction remains available for diagnostics, but is an
+        # internal articulated-body load already transmitted by Gazebo and
+        # must not be injected into base_link a second time.
+        self.assertGreater(float(np.linalg.norm(moving.damping_torque_body_nm)), 1.0e-4)
+        self.assertFalse(np.allclose(
+            moving.reaction_torque_body_nm,
+            moving.damping_torque_body_nm,
+            atol=1.0e-8,
+        ))
         self.assertGreater(loaded.mass_kg, home.mass_kg)
         self.assertGreater(float(np.linalg.norm(loaded.com_shift_m)), float(np.linalg.norm(moving.com_shift_m)) * 0.1)
         self.assertTrue(np.all(np.linalg.eigvalsh(loaded.inertia_at_com_kg_m2) > 0.0))

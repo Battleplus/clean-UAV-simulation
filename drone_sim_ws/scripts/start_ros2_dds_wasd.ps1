@@ -21,9 +21,12 @@ if ($AttachGazeboGui) {
 # Keep the keyboard controller in a visible terminal so it owns stdin.  The
 # force feed-forward switch belongs to this process, independently of the
 # backend torque feed-forward switch.
-$wasdArgs = @("-d", "Ubuntu-24.04", "--")
+$wasdArgs = @(
+    "-d", "Ubuntu-24.04", "--", "env",
+    "PX4_TRUTH_HOLD_ENABLED=true"
+)
 if ($ArmCompensationTest) {
-    $wasdArgs += @("env", "ARM_FEEDFORWARD_ENABLED=true")
+    $wasdArgs += @("ARM_FEEDFORWARD_ENABLED=true")
 }
 $wasdArgs += @("bash", $scriptPath)
 Start-Process -FilePath "wsl.exe" -ArgumentList $wasdArgs

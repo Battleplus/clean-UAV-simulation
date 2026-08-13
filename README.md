@@ -1,5 +1,11 @@
 # clean-UAV-simulation
 
+## Base 1 联合补偿最新验收（2026-08-13）
+
+4 kg Base 1 已通过 SO101 动作 6 的完整联合实测：末端伸出 `0.10 m / 90 s`、保持 `8 s`、`90 s` 原路收回。世界 X/Y 峰峰值分别为 `0.035 / 0.033 m`，高度 `0.011 m`，最大倾角 `0.6°`，无电机饱和、failsafe 或异常落地。WASD 水平输入整形更新为 `0.15 m/s²`、`0.30 m/s³` 后，`0.40 m/s` 目标的实测峰值为 `0.437 m/s`，并完成起飞、各向速度、H 悬停和正常降落。
+
+完整机制、参数、原始日志和复现命令见 [Base 1 机械臂六维补偿最终验收](drone_sim_ws/analysis/base1/Base_1_机械臂六维补偿最终验收_20260813.md)。该结论仅适用于 4 kg Base 1；7.735 kg 正式质量版本仍需单独校准。
+
 ## Current verification status (steps 4-10)
 
 The reproducible verification record is [drone_sim_ws/analysis/第4-10步实测验收记录.md](drone_sim_ws/analysis/第4-10步实测验收记录.md).

@@ -396,7 +396,11 @@ class CoupledArmDynamics:
             )
             axis = axes.get(name, (np.zeros(3), np.zeros(3)))[1]
             d_torque -= axis * resisting[index]
-        reaction_torque += d_torque
+        # Joint damping/friction is an internal actuator-load pair.  Gazebo
+        # already applies its equal-and-opposite effect through the articulated
+        # dynamics, so injecting it again at base_link double counts the load.
+        # Keep it as a diagnostic, but expose only the rigid-body momentum
+        # derivative as the external base-reaction feed-forward candidate.
         home_center = (
             self.home_com
             if payload is None
@@ -475,7 +479,8 @@ class CoupledArmDynamics:
             axis = axes.get(name, (np.zeros(3), np.zeros(3)))[1]
             # Equal/opposite internal joint torque transmitted to the base.
             d_torque -= axis * resisting[index]
-        reaction_torque += d_torque
+        # Match state(): damping/friction remains diagnostic-only and must not
+        # be added a second time to the base reaction wrench.
         _, home_center, _ = self.mass_properties({}, payload)
         return CoupledState(
             mass_kg=mass,

@@ -13,6 +13,9 @@ from drone_arm_sim.base1_wrench_reallocator import (
     config_thrust_n_to_commands,
     flight_state_allows_compensation,
     motor_order_to_config_order,
+    position_feedback_force_frd,
+    quaternion_xyzw_to_rotation_body_to_world,
+    relative_gravity_wrench,
     slew_vector,
 )
 
@@ -90,6 +93,20 @@ class Base1WrenchReallocatorTest(unittest.TestCase):
             result, [-0.1, 0.2, 0.3, -0.03, 0.045, 0.06], atol=1e-12
         )
 
+    def test_gravity_compensation_is_incremental_from_takeoff_trim(self):
+        reference = np.asarray([0.0, 0.0, 0.0, 0.04, -0.01, 0.0])
+        current = np.asarray([0.0, 0.0, 0.0, 0.16, 0.02, -0.01])
+        np.testing.assert_array_equal(
+            relative_gravity_wrench(current, reference),
+            np.asarray([0.0, 0.0, 0.0, 0.12, 0.03, -0.01]),
+        )
+        np.testing.assert_array_equal(
+            relative_gravity_wrench(reference, reference), np.zeros(6)
+        )
+        np.testing.assert_array_equal(
+            relative_gravity_wrench(current, None), np.zeros(6)
+        )
+
     def test_stale_target_slews_to_zero_without_freezing(self):
         current = np.asarray([0.2, -0.1, 0.05, 0.02, -0.01, 0.03])
         first = slew_vector(current, np.zeros(6), 0.1, 0.5, 0.1)
@@ -105,6 +122,41 @@ class Base1WrenchReallocatorTest(unittest.TestCase):
         self.assertFalse(
             flight_state_allows_compensation(True, True, float("inf"), 0.5)
         )
+
+    def test_position_feedback_force_is_bounded_and_converted_to_frd(self):
+        force = position_feedback_force_frd(
+            np.asarray([0.0, 0.0, 1.0]),
+            np.asarray([0.10, -0.10, 0.90]),
+            np.asarray([0.02, -0.01, 0.03]),
+            np.eye(3),
+            position_gain_n_m=4.0,
+            velocity_gain_n_s_m=2.0,
+            horizontal_limit_n=0.20,
+            vertical_limit_n=0.15,
+        )
+        # Raw ENU force is [-.44, .42, .34], then horizontal/vertical limits
+        # apply before FLU [x,y,z] -> FRD [x,-y,-z].
+        self.assertAlmostEqual(float(np.linalg.norm(force[:2])), 0.20, places=12)
+        self.assertLess(force[0], 0.0)
+        self.assertLess(force[1], 0.0)
+        self.assertAlmostEqual(force[2], -0.15, places=12)
+
+    def test_position_feedback_rotates_world_force_into_body(self):
+        # +90 degree yaw maps body +X to world +Y.
+        q = np.asarray([0.0, 0.0, np.sqrt(0.5), np.sqrt(0.5)])
+        rotation = quaternion_xyzw_to_rotation_body_to_world(q)
+        np.testing.assert_allclose(rotation @ [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], atol=1e-12)
+        force = position_feedback_force_frd(
+            np.asarray([0.0, 1.0, 0.0]),
+            np.zeros(3),
+            np.zeros(3),
+            rotation,
+            position_gain_n_m=1.0,
+            velocity_gain_n_s_m=0.0,
+            horizontal_limit_n=2.0,
+            vertical_limit_n=1.0,
+        )
+        np.testing.assert_allclose(force, [1.0, 0.0, 0.0], atol=1e-12)
 
 
 if __name__ == "__main__":

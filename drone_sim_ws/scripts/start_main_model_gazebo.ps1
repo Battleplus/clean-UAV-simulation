@@ -21,18 +21,10 @@ $wslArgs = @(
     "CLEAN_STALE_RUNTIME=1"
 )
 if ($ArmCompensationTest) {
-    # Conservative, explicitly opt-in 4 kg experiment.  Keep the disturbance
-    # observer off so this run tests only model-based force/torque terms.
-    $wslArgs += @(
-        "ARM_TORQUE_FEEDFORWARD_ENABLED=true",
-        "ARM_REACTION_TORQUE_FEEDFORWARD_GAIN=0.25",
-        "ARM_TORQUE_FEEDFORWARD_MAX_DELTA_N=0.05",
-        "ARM_STATIC_COM_FEEDFORWARD_GAIN=0.25",
-        "ARM_STATIC_COM_FEEDFORWARD_TIME_CONSTANT_S=2.0",
-        "ARM_DISTURBANCE_OBSERVER_ENABLED=false",
-        "PX4_READY_STABLE_TIMEOUT_S=180"
-    )
-    Write-Host "Arm compensation experiment: force FF + 25% reaction/COM torque FF" -ForegroundColor Yellow
+    # Kept for command-line compatibility.  The rejected legacy feed-forward
+    # experiment is no longer enabled; the validated gravity-only Base 1
+    # overlay starts automatically whenever arm control is enabled.
+    Write-Host "Arm compensation is now part of the validated Base 1 startup." -ForegroundColor Green
 }
 $wslArgs += @("bash", $scriptPath)
 

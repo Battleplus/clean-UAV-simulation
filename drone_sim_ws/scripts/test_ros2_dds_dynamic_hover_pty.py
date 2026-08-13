@@ -266,11 +266,19 @@ def main() -> int:
     if detailed_steady:
         px4_z = [state[5] for state in detailed_steady]
         px4_vz = [state[8] for state in detailed_steady]
+        truth_x = [state[9] for state in detailed_steady]
+        truth_y = [state[10] for state in detailed_steady]
         truth_z = [state[11] for state in detailed_steady]
         truth_vz = [state[14] for state in detailed_steady]
         report.update({
             "px4_height_peak_to_peak_m": max(px4_z) - min(px4_z),
             "truth_height_peak_to_peak_m": max(truth_z) - min(truth_z),
+            "truth_x_peak_to_peak_m": max(truth_x) - min(truth_x),
+            "truth_y_peak_to_peak_m": max(truth_y) - min(truth_y),
+            "truth_xy_peak_to_peak_m": max(
+                max(truth_x) - min(truth_x),
+                max(truth_y) - min(truth_y),
+            ),
             "px4_vertical_speed_abs_p90_m_s": float(np.percentile(np.abs(px4_vz), 90)),
             "px4_vertical_speed_abs_max_m_s": max(abs(value) for value in px4_vz),
             "truth_vertical_speed_abs_p90_m_s": float(np.percentile(np.abs(truth_vz), 90)),
