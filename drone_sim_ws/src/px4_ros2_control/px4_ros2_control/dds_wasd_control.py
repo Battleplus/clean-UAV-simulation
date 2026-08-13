@@ -237,10 +237,10 @@ class DdsWasdControl(Node):
     )
     YAW_ACCEL_LIMIT_RAD_S2 = math.radians(
         # Direct Q->E reversal with 30 deg/s^2 caused a 0.223 m/s vertical
-        # coupling transient.  20 deg/s^2, together with the debug yaw-rate
-        # integral tune, held the transient to 0.035 m/s and yaw overshoot to
-        # 2.7%.  The 15 deg/s latched yaw-rate limit is unchanged.
-        float(os.environ.get("PX4_WASD_YAW_ACCEL_DEG_S2", "20.0"))
+        # coupling transient. A later clean full-sequence run still reached
+        # 17.1 deg/s with the 15 deg/s target, so use 15 deg/s^2 to retain the
+        # target rate while reducing the reversal transient.
+        float(os.environ.get("PX4_WASD_YAW_ACCEL_DEG_S2", "15.0"))
     )
     RELEASE_HORIZONTAL_SPEED_M_S = float(
         os.environ.get("PX4_WASD_RELEASE_HORIZONTAL_SPEED_M_S", "0.08")

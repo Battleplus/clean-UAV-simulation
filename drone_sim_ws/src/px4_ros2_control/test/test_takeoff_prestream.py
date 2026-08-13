@@ -404,7 +404,7 @@ def test_tuned_vertical_s_curve_defaults_preserve_speed_and_jerk_contract():
     assert DdsWasdControl.VERTICAL_ACCEL_LIMIT_M_S2 == pytest.approx(0.18)
     assert DdsWasdControl.VERTICAL_JERK_LIMIT_M_S3 == pytest.approx(0.40)
     assert DdsWasdControl.YAW_RATE_RAD_S == pytest.approx(np.deg2rad(15.0))
-    assert DdsWasdControl.YAW_ACCEL_LIMIT_RAD_S2 == pytest.approx(np.deg2rad(20.0))
+    assert DdsWasdControl.YAW_ACCEL_LIMIT_RAD_S2 == pytest.approx(np.deg2rad(15.0))
 
 
 def test_position_and_velocity_setpoints_are_mutually_exclusive():
