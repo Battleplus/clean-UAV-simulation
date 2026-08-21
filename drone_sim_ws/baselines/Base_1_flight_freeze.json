@@ -1,6 +1,6 @@
 {
   "schema": "my_drone.base1-armcomp-candidate.v1",
-  "generated_utc": "2026-08-21T15:16:34.480084+00:00",
+  "generated_utc": "2026-08-21T16:12:34.194124+00:00",
   "reference": "base-1",
   "reference_commit": "b340ed6ce77ac4f7820be5a80edba783ce7b55ec",
   "expected_base1_commit_prefix": "b340ed6",
@@ -15,13 +15,10 @@
     {
       "path": "drone_sim_ws/px4/airframes/4027_gz_my_drone_octorotor_debug_4kg",
       "base1_sha256": "216934aecb99f3f5ca2cde251de023424d780f8f8b4e906b5d6a997dbdb7ccba",
-      "worktree_raw_sha256": "42ad4fb696664d9770ae51dc8d39f2e881f1e8e052e1a16867ecc51ba1909ab3",
-      "worktree_canonical_sha256": "7473864df8afb66185892961905dcc015c588bd4964628c561b16715c9557151",
+      "worktree_raw_sha256": "216934aecb99f3f5ca2cde251de023424d780f8f8b4e906b5d6a997dbdb7ccba",
+      "worktree_canonical_sha256": "216934aecb99f3f5ca2cde251de023424d780f8f8b4e906b5d6a997dbdb7ccba",
       "comparison": "SHA-256 after CRLF/CR to LF normalization",
-      "matches_base1": false,
-      "intentional": true,
-      "change_reason": "EV velocity/yaw aiding + PX4 controller retune for arm compensation",
-      "affects_baseline": true
+      "matches_base1": true
     },
     {
       "path": "drone_sim_ws/scripts/run_ros2_dds_wasd.sh",
@@ -129,8 +126,8 @@
     {
       "path": "drone_sim_ws/src/px4_ros2_control/px4_ros2_control/dds_wasd_control.py",
       "base1_sha256": "f55180701d3e3a9c0d2d2de0f0cbe89678efe11b40ccb68ffc027cd15ef28278",
-      "worktree_raw_sha256": "2048e7118f696abee6543423769470bdd189d64545125b8a4434645580b92cd7",
-      "worktree_canonical_sha256": "49dd55f089811df49c424aa5ac290fb82e69059ee5086bc2ff5a1900392ead4a",
+      "worktree_raw_sha256": "1d8f9bb91b1c38e5be048b1c7b64a62b04644a6e695b3b40f50293091adf4bf8",
+      "worktree_canonical_sha256": "acdd45f1e24587e03ea39b7e36f3330ca613a64262b378c31b988f1d2c8ef283",
       "comparison": "SHA-256 after CRLF/CR to LF normalization",
       "matches_base1": false,
       "intentional": true,
@@ -139,12 +136,11 @@
     }
   ],
   "total_core_files": 13,
-  "unchanged_count": 6,
-  "intentional_change_count": 7,
+  "unchanged_count": 7,
+  "intentional_change_count": 6,
   "unaccounted_change_count": 0,
   "all_core_files_match": false,
   "mismatches": [
-    "drone_sim_ws/px4/airframes/4027_gz_my_drone_octorotor_debug_4kg",
     "drone_sim_ws/scripts/start_main_model_gazebo.ps1",
     "drone_sim_ws/scripts/start_ros2_dds_wasd.ps1",
     "drone_sim_ws/scripts/wsl_start_ros2_dds_debug_4kg.sh",
@@ -154,10 +150,6 @@
   ],
   "unaccounted_mismatches": [],
   "intentional_differences": {
-    "drone_sim_ws/px4/airframes/4027_gz_my_drone_octorotor_debug_4kg": {
-      "change_reason": "EV velocity/yaw aiding + PX4 controller retune for arm compensation",
-      "affects_baseline": true
-    },
     "drone_sim_ws/scripts/start_main_model_gazebo.ps1": {
       "change_reason": "armcomp overlay activation + DISARMED guard",
       "affects_baseline": false

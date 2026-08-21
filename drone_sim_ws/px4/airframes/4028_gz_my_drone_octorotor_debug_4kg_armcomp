@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# @name Gazebo my_drone CAD debug 4kg ideal
+# @name Gazebo my_drone CAD debug 4kg armcomp
 #
 # @type Octocopter
 # @class Copter
@@ -112,18 +112,30 @@ param set-default SIM_GZ_EC_MAX8 1000
 param set-default MPC_THR_HOVER 0.4811
 param set-default MPC_ALT_MODE 0
 param set-default EKF2_BARO_DELAY 0
+# Preserve the Base 1 position/velocity/height estimator: GNSS horizontal
+# aiding and barometric height.  Fuse Gazebo odometry velocity and yaw
+# (bits 2 and 3), while deliberately leaving EV position disabled.  This lets
+# PX4's native velocity loop reject GNSS-velocity noise without creating a
+# second absolute-position reference or changing the Base 1 position origin.
 param set-default EKF2_BARO_CTRL 1
 param set-default EKF2_GPS_CTRL 5
+param set-default EKF2_EV_CTRL 12
+param set-default EKF2_EVA_NOISE 0.05
+param set-default EKF2_EVV_NOISE 0.05
 param set-default EKF2_HGT_REF 0
-param set-default MPC_XY_P 2.20
-param set-default MPC_XY_VEL_P_ACC 1.00
-param set-default MPC_XY_VEL_I_ACC 0.10
-param set-default MPC_XY_VEL_D_ACC 0.35
+# Use this PX4 build's documented multicopter cascade defaults.  The earlier
+# 2.20 outer XY gain repeatedly crossed the hold point by 8--14 cm even with
+# negligible arm motion, so it could not serve as a position-stable Base 1
+# derivative for arm compensation measurements.
+param set-default MPC_XY_P 0.95
+param set-default MPC_XY_VEL_P_ACC 1.80
+param set-default MPC_XY_VEL_I_ACC 0.40
+param set-default MPC_XY_VEL_D_ACC 0.20
 param set-default MPC_XY_VEL_MAX 0.40
-param set-default MPC_Z_P 0.35
-param set-default MPC_Z_VEL_P_ACC 2.20
-param set-default MPC_Z_VEL_I_ACC 0.20
-param set-default MPC_Z_VEL_D_ACC 0.20
+param set-default MPC_Z_P 1.00
+param set-default MPC_Z_VEL_P_ACC 4.00
+param set-default MPC_Z_VEL_I_ACC 2.00
+param set-default MPC_Z_VEL_D_ACC 0.00
 param set-default MPC_TKO_RAMP_T 1.00
 param set-default MPC_Z_VEL_MAX_UP 0.25
 param set-default MPC_Z_VEL_MAX_DN 0.25
