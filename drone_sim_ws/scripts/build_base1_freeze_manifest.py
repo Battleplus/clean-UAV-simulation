@@ -54,6 +54,42 @@ def git_commit(root: Path, ref: str) -> str:
     ).strip()
 
 
+# Intentional differences from base-1 for the armcomp candidate.
+# Each entry documents WHY a core file was changed and whether it
+# affects the flight baseline.  The manifest test uses this list to
+# verify that every mismatch is accounted for — no silent drift.
+INTENTIONAL_DIFFERENCES = {
+    "drone_sim_ws/px4/airframes/4027_gz_my_drone_octorotor_debug_4kg": {
+        "change_reason": "EV velocity/yaw aiding + PX4 controller retune for arm compensation",
+        "affects_baseline": True,
+    },
+    "drone_sim_ws/scripts/start_main_model_gazebo.ps1": {
+        "change_reason": "armcomp overlay activation + DISARMED guard",
+        "affects_baseline": False,
+    },
+    "drone_sim_ws/scripts/start_ros2_dds_wasd.ps1": {
+        "change_reason": "remove ARM_FEEDFORWARD_ENABLED legacy switch",
+        "affects_baseline": False,
+    },
+    "drone_sim_ws/scripts/wsl_start_ros2_dds_debug_4kg.sh": {
+        "change_reason": "WASD tune for armcomp derivative profile",
+        "affects_baseline": True,
+    },
+    "drone_sim_ws/scripts/wsl_start_ros2_dds_noarm.sh": {
+        "change_reason": "armcomp overlay activation",
+        "affects_baseline": False,
+    },
+    "drone_sim_ws/src/drone_arm_sim/urdf/my_drone_v3/my_drone_cad_debug_4kg.urdf": {
+        "change_reason": "baro noise model update for armcomp profile",
+        "affects_baseline": True,
+    },
+    "drone_sim_ws/src/px4_ros2_control/px4_ros2_control/dds_wasd_control.py": {
+        "change_reason": "truth-hold body-to-world frame fix + sim-time semantics",
+        "affects_baseline": False,
+    },
+}
+
+
 def build_manifest(root: Path, ref: str) -> dict:
     commit = git_commit(root, ref)
     records = []
@@ -67,26 +103,34 @@ def build_manifest(root: Path, ref: str) -> dict:
             sha256(canonical_text(local_payload)) if local_payload is not None else None
         )
         matches = local_canonical_hash == reference_hash
-        records.append(
-            {
-                "path": relative,
-                "base1_sha256": reference_hash,
-                "worktree_raw_sha256": local_hash,
-                "worktree_canonical_sha256": local_canonical_hash,
-                "comparison": "SHA-256 after CRLF/CR to LF normalization",
-                "matches_base1": matches,
-            }
-        )
+        record = {
+            "path": relative,
+            "base1_sha256": reference_hash,
+            "worktree_raw_sha256": local_hash,
+            "worktree_canonical_sha256": local_canonical_hash,
+            "comparison": "SHA-256 after CRLF/CR to LF normalization",
+            "matches_base1": matches,
+        }
         if not matches:
             mismatches.append(relative)
+            if relative in INTENTIONAL_DIFFERENCES:
+                record["intentional"] = True
+                record["change_reason"] = INTENTIONAL_DIFFERENCES[relative]["change_reason"]
+                record["affects_baseline"] = INTENTIONAL_DIFFERENCES[relative]["affects_baseline"]
+            else:
+                record["intentional"] = False
+                record["change_reason"] = "UNACCOUNTED — must be explained or reverted"
+        records.append(record)
+
+    unaccounted = [m for m in mismatches if m not in INTENTIONAL_DIFFERENCES]
 
     return {
-        "schema": "my_drone.base1-flight-freeze.v1",
+        "schema": "my_drone.base1-armcomp-candidate.v1",
         "generated_utc": datetime.now(timezone.utc).isoformat(),
         "reference": ref,
         "reference_commit": commit,
         "expected_base1_commit_prefix": BASE1_COMMIT,
-        "scope": "4kg Base 1 flight only; 7.735kg explicitly excluded",
+        "scope": "4kg armcomp candidate; derived from Base 1 with intentional deltas",
         "default_compensation": {
             "ARM_FEEDFORWARD_ENABLED": False,
             "ARM_TORQUE_FEEDFORWARD_ENABLED": False,
@@ -94,8 +138,16 @@ def build_manifest(root: Path, ref: str) -> dict:
             "ARM_DISTURBANCE_OBSERVER_ENABLED": False,
         },
         "files": records,
+        "total_core_files": len(CORE_PATHS),
+        "unchanged_count": len(CORE_PATHS) - len(mismatches),
+        "intentional_change_count": len(mismatches) - len(unaccounted),
+        "unaccounted_change_count": len(unaccounted),
         "all_core_files_match": not mismatches,
         "mismatches": mismatches,
+        "unaccounted_mismatches": unaccounted,
+        "intentional_differences": {
+            k: v for k, v in INTENTIONAL_DIFFERENCES.items() if k in mismatches
+        },
     }
 
 
@@ -127,11 +179,18 @@ def main() -> int:
     output.write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
-    print(f"BASE1_FREEZE_MANIFEST {output}")
+    print(f"BASE1_CANDIDATE_MANIFEST {output}")
     print(f"BASE1_CORE_MATCH={str(manifest['all_core_files_match']).lower()}")
+    print(f"INTENTIONAL_CHANGES={manifest['intentional_change_count']}")
+    print(f"UNACCOUNTED_CHANGES={manifest['unaccounted_change_count']}")
     if manifest["mismatches"]:
         print("BASE1_MISMATCHES=" + ",".join(manifest["mismatches"]))
-    return 0 if manifest["all_core_files_match"] or args.allow_mismatch else 2
+    if manifest["unaccounted_mismatches"]:
+        print(
+            "BASE1_UNACCOUNTED=" + ",".join(manifest["unaccounted_mismatches"])
+        )
+    has_unaccounted = bool(manifest["unaccounted_mismatches"])
+    return 0 if not has_unaccounted or args.allow_mismatch else 2
 
 
 if __name__ == "__main__":
