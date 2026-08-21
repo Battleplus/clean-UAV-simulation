@@ -315,7 +315,7 @@ class DdsWasdControl(Node):
         self.gazebo_truth_rpy: Optional[np.ndarray] = None
         self.gazebo_truth_angular_velocity: Optional[np.ndarray] = None
         self.last_gazebo_truth_monotonic = 0.0
-        self.last_gazebo_truth_filter_monotonic = 0.0
+        self._last_gazebo_truth_filter_sim_s = 0.0
         self.truth_hold_target_enu: Optional[np.ndarray] = None
         self.truth_hold_stale_reported = False
         self.actuator_outputs: Optional[ActuatorOutputs] = None
@@ -341,6 +341,7 @@ class DdsWasdControl(Node):
         self.yaw_hold_rad = float("nan")
         self.yaw_hold_pending = False
         self.last_control_tick_monotonic = time.monotonic()
+        self._last_dynamics_tick_s = time.monotonic()
         self.pending_takeoff = False
         self.offboard_requested = False
         self.landing_requested = False
@@ -497,6 +498,18 @@ class DdsWasdControl(Node):
     def now_us(self) -> int:
         return self.get_clock().now().nanoseconds // 1000
 
+    def _dynamics_now(self) -> float:
+        """Return simulation-time seconds for dynamics calculations.
+
+        When use_sim_time is true (Gazebo lockstep), this returns the
+        sim clock so that jerk/slew/trajectory dt matches physical time.
+        When use_sim_time is false, falls back to wall-clock monotonic.
+        """
+        try:
+            return self.get_clock().now().nanoseconds / 1.0e9
+        except Exception:
+            return time.monotonic()
+
     def _status_cb(self, msg: VehicleStatus) -> None:
         self.status = msg
         self.last_status_monotonic = time.monotonic()
@@ -516,7 +529,8 @@ class DdsWasdControl(Node):
         ], dtype=float)
 
     def _gazebo_truth_cb(self, msg: GazeboOdometry) -> None:
-        now_monotonic = time.monotonic()
+        now_monotonic = time.monotonic()  # wall-clock for freshness watchdog
+        now_sim_s = self._dynamics_now()  # sim-time for filter dt
         self.gazebo_truth_enu = np.array(
             [
                 float(msg.pose.pose.position.x),
@@ -538,7 +552,7 @@ class DdsWasdControl(Node):
         )
         self.gazebo_truth_velocity_enu = rot_body_to_world @ velocity_body_flu
         filter_tau_s = max(0.0, self.TRUTH_HOLD_VELOCITY_FILTER_TAU_S)
-        filter_dt_s = now_monotonic - self.last_gazebo_truth_filter_monotonic
+        filter_dt_s = now_sim_s - self._last_gazebo_truth_filter_sim_s
         if (
             self.gazebo_truth_velocity_filtered_enu is None
             or filter_tau_s <= 0.0
@@ -558,7 +572,7 @@ class DdsWasdControl(Node):
                 self.gazebo_truth_velocity_enu
                 - self.gazebo_truth_velocity_filtered_enu
             )
-        self.last_gazebo_truth_filter_monotonic = now_monotonic
+        self._last_gazebo_truth_filter_sim_s = now_sim_s
         orientation = msg.pose.pose.orientation
         self.gazebo_truth_rpy = self._quaternion_wxyz_to_rpy(
             [orientation.w, orientation.x, orientation.y, orientation.z]
@@ -1341,9 +1355,11 @@ class DdsWasdControl(Node):
                 self.exit_requested = True
 
     def _tick(self) -> None:
-        now = time.monotonic()
-        dt = now - self.last_control_tick_monotonic
-        self.last_control_tick_monotonic = now
+        wall_now = time.monotonic()
+        sim_now = self._dynamics_now()
+        dt = sim_now - self._last_dynamics_tick_s
+        self._last_dynamics_tick_s = sim_now
+        now = wall_now  # keep wall-clock for timeout/watchdog checks
         self.publish_rl_observation()
         state_report_period_s = 1.0 / max(0.2, min(20.0, self.STATE_REPORT_HZ))
         if self.status and self.local and now - self.last_state_report >= state_report_period_s:
