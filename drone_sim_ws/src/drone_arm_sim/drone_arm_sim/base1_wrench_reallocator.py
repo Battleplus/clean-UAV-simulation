@@ -273,6 +273,9 @@ def allocate_total_wrench(
     compensation_wrench: np.ndarray,
     *,
     maximum_motor_delta_n: float,
+    force_limit_n: float = 60.0,
+    reaction_torque_limit_nm: float = 1.0,
+    gravity_torque_limit_nm: float = 1.0,
     regularization: float = 1.0e-7,
 ) -> dict:
     """Perform one bounded 6x8 allocation around the PX4 Base 1 solution."""
@@ -307,6 +310,18 @@ def allocate_total_wrench(
     residual = realized - desired_wrench
     commands = config_thrust_n_to_commands(config, thrust)
     tolerance = max(1.0e-9, 1.0e-6 * maximum)
+
+    # Dimensionless weighted residual: force components normalized by
+    # force_limit_n, torque components by max(reaction, gravity) limit.
+    # This avoids mixing N and N·m in a single L2 norm.
+    torque_limit = max(reaction_torque_limit_nm, gravity_torque_limit_nm, 1.0e-9)
+    weights = np.array([
+        force_limit_n, force_limit_n, force_limit_n,
+        torque_limit, torque_limit, torque_limit,
+    ])
+    residual_normalized = residual / weights
+    residual_norm = float(np.linalg.norm(residual_normalized))
+
     return {
         "commands_motor_order": commands,
         "base_thrust_config_order_n": base_thrust,
@@ -315,7 +330,10 @@ def allocate_total_wrench(
         "desired_wrench_frd": desired_wrench,
         "realized_wrench_frd": realized,
         "residual_frd": residual,
-        "residual_norm": float(np.linalg.norm(residual)),
+        "residual_normalized": residual_normalized.tolist(),
+        "residual_norm": residual_norm,
+        "residual_force_norm_n": float(np.linalg.norm(residual[:3])),
+        "residual_torque_norm_nm": float(np.linalg.norm(residual[3:])),
         "success": bool(result.success),
         "saturated_low": thrust <= lower + tolerance,
         "saturated_high": thrust >= upper - tolerance,
@@ -623,6 +641,9 @@ class Base1WrenchReallocator(Node):
             commands,
             self.current_compensation,
             maximum_motor_delta_n=self.maximum_motor_delta_n,
+            force_limit_n=self.force_limit_n,
+            reaction_torque_limit_nm=self.reaction_torque_limit_nm,
+            gravity_torque_limit_nm=self.gravity_torque_limit_nm,
         )
         if (
             not allocation["success"]
