@@ -71,7 +71,7 @@ def parse_log(path: Path) -> dict:
     return {
         "log": str(path.resolve()),
         "pass": raw_pass_marker,
-        "accepted_pass": raw_pass_marker or full_sequence_gate_pass,
+        "accepted_pass": full_sequence_gate_pass,
         "full_sequence_gate_pass": full_sequence_gate_pass,
         "relative_climb_pass": relative_climb,
         "dynamic_gate_pass": dynamic_gate_pass,
