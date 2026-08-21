@@ -26,7 +26,10 @@ $wasdArgs = @(
     "PX4_TRUTH_HOLD_ENABLED=true"
 )
 if ($ArmCompensationTest) {
-    $wasdArgs += @("ARM_FEEDFORWARD_ENABLED=true")
+    # The old ARM_FEEDFORWARD_ENABLED acceleration path is removed.
+    # Compensation is now handled exclusively by the pre-allocation
+    # wrench reallocator overlay (activate_base1_wrench_reallocator_overlay.sh).
+    Write-Host "Arm compensation: using new 6D wrench reallocator overlay (not legacy feed-forward)." -ForegroundColor Green
 }
 $wasdArgs += @("bash", $scriptPath)
 Start-Process -FilePath "wsl.exe" -ArgumentList $wasdArgs

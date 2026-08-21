@@ -92,9 +92,30 @@ if ! ros2 topic list 2>/dev/null | grep -qx "${output_topic}"; then
   exit 1
 fi
 
+# ── Disarmed gate ──────────────────────────────────────────────────────
+# The aircraft must be DISARMED before swapping the motor subscriber.
+# Query PX4 VehicleStatus; refuse if armed or stale.
+VEH_STATUS_TOPIC="/fmu/out/vehicle_status_v4"
+MAX_STATUS_WAIT_S=3
+_status_start=$(date +%s%N 2>/dev/null || echo 0)
+_found_disarmed=false
+for _ in $(seq 1 60); do
+  # Read the latest VehicleStatus via ros2 topic echo (timeout 0.2s).
+  _raw=$(timeout 0.2 ros2 topic echo --once "${VEH_STATUS_TOPIC}" 2>/dev/null || true)
+  if echo "${_raw}" | grep -q 'ARMING_STATE_DISARMED'; then
+    _found_disarmed=true
+    break
+  fi
+  sleep 0.05
+done
+if [[ "${_found_disarmed}" != "true" ]]; then
+  echo "REFUSED: VehicleStatus did not show DISARMED within ${MAX_STATUS_WAIT_S}s" >&2
+  kill "${reallocator_pid}" 2>/dev/null || true
+  exit 1
+fi
+
 # The original frozen launch starts exactly one direct-motor process.  Stop
-# that subscriber only after the replacement command stream exists.  The
-# aircraft must still be disarmed/on the ground when this overlay is enabled.
+# that subscriber only after the replacement command stream exists.
 mapfile -t old_motor_pids < <(pgrep -x gazebo_direct_m || true)
 if [[ "${#old_motor_pids[@]}" -ne 1 ]]; then
   echo "REFUSED: expected exactly one Base 1 direct-motor process, found ${#old_motor_pids[@]}" >&2
@@ -130,7 +151,29 @@ echo "${motor_pid}" >"${runtime_dir}/base1_overlay_motor.pid"
 sleep 1
 if ! kill -0 "${motor_pid}" 2>/dev/null; then
   cat "${runtime_dir}/base1_overlay_motor.log" >&2 || true
-  echo "Base 1 overlay motor failed; refusing to arm" >&2
+  echo "Base 1 overlay motor failed; attempting rollback" >&2
+  # Rollback: restart the original direct-motor subscriber.
+  rollback_args=(
+    --config "${config_file}"
+    --entity-name base_link
+    --command-topic /my_drone/command/motor_speed
+    --reaction-moment-ratio-m "${REACTION_MOMENT_RATIO_M:-0.005}"
+    --battery-dynamics-enabled false
+    --arm-torque-feedforward-enabled false
+    --arm-disturbance-observer-enabled false
+  )
+  setsid ros2 run drone_arm_sim gazebo_direct_motor_model "${rollback_args[@]}" \
+    >"${runtime_dir}/base1_rollback_motor.log" 2>&1 &
+  rollback_pid=$!
+  echo "${rollback_pid}" >"${runtime_dir}/base1_rollback_motor.pid"
+  sleep 1
+  if kill -0 "${rollback_pid}" 2>/dev/null; then
+    echo "Rollback: original motor subscriber restarted (pid ${rollback_pid})" >&2
+  else
+    echo "CRITICAL: rollback motor also failed" >&2
+    cat "${runtime_dir}/base1_rollback_motor.log" >&2 || true
+  fi
+  kill "${reallocator_pid}" 2>/dev/null || true
   exit 1
 fi
 

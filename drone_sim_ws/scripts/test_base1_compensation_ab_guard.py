@@ -30,7 +30,7 @@ class Base1CompensationABGuardTest(unittest.TestCase):
 
     def test_px4_status_timeout_aborts_driver_without_waiting_full_timeout(self):
         text = FLIGHT_DRIVER.read_text(encoding="utf-8")
-        self.assertIn("PX4 status timeout: stopping Offboard stream", text)
+        self.assertIn("OFFBOARD_STREAM_STOPPED ", text)
         self.assertIn("ARM_FLIGHT_CONTROLLER_STREAM_STOPPED", text)
 
 

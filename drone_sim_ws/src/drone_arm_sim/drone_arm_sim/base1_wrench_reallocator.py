@@ -562,8 +562,18 @@ class Base1WrenchReallocator(Node):
             np.min(maximum - base_thrust) >= self.minimum_headroom_n
             and np.min(base_thrust) >= self.minimum_headroom_n
         )
+
+        # ── Hard safety gate: bypass immediately ─────────────────────────
+        # Disarmed / not Offboard / no headroom → zero compensation and
+        # forward the unmodified PX4 message on the very next frame.
+        # Estimator source stale → controlled fade-out via slew.
+        if not flight_allowed or not has_headroom:
+            self.current_compensation[:] = 0.0
+            self.publisher.publish(message)
+            return
+
         target = np.zeros(6)
-        if source_fresh and flight_allowed and has_headroom:
+        if source_fresh:
             gravity_delta = relative_gravity_wrench(
                 self.gravity_wrench_flu, self.gravity_reference_flu
             )
@@ -582,8 +592,6 @@ class Base1WrenchReallocator(Node):
             self.position_feedback_enabled
             and motion_active
             and truth_fresh
-            and flight_allowed
-            and has_headroom
             and self.position_target_world_enu is not None
             and self.truth_position_world_enu is not None
             and self.truth_velocity_body_flu is not None

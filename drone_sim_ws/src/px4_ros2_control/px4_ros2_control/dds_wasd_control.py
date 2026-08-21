@@ -502,6 +502,19 @@ class DdsWasdControl(Node):
         self.last_status_monotonic = time.monotonic()
         self.status_stale_reported = False
 
+    @staticmethod
+    def _quaternion_wxyz_to_rotation_body_to_world(q_wxyz: np.ndarray) -> np.ndarray:
+        """Return the 3x3 rotation matrix from body FLU to world ENU."""
+        q = np.asarray(q_wxyz, dtype=float)
+        if q.shape != (4,) or not np.all(np.isfinite(q)) or np.linalg.norm(q) < 1.0e-9:
+            return np.eye(3)
+        w, x, y, z = q / np.linalg.norm(q)
+        return np.array([
+            [1 - 2*(y*y + z*z), 2*(x*y - z*w),     2*(x*z + y*w)],
+            [2*(x*y + z*w),     1 - 2*(x*x + z*z), 2*(y*z - x*w)],
+            [2*(x*z - y*w),     2*(y*z + x*w),     1 - 2*(x*x + y*y)],
+        ], dtype=float)
+
     def _gazebo_truth_cb(self, msg: GazeboOdometry) -> None:
         now_monotonic = time.monotonic()
         self.gazebo_truth_enu = np.array(
@@ -511,13 +524,19 @@ class DdsWasdControl(Node):
                 float(msg.pose.pose.position.z),
             ]
         )
-        self.gazebo_truth_velocity_enu = np.array(
+        # Gazebo Odometry twist is in base_link (body FLU), not world ENU.
+        velocity_body_flu = np.array(
             [
                 float(msg.twist.twist.linear.x),
                 float(msg.twist.twist.linear.y),
                 float(msg.twist.twist.linear.z),
             ]
         )
+        orientation = msg.pose.pose.orientation
+        rot_body_to_world = self._quaternion_wxyz_to_rotation_body_to_world(
+            np.array([orientation.w, orientation.x, orientation.y, orientation.z])
+        )
+        self.gazebo_truth_velocity_enu = rot_body_to_world @ velocity_body_flu
         filter_tau_s = max(0.0, self.TRUTH_HOLD_VELOCITY_FILTER_TAU_S)
         filter_dt_s = now_monotonic - self.last_gazebo_truth_filter_monotonic
         if (
@@ -1508,7 +1527,7 @@ class DdsWasdControl(Node):
             else self.LOCAL_POSITION_TIMEOUT_S
         )
         if not self.local_position_fresh(local_timeout_s):
-            self.get_logger().error("PX4 local-position timeout: stopping Offboard stream")
+            self.get_logger().error("OFFBOARD_STREAM_STOPPED reason=local_position_stale")
             self.offboard_requested = False
             return
         if not self.status_fresh() and not self.status_stale_reported:

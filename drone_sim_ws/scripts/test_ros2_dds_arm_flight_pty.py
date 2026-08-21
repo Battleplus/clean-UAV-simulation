@@ -459,7 +459,7 @@ def main() -> int:
                 sys.stdout.write(data)
                 sys.stdout.flush()
                 output += data
-                if "PX4 status timeout: stopping Offboard stream" in data:
+                if "OFFBOARD_STREAM_STOPPED " in data:
                     controller_stream_stopped = True
                 if (
                     "LANDING_DISARMED_CONFIRMED" in output

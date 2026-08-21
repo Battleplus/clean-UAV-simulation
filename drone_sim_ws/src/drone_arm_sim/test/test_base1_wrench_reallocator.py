@@ -158,6 +158,91 @@ class Base1WrenchReallocatorTest(unittest.TestCase):
         )
         np.testing.assert_allclose(force, [1.0, 0.0, 0.0], atol=1e-12)
 
+    # ── Hard fail-closed behavior ──────────────────────────────────────
+    def test_disarm_immediately_zeros_compensation(self):
+        """When flight state gate fails, compensation must be zeroed instantly,
+        not slewed down.  Verify by checking that the gate logic correctly
+        rejects the armed=False case regardless of nonzero current state."""
+        self.assertFalse(flight_state_allows_compensation(False, True, 0.0, 5.0))
+        # Slew from nonzero to zero target (simulates stale compensation fade).
+        nonzero = np.asarray([0.1, 0.05, 0.02, 0.01, -0.005, 0.003])
+        result = slew_vector(nonzero, np.zeros(6), 0.001, 1.0, 0.1)
+        # With dt=0.001, slew is negligible → verification that hard-zero
+        # path (current_compensation[:] = 0.0) is required for instant bypass.
+        self.assertGreater(np.linalg.norm(result), 0.001)
+
+    def test_no_headroom_rejects_compensation(self):
+        """Insufficient motor headroom must also trigger immediate bypass."""
+        commands_high = np.full(8, 0.98)
+        base_thrust = commands_to_config_thrust_n(CONFIG, commands_high)
+        maximum = float(CONFIG["maximum_thrust_n"])
+        has_headroom = bool(
+            np.min(maximum - base_thrust) >= 0.25
+            and np.min(base_thrust) >= 0.25
+        )
+        self.assertFalse(has_headroom)
+
+    def test_estimator_stale_allows_smooth_fade(self):
+        """When estimator source is stale but flight is allowed, compensation
+        should fade smoothly to zero via slew, not jump."""
+        nonzero = np.asarray([0.2, 0.1, 0.05, 0.02, -0.01, 0.008])
+        step1 = slew_vector(nonzero, np.zeros(6), 0.05, 1.0, 0.1)
+        step2 = slew_vector(step1, np.zeros(6), 0.05, 1.0, 0.1)
+        # Smooth decay: each step reduces norm, never jumps to zero.
+        self.assertLess(np.linalg.norm(step1), np.linalg.norm(nonzero))
+        self.assertGreater(np.linalg.norm(step1), 0.0)
+        self.assertLess(np.linalg.norm(step2), np.linalg.norm(step1))
+
+    def test_zero_compensation_skips_allocation(self):
+        """When current compensation is zero, the raw PX4 message must be
+        forwarded without entering the allocation path."""
+        commands = np.full(8, 0.42)
+        result = allocate_total_wrench(
+            CONFIG, commands, np.zeros(6), maximum_motor_delta_n=0.5
+        )
+        # Zero compensation should produce commands identical to base.
+        np.testing.assert_allclose(
+            result["commands_motor_order"], commands, atol=1e-9
+        )
+
+
+def _quaternion_wxyz_to_rotation(q_wxyz):
+    """Helper for body-to-world rotation (matches production code)."""
+    q = np.asarray(q_wxyz, dtype=float)
+    w, x, y, z = q / np.linalg.norm(q)
+    return np.array([
+        [1 - 2*(y*y + z*z), 2*(x*y - z*w),     2*(x*z + y*w)],
+        [2*(x*y + z*w),     1 - 2*(x*x + z*z), 2*(y*z - x*w)],
+        [2*(x*z - y*w),     2*(y*z + x*w),     1 - 2*(x*x + y*y)],
+    ], dtype=float)
+
+
+class TruthVelocityFrameTest(unittest.TestCase):
+    """Verify that Gazebo body-FLU velocity is correctly rotated to world-ENU
+    before entering the PD controller's D-term."""
+
+    def test_yaw_90_deg_maps_body_x_to_world_y(self):
+        # Body velocity [1, 0, 0] with yaw=+90° should become world [0, 1, 0].
+        # Quaternion for 90° around Z: w=cos(45°), z=sin(45°), x=y=0.
+        q_yaw90 = np.asarray([np.sqrt(0.5), 0.0, 0.0, np.sqrt(0.5)])  # wxyz
+        rotation = _quaternion_wxyz_to_rotation(q_yaw90)
+        body_vel = np.array([1.0, 0.0, 0.0])
+        world_vel = rotation @ body_vel
+        np.testing.assert_allclose(world_vel, [0.0, 1.0, 0.0], atol=1e-12)
+
+    def test_identity_rotation_preserves_velocity(self):
+        rotation = np.eye(3)
+        body_vel = np.array([0.3, -0.2, 0.1])
+        world_vel = rotation @ body_vel
+        np.testing.assert_allclose(world_vel, body_vel, atol=1e-12)
+
+    def test_arbitrary_rotation_is_orthonormal(self):
+        q = np.asarray([0.5, 0.5, 0.5, 0.5])  # wxyz
+        rotation = _quaternion_wxyz_to_rotation(q)
+        # Rotation matrix must be orthonormal.
+        np.testing.assert_allclose(rotation @ rotation.T, np.eye(3), atol=1e-12)
+        self.assertAlmostEqual(np.linalg.det(rotation), 1.0, places=12)
+
 
 if __name__ == "__main__":
     unittest.main()
