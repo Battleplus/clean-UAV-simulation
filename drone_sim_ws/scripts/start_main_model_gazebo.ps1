@@ -14,26 +14,24 @@ $scriptPath = "/mnt/$drive/$relativePath"
 Write-Host "Starting current my_drone 4 kg Gazebo/PX4 backend..."
 Write-Host "Source: $windowsScriptPath"
 
-$wslArgs = @(
-    "-d", "Ubuntu-24.04", "--", "env",
+$wslEnvironment = @(
     "HEADLESS=false",
     "ENABLE_ARM_CONTROL=true",
     "CLEAN_STALE_RUNTIME=1"
 )
 if ($ArmCompensationTest) {
-    # Conservative, explicitly opt-in 4 kg experiment.  Keep the disturbance
-    # observer off so this run tests only model-based force/torque terms.
-    $wslArgs += @(
-        "ARM_TORQUE_FEEDFORWARD_ENABLED=true",
-        "ARM_REACTION_TORQUE_FEEDFORWARD_GAIN=0.25",
-        "ARM_TORQUE_FEEDFORWARD_MAX_DELTA_N=0.05",
-        "ARM_STATIC_COM_FEEDFORWARD_GAIN=0.25",
-        "ARM_STATIC_COM_FEEDFORWARD_TIME_CONSTANT_S=2.0",
-        "ARM_DISTURBANCE_OBSERVER_ENABLED=false",
-        "PX4_READY_STABLE_TIMEOUT_S=180"
+    $candidatePath = (Resolve-Path (Join-Path $PSScriptRoot "..\px4\airframes\4028_gz_my_drone_octorotor_debug_4kg_armcomp")).Path
+    $candidateDrive = $candidatePath.Substring(0, 1).ToLowerInvariant()
+    $candidateRelativePath = $candidatePath.Substring(3).Replace("\", "/")
+    $candidateWslPath = "/mnt/$candidateDrive/$candidateRelativePath"
+    $wslEnvironment += @(
+        "AIRFRAME_ID=4028",
+        "PROJECT_AIRFRAME_FILE=$candidateWslPath",
+        "GZ_RANDOM_SEED=4028"
     )
-    Write-Host "Arm compensation experiment: force FF + 25% reaction/COM torque FF" -ForegroundColor Yellow
+    Write-Host "Arm compensation candidate: PX4 airframe 4028." -ForegroundColor Green
 }
+$wslArgs = @("-d", "Ubuntu-24.04", "--", "env") + $wslEnvironment
 $wslArgs += @("bash", $scriptPath)
 
 # Keep this terminal attached to the backend log. Gazebo itself is launched

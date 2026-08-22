@@ -215,9 +215,17 @@ def _trajectory_points(
         point.positions = row.tolist()
         if index in (0, count - 1, count, len(rows) - 1):
             point.velocities = [0.0] * len(JOINT_NAMES)
+            point.accelerations = [0.0] * len(JOINT_NAMES)
         else:
             dt = max(1.0e-6, times[index + 1] - times[index - 1])
             point.velocities = ((rows[index + 1] - rows[index - 1]) / dt).tolist()
+            dt_before = max(1.0e-6, times[index] - times[index - 1])
+            dt_after = max(1.0e-6, times[index + 1] - times[index])
+            velocity_before = (rows[index] - rows[index - 1]) / dt_before
+            velocity_after = (rows[index + 1] - rows[index]) / dt_after
+            point.accelerations = (
+                2.0 * (velocity_after - velocity_before) / (dt_before + dt_after)
+            ).tolist()
         seconds = int(elapsed)
         nanoseconds = int(round((elapsed - seconds) * 1_000_000_000))
         if nanoseconds == 1_000_000_000:

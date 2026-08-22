@@ -1,0 +1,7 @@
+base1_ref=base-1
+base1_commit=b340ed6
+scope=4kg_only
+mode=disabled
+ENABLE_ARM_CONTROL=false
+compensation=all_off
+seed=4027

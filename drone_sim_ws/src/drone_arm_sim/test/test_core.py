@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from collections import deque
+import math
 from pathlib import Path
 import re
 import sys
@@ -18,6 +19,7 @@ from drone_arm_sim.floating_base_reaction import reaction_twist
 from drone_arm_sim.coupled_dynamics import CoupledArmDynamics, JOINT_NAMES, Payload
 from drone_arm_sim.arm_coupling_monitor import (
     bounded_compensation_ned,
+    estimator_source_is_fresh,
     filtered_joint_acceleration_step,
 )
 from drone_arm_sim.arm_disturbance_observer import (
@@ -54,7 +56,8 @@ from drone_arm_sim.cartesian_arm_demo import (
     _trajectory_points,
     plan_tool_forward_path,
 )
-from drone_arm_sim.gazebo_sensor_delay import message_stamp_seconds
+import drone_arm_sim.gazebo_sensor_delay as sensor_delay_module
+from drone_arm_sim.gazebo_sensor_delay import RelaySpec, SensorDelayRelay, message_stamp_seconds
 from drone_arm_sim.model_analysis import UrdfModel, _rpy_matrix
 from drone_arm_sim.motor_evidence import validate_motor_thrust_evidence
 from drone_arm_sim.rl_env import make_default_env
@@ -362,6 +365,45 @@ class CoreRegressionTest(unittest.TestCase):
             header = Header()
         self.assertAlmostEqual(message_stamp_seconds(Message()), 12.345)
         self.assertAlmostEqual(message_stamp_seconds(object(), 7.5), 7.5)
+
+    def test_zero_delay_sensor_sample_is_forwarded_without_clock_callback(self):
+        class FakeMessage:
+            def __init__(self, stamp=0.0):
+                self.header = type("Header", (), {})()
+                self.header.stamp = type(
+                    "Stamp",
+                    (),
+                    {"sec": int(stamp), "nsec": int((stamp % 1.0) * 1e9)},
+                )()
+
+            def CopyFrom(self, other):
+                self.header = other.header
+
+        class FakePublisher:
+            def __init__(self):
+                self.messages = []
+
+            def publish(self, message):
+                self.messages.append(message)
+
+        original_rclpy = sensor_delay_module.rclpy
+        sensor_delay_module.rclpy = type("FakeRclpy", (), {"ok": staticmethod(lambda: True)})
+        try:
+            relay = SensorDelayRelay.__new__(SensorDelayRelay)
+            relay.simulation_time_s = 0.0
+            relay.lock = __import__("threading").Lock()
+            relay.last_published_source_time = {"imu": -math.inf}
+            relay.gz_publishers = {"imu": FakePublisher()}
+            spec = RelaySpec("imu", FakeMessage, "/raw", "/out", 0.0)
+            callback = relay._make_callback(spec)
+            callback(FakeMessage(1.004))
+            self.assertEqual(len(relay.gz_publishers["imu"].messages), 1)
+            callback(FakeMessage(1.004))
+            self.assertEqual(len(relay.gz_publishers["imu"].messages), 1)
+            callback(FakeMessage(1.008))
+            self.assertEqual(len(relay.gz_publishers["imu"].messages), 2)
+        finally:
+            sensor_delay_module.rclpy = original_rclpy
 
     def test_reachable_inverse_kinematics(self):
         source = {
@@ -986,11 +1028,49 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertAlmostEqual(home.mass_kg, 7.735, places=8)
         self.assertGreater(float(np.linalg.norm(moving.com_shift_m)), 1.0e-4)
         self.assertGreater(float(np.linalg.norm(moving.reaction_torque_body_nm)), 1.0e-4)
+        # Damping/friction remains available for diagnostics, but is an
+        # internal articulated-body load already transmitted by Gazebo and
+        # must not be injected into base_link a second time.
+        self.assertGreater(float(np.linalg.norm(moving.damping_torque_body_nm)), 1.0e-4)
+        self.assertFalse(np.allclose(
+            moving.reaction_torque_body_nm,
+            moving.damping_torque_body_nm,
+            atol=1.0e-8,
+        ))
         self.assertGreater(loaded.mass_kg, home.mass_kg)
         self.assertGreater(float(np.linalg.norm(loaded.com_shift_m)), float(np.linalg.norm(moving.com_shift_m)) * 0.1)
         self.assertTrue(np.all(np.linalg.eigvalsh(loaded.inertia_at_com_kg_m2) > 0.0))
         impulse_twist = dynamics.contact_delta_twist(work, np.array([0.0, 0.0, -1.0]), Payload(0.25))
         self.assertGreater(float(np.linalg.norm(impulse_twist)), 1.0e-4)
+
+    def test_optimized_coupled_state_matches_finite_difference_reference(self):
+        reference = json.loads(SO101_MOTION_REFERENCE_PATH.read_text(encoding="utf-8"))
+        dynamics = CoupledArmDynamics(CAD_V3_FORMAL_URDF, reference, target_mass_kg=4.0)
+        positions = dict(zip(JOINT_NAMES, [0.2, -0.4, 0.6, -0.3, 0.2, 0.4]))
+        velocities = dict(zip(JOINT_NAMES, [0.1, -0.08, 0.06, -0.04, 0.02, 0.01]))
+        accelerations = dict(zip(JOINT_NAMES, [0.2, -0.15, 0.1, -0.08, 0.05, 0.02]))
+        optimized = dynamics.state(positions, velocities, accelerations)
+        finite = dynamics._state_finite_difference_reference(
+            positions, velocities, accelerations
+        )
+        np.testing.assert_allclose(
+            optimized.center_of_mass_m, finite.center_of_mass_m, atol=1.0e-12
+        )
+        np.testing.assert_allclose(
+            optimized.inertia_at_com_kg_m2,
+            finite.inertia_at_com_kg_m2,
+            atol=1.0e-12,
+        )
+        np.testing.assert_allclose(
+            optimized.reaction_force_body_n,
+            finite.reaction_force_body_n,
+            atol=1.0e-7,
+        )
+        np.testing.assert_allclose(
+            optimized.reaction_torque_body_nm,
+            finite.reaction_torque_body_nm,
+            atol=1.0e-7,
+        )
 
     def test_formal_gripper_has_cad_collision_geometry_for_contact_bringup(self):
         root = ET.parse(CAD_V3_FORMAL_URDF).getroot()
@@ -1140,6 +1220,14 @@ class CoreRegressionTest(unittest.TestCase):
         self.assertEqual(clipped, 4.0)
         unchanged = filtered_joint_acceleration_step(1.25, float("nan"), 0.01, 0.20, 4.0)
         self.assertEqual(unchanged, 1.25)
+
+    def test_arm_coupling_estimator_source_freshness_is_fail_closed(self):
+        self.assertTrue(estimator_source_is_fresh(0.0))
+        self.assertTrue(estimator_source_is_fresh(0.10))
+        self.assertFalse(estimator_source_is_fresh(0.100001))
+        self.assertFalse(estimator_source_is_fresh(-0.01))
+        self.assertFalse(estimator_source_is_fresh(float("nan")))
+        self.assertFalse(estimator_source_is_fresh(float("inf")))
 
     def test_arm_dob_motor_model_matches_balanced_4kg_hover(self):
         config = json.loads(CAD_V3_DEBUG_4KG_CONFIG_PATH.read_text(encoding="utf-8"))

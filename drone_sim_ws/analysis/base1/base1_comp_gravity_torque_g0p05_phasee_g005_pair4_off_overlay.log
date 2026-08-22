@@ -1,0 +1,4 @@
+BASE1_READONLY_ESTIMATOR_READY pid=59025 rate_hz=100 mass_kg=4.0
+BASE1_WRENCH_OVERLAY_READY enabled=true
+input=/my_drone/command/motor_speed output=/my_drone/base1_compensated/command/motor_speed
+logs=/tmp/my_drone_ros2_dds/base1_reallocator.log /tmp/my_drone_ros2_dds/base1_overlay_motor.log

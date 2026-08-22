@@ -1,0 +1,76 @@
+{
+  "schema": "my_drone.base1-arm-state-hover.v1",
+  "scope": "Base 1 4kg only; compensation off; 7.735kg not exercised",
+  "disabled": {
+    "log": "/mnt/e/\u6e05\u6d01\u65e0\u4eba\u673a/drone_sim_ws/analysis/base1/base1_arm_state_20260813_phaseA_arm_state_pair3_disabled_flight.log",
+    "exists": true,
+    "pass": true,
+    "metrics": {
+      "failsafe_seen": false,
+      "landing_horizontal_excursion_m": 0.05249761899362675,
+      "landing_max_state_step_m": 0.26854608543041536,
+      "max_height_error_m": 0.10899999999999999,
+      "max_horizontal_error_m": 0.06627216610312356,
+      "max_motor_output": 497.7,
+      "max_state_step_m": 0.07908223567907018,
+      "mean_motor_output": 481.30975,
+      "motor_saturation_fraction": 0.0,
+      "offboard_samples": 44,
+      "px4_height_peak_to_peak_m": 0.07000000000000006,
+      "px4_truth_height_correlation": 0.9362362760681334,
+      "px4_vertical_speed_abs_max_m_s": 0.011,
+      "px4_vertical_speed_abs_p90_m_s": 0.008,
+      "steady_hover_samples": 15,
+      "steady_window_duration_s": 15.0,
+      "steady_window_start_s": 0.0,
+      "takeoff_transient_max_height_error_m": 1.217,
+      "truth_height_peak_to_peak_m": 0.08499999999999996,
+      "truth_vertical_speed_abs_max_m_s": 0.012,
+      "truth_vertical_speed_abs_p90_m_s": 0.011
+    }
+  },
+  "static": {
+    "log": "/mnt/e/\u6e05\u6d01\u65e0\u4eba\u673a/drone_sim_ws/analysis/base1/base1_arm_state_20260813_phaseA_arm_state_pair3_static_flight.log",
+    "exists": true,
+    "pass": true,
+    "metrics": {
+      "failsafe_seen": false,
+      "landing_horizontal_excursion_m": 0.03920459156782532,
+      "landing_max_state_step_m": 0.2487689691259744,
+      "max_height_error_m": 0.08600000000000008,
+      "max_horizontal_error_m": 0.08464632301523795,
+      "max_motor_output": 498.02,
+      "max_state_step_m": 0.11282287002199509,
+      "mean_motor_output": 481.3376666666667,
+      "motor_saturation_fraction": 0.0,
+      "offboard_samples": 44,
+      "px4_height_peak_to_peak_m": 0.08200000000000007,
+      "px4_truth_height_correlation": 0.9246017090933824,
+      "px4_vertical_speed_abs_max_m_s": 0.009,
+      "px4_vertical_speed_abs_p90_m_s": 0.0076,
+      "steady_hover_samples": 15,
+      "steady_window_duration_s": 15.0,
+      "steady_window_start_s": 0.0,
+      "takeoff_transient_max_height_error_m": 1.195,
+      "truth_height_peak_to_peak_m": 0.05599999999999983,
+      "truth_vertical_speed_abs_max_m_s": 0.008,
+      "truth_vertical_speed_abs_p90_m_s": 0.0076
+    }
+  },
+  "static_minus_disabled": {
+    "max_horizontal_error_m": 0.018374156912114387,
+    "truth_height_peak_to_peak_m": -0.029000000000000137,
+    "px4_vertical_speed_abs_p90_m_s": -0.0004000000000000002,
+    "mean_motor_output": 0.0279166666666697
+  },
+  "gates": {
+    "both_runtime_pass": true,
+    "horizontal_regression_le_0p10_m": true,
+    "height_p2p_regression_le_0p03_m": true,
+    "vertical_speed_p90_regression_le_0p03_m_s": true,
+    "mean_motor_regression_le_50": true,
+    "no_motor_saturation": true,
+    "no_failsafe": true
+  },
+  "pass": true
+}

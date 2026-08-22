@@ -108,10 +108,12 @@ discard_buffered_keys() {
 run_visible_demo() {
   local duration=8
   local distance=0.12
+  local hold=3
   if vehicle_is_armed; then
-    duration=30
-    distance=0.10
-    echo "AIRBORNE_DEMO: using 0.10m and slower 30s extend/retract trajectories"
+    duration="${ARM_KEY6_AIRBORNE_DURATION_S:-90}"
+    distance="${ARM_KEY6_AIRBORNE_DISTANCE_M:-0.10}"
+    hold="${ARM_KEY6_AIRBORNE_HOLD_S:-8}"
+    echo "AIRBORNE_DEMO: using ${distance}m, ${duration}s each way and ${hold}s extended hold"
     if ! request_hover_and_wait_stable; then
       echo "AIRBORNE_DEMO_REFUSED: vehicle did not satisfy the stability gate"
       discard_buffered_keys
@@ -122,7 +124,7 @@ run_visible_demo() {
   fi
   echo "VISIBLE_DEMO_BEGIN: Cartesian tool-forward extension and exact-path return"
   ros2 run drone_arm_sim cartesian_arm_demo \
-    --distance "${distance}" --step 0.005 --duration "${duration}" --hold 3
+    --distance "${distance}" --step 0.005 --duration "${duration}" --hold "${hold}"
   if vehicle_is_armed; then
     echo "AIRBORNE_DEMO_SETTLING: waiting for measured velocity stability"
     if ! request_hover_and_wait_stable; then
@@ -159,7 +161,8 @@ echo "Manual jog (+/-): Q/A shoulder_pan | W/S shoulder_lift | E/D elbow_flex"
 echo "                  R/F wrist_flex  | T/G wrist_roll    | Y/H gripper"
 echo "Each press is one bounded smooth step; holding a key does not accumulate repeats."
 echo "Use 1/2/3 during flight. Full 4/5 poses are ground-only."
-echo "Key 6 uses 0.12m on ground; in flight it uses a safer 0.10m/30s path plus a 10s settle."
+echo "Key 6 uses 0.12m on ground; in flight it defaults to 0.10m/90s each way,"
+echo "an 8s extended hold, then a measured-velocity stability check."
 
 while true; do
   IFS= read -rsn1 key

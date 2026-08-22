@@ -1,0 +1,9 @@
+*_backend.log
+*_gazebo.log
+*_px4.log
+*_agent.log
+*_settle.log
+*_px4_stability.log
+*_arm_init.log
+# Superseded by the corrected reanalysis after fixing exact failsafe parsing.
+base1_no_comp_20260812_phaseA_summary.json

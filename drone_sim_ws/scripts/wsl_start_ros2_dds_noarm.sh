@@ -22,6 +22,11 @@ fi
 # same actuator topic and apply thrust twice to one Gazebo entity.
 if [[ "${CLEAN_STALE_RUNTIME:-1}" == "1" ]]; then
   pkill -x gazebo_direct_m 2>/dev/null || true
+  # Optional Base 1 overlays outlive the launch parent by design.  Remove
+  # their installed entry points explicitly so a clean restart cannot retain
+  # a second motor-command publisher or a stale compensation state.
+  pkill -f '/[b]ase1_wrench_reallocator' 2>/dev/null || true
+  pkill -f '/[b]ase1_arm_coupling_estimator_100hz' 2>/dev/null || true
   pkill -x gazebo_sensor_d 2>/dev/null || true
   pkill -x parameter_bridg 2>/dev/null || true
   pkill -x robot_state_pub 2>/dev/null || true
@@ -172,7 +177,8 @@ for _ in $(seq 1 90); do
       # Retry the already loaded broadcaster through controller_manager, then
       # require one real /joint_states sample before sending any trajectory.
       arm_joint_state_topic="${ARM_JOINT_STATE_TOPIC:-/joint_states}"
-      if ! timeout 5 ros2 topic echo --once "${arm_joint_state_topic}" \
+      arm_joint_sample_timeout_s="${ARM_INIT_SAMPLE_TIMEOUT_S:-8}"
+      if ! timeout "${arm_joint_sample_timeout_s}" ros2 topic echo --once "${arm_joint_state_topic}" \
         >/dev/null 2>&1; then
         echo "ARM_INIT_RETRY activating joint_state_broadcaster" \
           >>"${arm_init_log}"
@@ -184,7 +190,7 @@ for _ in $(seq 1 90); do
       fi
       arm_joint_state_ready=false
       for _ in $(seq 1 20); do
-        if timeout 3 ros2 topic echo --once "${arm_joint_state_topic}" \
+        if timeout "${arm_joint_sample_timeout_s}" ros2 topic echo --once "${arm_joint_state_topic}" \
           >/dev/null 2>&1; then
           arm_joint_state_ready=true
           break

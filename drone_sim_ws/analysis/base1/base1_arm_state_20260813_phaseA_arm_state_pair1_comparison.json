@@ -1,0 +1,54 @@
+{
+  "schema": "my_drone.base1-arm-state-hover.v1",
+  "scope": "Base 1 4kg only; compensation off; 7.735kg not exercised",
+  "disabled": {
+    "log": "E:\\\u6e05\u6d01\u65e0\u4eba\u673a\\drone_sim_ws\\analysis\\base1\\base1_arm_state_20260813_phaseA_arm_state_pair1_disabled_flight.log",
+    "exists": true,
+    "pass": true,
+    "metrics": {
+      "failsafe_seen": false,
+      "landing_horizontal_excursion_m": 0.05813776741499454,
+      "landing_max_state_step_m": 0.28023383093409693,
+      "max_height_error_m": 0.08899999999999997,
+      "max_horizontal_error_m": 0.08697700845625812,
+      "max_motor_output": 497.93,
+      "max_state_step_m": 0.11419719786404567,
+      "mean_motor_output": 481.29225,
+      "motor_saturation_fraction": 0.0,
+      "offboard_samples": 42,
+      "px4_height_peak_to_peak_m": 0.09699999999999998,
+      "px4_truth_height_correlation": 0.9588235587512385,
+      "px4_vertical_speed_abs_max_m_s": 0.017,
+      "px4_vertical_speed_abs_p90_m_s": 0.013,
+      "steady_hover_samples": 15,
+      "steady_window_duration_s": 15.0,
+      "steady_window_start_s": 0.0,
+      "takeoff_transient_max_height_error_m": 1.174,
+      "truth_height_peak_to_peak_m": 0.1080000000000001,
+      "truth_vertical_speed_abs_max_m_s": 0.018,
+      "truth_vertical_speed_abs_p90_m_s": 0.014199999999999999
+    }
+  },
+  "static": {
+    "log": "E:\\\u6e05\u6d01\u65e0\u4eba\u673a\\drone_sim_ws\\analysis\\base1\\base1_arm_state_20260813_phaseA_arm_state_pair1_static_flight.log",
+    "exists": false,
+    "pass": false,
+    "metrics": {}
+  },
+  "static_minus_disabled": {
+    "max_horizontal_error_m": null,
+    "truth_height_peak_to_peak_m": null,
+    "px4_vertical_speed_abs_p90_m_s": null,
+    "mean_motor_output": null
+  },
+  "gates": {
+    "both_runtime_pass": false,
+    "horizontal_regression_le_0p10_m": false,
+    "height_p2p_regression_le_0p03_m": false,
+    "vertical_speed_p90_regression_le_0p03_m_s": false,
+    "mean_motor_regression_le_50": false,
+    "no_motor_saturation": false,
+    "no_failsafe": false
+  },
+  "pass": false
+}

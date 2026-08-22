@@ -51,6 +51,7 @@ setup(
         "console_scripts": [
             "allocation_analysis = drone_arm_sim.allocation_analysis:main",
             "arm_coupling_monitor = drone_arm_sim.arm_coupling_monitor:main",
+            "base1_wrench_reallocator = drone_arm_sim.base1_wrench_reallocator:main",
             "arm_disturbance_observer = drone_arm_sim.arm_disturbance_observer:main",
             "cartesian_arm_demo = drone_arm_sim.cartesian_arm_demo:main",
             "cartesian_arm_jog = drone_arm_sim.cartesian_arm_jog:main",

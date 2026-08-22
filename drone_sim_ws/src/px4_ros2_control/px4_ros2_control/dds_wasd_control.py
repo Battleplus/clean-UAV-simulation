@@ -100,10 +100,110 @@ class RawTerminal:
             termios.tcsetattr(self.fd, termios.TCSADRAIN, self.old)
 
 
+def truth_hold_velocity_ned(
+    target_enu: np.ndarray,
+    position_enu: np.ndarray,
+    velocity_enu: np.ndarray,
+    *,
+    position_gain_xy: float,
+    position_gain_z: float,
+    velocity_damping_xy: float,
+    velocity_damping_z: float,
+    maximum_speed_xy: float,
+    maximum_speed_z: float,
+) -> np.ndarray:
+    """Outer-loop motion-capture position hold expressed as PX4 NED velocity."""
+    target = np.asarray(target_enu, dtype=float)
+    position = np.asarray(position_enu, dtype=float)
+    velocity = np.asarray(velocity_enu, dtype=float)
+    if any(value.shape != (3,) for value in (target, position, velocity)):
+        raise ValueError("truth hold vectors must be three dimensional")
+    if not all(np.all(np.isfinite(value)) for value in (target, position, velocity)):
+        raise ValueError("truth hold vectors must be finite")
+    error = target - position
+    command_enu = np.array(
+        [
+            max(0.0, position_gain_xy) * error[0]
+            - max(0.0, velocity_damping_xy) * velocity[0],
+            max(0.0, position_gain_xy) * error[1]
+            - max(0.0, velocity_damping_xy) * velocity[1],
+            max(0.0, position_gain_z) * error[2]
+            - max(0.0, velocity_damping_z) * velocity[2],
+        ]
+    )
+    horizontal_norm = float(np.linalg.norm(command_enu[:2]))
+    horizontal_limit = max(0.0, maximum_speed_xy)
+    if horizontal_norm > horizontal_limit > 0.0:
+        command_enu[:2] *= horizontal_limit / horizontal_norm
+    elif horizontal_limit <= 0.0:
+        command_enu[:2] = 0.0
+    command_enu[2] = float(
+        np.clip(command_enu[2], -max(0.0, maximum_speed_z), max(0.0, maximum_speed_z))
+    )
+    # Gazebo ENU [east,north,up] -> PX4 NED [north,east,down].
+    return np.array([command_enu[1], command_enu[0], -command_enu[2]])
+
+
+def truth_hold_position_ned(
+    local_position_ned: np.ndarray,
+    target_truth_enu: np.ndarray,
+    position_truth_enu: np.ndarray,
+    *,
+    position_gain: float,
+    maximum_offset_xy_m: float,
+    maximum_offset_z_m: float,
+) -> np.ndarray:
+    """Translate motion-capture error into a PX4 local-position offset.
+
+    The target is rebuilt around the current PX4 local position, so EKF
+    origin/noise does not masquerade as a physical aircraft displacement.
+    PX4 then closes its normal position, velocity, attitude and rate loops.
+    """
+    local = np.asarray(local_position_ned, dtype=float)
+    target = np.asarray(target_truth_enu, dtype=float)
+    position = np.asarray(position_truth_enu, dtype=float)
+    if any(value.shape != (3,) for value in (local, target, position)):
+        raise ValueError("truth position hold vectors must be three dimensional")
+    if not all(np.all(np.isfinite(value)) for value in (local, target, position)):
+        raise ValueError("truth position hold vectors must be finite")
+    correction_enu = max(0.0, float(position_gain)) * (target - position)
+    horizontal_norm = float(np.linalg.norm(correction_enu[:2]))
+    horizontal_limit = max(0.0, float(maximum_offset_xy_m))
+    if horizontal_norm > horizontal_limit > 0.0:
+        correction_enu[:2] *= horizontal_limit / horizontal_norm
+    elif horizontal_limit <= 0.0:
+        correction_enu[:2] = 0.0
+    correction_enu[2] = float(
+        np.clip(
+            correction_enu[2],
+            -max(0.0, float(maximum_offset_z_m)),
+            max(0.0, float(maximum_offset_z_m)),
+        )
+    )
+    correction_ned = np.asarray(
+        [correction_enu[1], correction_enu[0], -correction_enu[2]], dtype=float
+    )
+    return local + correction_ned
+
+
 class DdsWasdControl(Node):
     RATE_HZ = 20.0
     STATE_REPORT_HZ = float(os.environ.get("PX4_STATE_REPORT_HZ", "1.0"))
-    STATUS_TIMEOUT_S = 1.0
+    # vehicle_status is intentionally low rate.  A healthy half-second PX4
+    # simulation interval can take several wall-clock seconds while Gazebo is
+    # below real time during arm motion.  Keep this liveness window separate
+    # from the high-rate local-position safety gate: a delayed status report
+    # must not cause a false landing, while stale position must stop control.
+    STATUS_TIMEOUT_S = float(os.environ.get("PX4_DDS_STATUS_TIMEOUT_S", "5.0"))
+    LOCAL_POSITION_TIMEOUT_S = float(
+        os.environ.get("PX4_DDS_LOCAL_POSITION_TIMEOUT_S", "1.0")
+    )
+    LANDING_LOCAL_POSITION_TIMEOUT_S = float(
+        os.environ.get("PX4_DDS_LANDING_LOCAL_POSITION_TIMEOUT_S", "2.0")
+    )
+    ACTUATOR_OUTPUT_TIMEOUT_S = float(
+        os.environ.get("PX4_DDS_ACTUATOR_OUTPUT_TIMEOUT_S", "1.0")
+    )
     PRESTREAM_S = 2.0
     # RL actions still use bounded position increments.  Interactive keyboard
     # flight below is velocity controlled and never accumulates these steps.
@@ -119,10 +219,12 @@ class DdsWasdControl(Node):
         os.environ.get("PX4_KEY_RELEASE_TIMEOUT_S", "0.20")
     )
     HORIZONTAL_ACCEL_LIMIT_M_S2 = float(
-        os.environ.get("PX4_WASD_HORIZONTAL_ACCEL_M_S2", "0.30")
+        # Clean Base 1 A/B: 0.30 m/s^2 produced 54% velocity overshoot,
+        # whereas 0.15 m/s^2 held the same 0.40 m/s target to 9.1%.
+        os.environ.get("PX4_WASD_HORIZONTAL_ACCEL_M_S2", "0.15")
     )
     HORIZONTAL_JERK_LIMIT_M_S3 = float(
-        os.environ.get("PX4_WASD_HORIZONTAL_JERK_M_S3", "0.60")
+        os.environ.get("PX4_WASD_HORIZONTAL_JERK_M_S3", "0.30")
     )
     VERTICAL_ACCEL_LIMIT_M_S2 = float(
         # 0.20 m/s^2 produced 11.3% overshoot in the clean R->F->Q
@@ -135,10 +237,10 @@ class DdsWasdControl(Node):
     )
     YAW_ACCEL_LIMIT_RAD_S2 = math.radians(
         # Direct Q->E reversal with 30 deg/s^2 caused a 0.223 m/s vertical
-        # coupling transient.  20 deg/s^2, together with the debug yaw-rate
-        # integral tune, held the transient to 0.035 m/s and yaw overshoot to
-        # 2.7%.  The 15 deg/s latched yaw-rate limit is unchanged.
-        float(os.environ.get("PX4_WASD_YAW_ACCEL_DEG_S2", "20.0"))
+        # coupling transient. A later clean full-sequence run still reached
+        # 17.1 deg/s with the 15 deg/s target, so use 15 deg/s^2 to retain the
+        # target rate while reducing the reversal transient.
+        float(os.environ.get("PX4_WASD_YAW_ACCEL_DEG_S2", "15.0"))
     )
     RELEASE_HORIZONTAL_SPEED_M_S = float(
         os.environ.get("PX4_WASD_RELEASE_HORIZONTAL_SPEED_M_S", "0.08")
@@ -174,6 +276,32 @@ class DdsWasdControl(Node):
     TOUCHDOWN_DISARM_HOLD_S = float(
         os.environ.get("PX4_TOUCHDOWN_DISARM_HOLD_S", "0.5")
     )
+    TRUTH_HOLD_ENABLED = os.environ.get(
+        "PX4_TRUTH_HOLD_ENABLED", "false"
+    ).lower() in {"1", "true", "yes", "on"}
+    TRUTH_HOLD_TIMEOUT_S = float(os.environ.get("PX4_TRUTH_HOLD_TIMEOUT_S", "1.0"))
+    TRUTH_HOLD_XY_P = float(os.environ.get("PX4_TRUTH_HOLD_XY_P", "0.80"))
+    TRUTH_HOLD_Z_P = float(os.environ.get("PX4_TRUTH_HOLD_Z_P", "1.30"))
+    TRUTH_HOLD_XY_D = float(os.environ.get("PX4_TRUTH_HOLD_XY_D", "0.25"))
+    TRUTH_HOLD_Z_D = float(os.environ.get("PX4_TRUTH_HOLD_Z_D", "0.45"))
+    TRUTH_HOLD_VELOCITY_FILTER_TAU_S = float(
+        os.environ.get("PX4_TRUTH_HOLD_VELOCITY_FILTER_TAU_S", "0.0")
+    )
+    TRUTH_HOLD_XY_MAX_M_S = float(
+        os.environ.get("PX4_TRUTH_HOLD_XY_MAX_M_S", "0.08")
+    )
+    TRUTH_HOLD_Z_MAX_M_S = float(
+        os.environ.get("PX4_TRUTH_HOLD_Z_MAX_M_S", "0.12")
+    )
+    TRUTH_HOLD_POSITION_GAIN = float(
+        os.environ.get("PX4_TRUTH_HOLD_POSITION_GAIN", "1.0")
+    )
+    TRUTH_HOLD_POSITION_XY_MAX_M = float(
+        os.environ.get("PX4_TRUTH_HOLD_POSITION_XY_MAX_M", "0.15")
+    )
+    TRUTH_HOLD_POSITION_Z_MAX_M = float(
+        os.environ.get("PX4_TRUTH_HOLD_POSITION_Z_MAX_M", "0.12")
+    )
 
     def __init__(self, arm_only: bool = False) -> None:
         super().__init__("my_drone_dds_wasd_control")
@@ -183,12 +311,18 @@ class DdsWasdControl(Node):
         self.odometry: Optional[VehicleOdometry] = None
         self.gazebo_truth_enu: Optional[np.ndarray] = None
         self.gazebo_truth_velocity_enu: Optional[np.ndarray] = None
+        self.gazebo_truth_velocity_filtered_enu: Optional[np.ndarray] = None
         self.gazebo_truth_rpy: Optional[np.ndarray] = None
         self.gazebo_truth_angular_velocity: Optional[np.ndarray] = None
+        self.last_gazebo_truth_monotonic = 0.0
+        self._last_gazebo_truth_filter_sim_s = 0.0
+        self.truth_hold_target_enu: Optional[np.ndarray] = None
+        self.truth_hold_stale_reported = False
         self.actuator_outputs: Optional[ActuatorOutputs] = None
         self.last_actuator_monotonic = 0.0
         self.last_status_monotonic = 0.0
         self.last_local_monotonic = 0.0
+        self.status_stale_reported = False
         self.target = TargetNed()
         self.target_initialized = False
         self.xy_reset_counter: Optional[int] = None
@@ -197,6 +331,7 @@ class DdsWasdControl(Node):
         self.control_state = FlightControlState.DISARMED
         self.active_velocity_key: Optional[str] = None
         self.last_velocity_key_monotonic = 0.0
+        self.hover_transition_pending = False
         self.velocity_command_ned = np.zeros(3)
         self.acceleration_command_ned = np.zeros(3)
         self.velocity_acceleration_feedforward_enabled = os.environ.get(
@@ -206,6 +341,7 @@ class DdsWasdControl(Node):
         self.yaw_hold_rad = float("nan")
         self.yaw_hold_pending = False
         self.last_control_tick_monotonic = time.monotonic()
+        self._last_dynamics_tick_s = time.monotonic()
         self.pending_takeoff = False
         self.offboard_requested = False
         self.landing_requested = False
@@ -362,11 +498,39 @@ class DdsWasdControl(Node):
     def now_us(self) -> int:
         return self.get_clock().now().nanoseconds // 1000
 
+    def _dynamics_now(self) -> float:
+        """Return simulation-time seconds for dynamics calculations.
+
+        When use_sim_time is true (Gazebo lockstep), this returns the
+        sim clock so that jerk/slew/trajectory dt matches physical time.
+        When use_sim_time is false, falls back to wall-clock monotonic.
+        """
+        try:
+            return self.get_clock().now().nanoseconds / 1.0e9
+        except Exception:
+            return time.monotonic()
+
     def _status_cb(self, msg: VehicleStatus) -> None:
         self.status = msg
         self.last_status_monotonic = time.monotonic()
+        self.status_stale_reported = False
+
+    @staticmethod
+    def _quaternion_wxyz_to_rotation_body_to_world(q_wxyz: np.ndarray) -> np.ndarray:
+        """Return the 3x3 rotation matrix from body FLU to world ENU."""
+        q = np.asarray(q_wxyz, dtype=float)
+        if q.shape != (4,) or not np.all(np.isfinite(q)) or np.linalg.norm(q) < 1.0e-9:
+            return np.eye(3)
+        w, x, y, z = q / np.linalg.norm(q)
+        return np.array([
+            [1 - 2*(y*y + z*z), 2*(x*y - z*w),     2*(x*z + y*w)],
+            [2*(x*y + z*w),     1 - 2*(x*x + z*z), 2*(y*z - x*w)],
+            [2*(x*z - y*w),     2*(y*z + x*w),     1 - 2*(x*x + y*y)],
+        ], dtype=float)
 
     def _gazebo_truth_cb(self, msg: GazeboOdometry) -> None:
+        now_monotonic = time.monotonic()  # wall-clock for freshness watchdog
+        now_sim_s = self._dynamics_now()  # sim-time for filter dt
         self.gazebo_truth_enu = np.array(
             [
                 float(msg.pose.pose.position.x),
@@ -374,13 +538,41 @@ class DdsWasdControl(Node):
                 float(msg.pose.pose.position.z),
             ]
         )
-        self.gazebo_truth_velocity_enu = np.array(
+        # Gazebo Odometry twist is in base_link (body FLU), not world ENU.
+        velocity_body_flu = np.array(
             [
                 float(msg.twist.twist.linear.x),
                 float(msg.twist.twist.linear.y),
                 float(msg.twist.twist.linear.z),
             ]
         )
+        orientation = msg.pose.pose.orientation
+        rot_body_to_world = self._quaternion_wxyz_to_rotation_body_to_world(
+            np.array([orientation.w, orientation.x, orientation.y, orientation.z])
+        )
+        self.gazebo_truth_velocity_enu = rot_body_to_world @ velocity_body_flu
+        filter_tau_s = max(0.0, self.TRUTH_HOLD_VELOCITY_FILTER_TAU_S)
+        filter_dt_s = now_sim_s - self._last_gazebo_truth_filter_sim_s
+        if (
+            self.gazebo_truth_velocity_filtered_enu is None
+            or filter_tau_s <= 0.0
+            or filter_dt_s <= 0.0
+            or filter_dt_s > self.TRUTH_HOLD_TIMEOUT_S
+        ):
+            self.gazebo_truth_velocity_filtered_enu = (
+                self.gazebo_truth_velocity_enu.copy()
+            )
+        else:
+            # Exact first-order low-pass discretization.  Only the derivative
+            # branch is filtered: the position error remains unfiltered so H
+            # retains its steady-state accuracy while Gazebo velocity noise
+            # cannot be amplified into an attitude oscillation by a larger D.
+            filter_alpha = 1.0 - math.exp(-filter_dt_s / filter_tau_s)
+            self.gazebo_truth_velocity_filtered_enu += filter_alpha * (
+                self.gazebo_truth_velocity_enu
+                - self.gazebo_truth_velocity_filtered_enu
+            )
+        self._last_gazebo_truth_filter_sim_s = now_sim_s
         orientation = msg.pose.pose.orientation
         self.gazebo_truth_rpy = self._quaternion_wxyz_to_rpy(
             [orientation.w, orientation.x, orientation.y, orientation.z]
@@ -392,6 +584,7 @@ class DdsWasdControl(Node):
                 float(msg.twist.twist.angular.z),
             ]
         )
+        self.last_gazebo_truth_monotonic = now_monotonic
 
     def _local_cb(self, msg: VehicleLocalPosition) -> None:
         if self.target_initialized:
@@ -617,16 +810,30 @@ class DdsWasdControl(Node):
         age = current - self.last_arm_motion_monotonic
         return bool(self.arm_motion_active and 0.0 <= age < 1.0)
 
-    def state_fresh(self) -> bool:
+    def status_fresh(self) -> bool:
         now = time.monotonic()
-        return (
+        return bool(
             self.status is not None
-            and self.local is not None
             and now - self.last_status_monotonic < self.STATUS_TIMEOUT_S
-            and now - self.last_local_monotonic < self.STATUS_TIMEOUT_S
+        )
+
+    def local_position_fresh(self, timeout_s: float | None = None) -> bool:
+        now = time.monotonic()
+        maximum_age = (
+            self.LOCAL_POSITION_TIMEOUT_S
+            if timeout_s is None
+            else float(timeout_s)
+        )
+        return (
+            self.local is not None
+            and now - self.last_local_monotonic < maximum_age
             and self.local.xy_valid
             and self.local.z_valid
         )
+
+    def state_fresh(self) -> bool:
+        """Strict gate used before arming: both status and position are fresh."""
+        return self.status_fresh() and self.local_position_fresh()
 
     def publish_command(self, command: int, **params: float) -> None:
         msg = VehicleCommand()
@@ -643,6 +850,25 @@ class DdsWasdControl(Node):
         self.command_pub.publish(msg)
 
     def publish_hold(self) -> None:
+        if (
+            self.control_state == FlightControlState.POSITION_HOLD
+            and self.TRUTH_HOLD_ENABLED
+            and self.truth_hold_target_enu is not None
+            and self.truth_hold_fresh()
+        ):
+            self.publish_truth_hold()
+            return
+        if (
+            self.control_state == FlightControlState.POSITION_HOLD
+            and
+            self.TRUTH_HOLD_ENABLED
+            and self.truth_hold_target_enu is not None
+            and not self.truth_hold_stale_reported
+        ):
+            self.get_logger().warning(
+                "TRUTH_HOLD_STALE; falling back to PX4 position hold"
+            )
+            self.truth_hold_stale_reported = True
         mode = OffboardControlMode()
         mode.timestamp = self.now_us()
         mode.position = True
@@ -661,6 +887,51 @@ class DdsWasdControl(Node):
             sp.acceleration = list(self.arm_feedforward_ned)
         else:
             sp.acceleration = [nan, nan, nan]
+        sp.jerk = [nan, nan, nan]
+        sp.yaw = self.target.yaw
+        sp.yawspeed = nan
+        self.setpoint_pub.publish(sp)
+
+    def truth_hold_fresh(self) -> bool:
+        return bool(
+            self.gazebo_truth_enu is not None
+            and self.gazebo_truth_velocity_enu is not None
+            and 0.0 <= time.monotonic() - self.last_gazebo_truth_monotonic
+            < self.TRUTH_HOLD_TIMEOUT_S
+        )
+
+    def publish_truth_hold(self) -> None:
+        """Hold the H snapshot with a motion-capture outer velocity loop.
+
+        Gazebo truth plays the same role as a motion-capture/VIO measurement:
+        this outer loop only asks for a bounded corrective velocity.  PX4
+        remains responsible for velocity, acceleration, attitude, rate and
+        actuator control.  Using velocity mode avoids rebuilding a moving
+        local-position target from noisy EKF coordinates on every control
+        tick, which previously produced an XY limit cycle.
+        """
+        mode = OffboardControlMode()
+        self.truth_hold_stale_reported = False
+        mode.timestamp = self.now_us()
+        mode.velocity = True
+        self.mode_pub.publish(mode)
+        velocity_ned = truth_hold_velocity_ned(
+            self.truth_hold_target_enu,
+            self.gazebo_truth_enu,
+            self.gazebo_truth_velocity_filtered_enu,
+            position_gain_xy=self.TRUTH_HOLD_XY_P,
+            position_gain_z=self.TRUTH_HOLD_Z_P,
+            velocity_damping_xy=self.TRUTH_HOLD_XY_D,
+            velocity_damping_z=self.TRUTH_HOLD_Z_D,
+            maximum_speed_xy=self.TRUTH_HOLD_XY_MAX_M_S,
+            maximum_speed_z=self.TRUTH_HOLD_Z_MAX_M_S,
+        )
+        nan = float("nan")
+        sp = TrajectorySetpoint()
+        sp.timestamp = mode.timestamp
+        sp.position = [nan, nan, nan]
+        sp.velocity = velocity_ned.tolist()
+        sp.acceleration = [nan, nan, nan]
         sp.jerk = [nan, nan, nan]
         sp.yaw = self.target.yaw
         sp.yawspeed = nan
@@ -793,6 +1064,7 @@ class DdsWasdControl(Node):
         self.get_logger().error("EMERGENCY FORCE DISARM sent")
 
     def _clear_velocity_command(self) -> None:
+        self.hover_transition_pending = False
         self.active_velocity_key = None
         self.last_velocity_key_monotonic = 0.0
         self.velocity_command_ned = np.zeros(3)
@@ -885,6 +1157,7 @@ class DdsWasdControl(Node):
         """Latch one body-frame velocity target until H or another command."""
         if key not in "wasdrfqe":
             return
+        self.hover_transition_pending = False
         # A real terminal emits repeated characters while a key is held.  The
         # latched command is edge-triggered: repeating the same key must not
         # restart any ramp or re-latch heading to a drifting measured value.
@@ -992,10 +1265,48 @@ class DdsWasdControl(Node):
         return True
 
     def hold_current_position(self) -> None:
-        """H latches zero demand; S-curve braking remains velocity-only."""
+        """Brake with the S-curve, then freeze a real position setpoint."""
         self.stop_velocity_demand()
         self.control_state = FlightControlState.VELOCITY_CONTROL
-        self.get_logger().info("HOVER_ZERO_VELOCITY_DEMAND")
+        self.hover_transition_pending = True
+        self.get_logger().info("HOVER_BRAKING_TO_POSITION_HOLD")
+
+    def complete_hover_transition_if_ready(self) -> bool:
+        """Switch H from zero-velocity braking to a fixed NED position."""
+        if not self.hover_transition_pending or self.local is None:
+            return False
+        command_stopped = bool(
+            np.linalg.norm(self.velocity_command_ned) <= self.VELOCITY_ZERO_EPS
+            and np.linalg.norm(self.acceleration_command_ned) <= self.VELOCITY_ZERO_EPS
+            and abs(self.yaw_rate_command) <= self.VELOCITY_ZERO_EPS
+        )
+        if not command_stopped or not self._measured_motion_settled():
+            return False
+        self.target = TargetNed(
+            float(self.local.x),
+            float(self.local.y),
+            float(self.local.z),
+            float(self.local.heading),
+        )
+        self.yaw_hold_rad = float(self.local.heading)
+        if self.TRUTH_HOLD_ENABLED and self.truth_hold_fresh():
+            self.truth_hold_target_enu = self.gazebo_truth_enu.copy()
+            self.get_logger().info(
+                "TRUTH_HOLD_LOCKED ENU=("
+                f"{self.truth_hold_target_enu[0]:.3f},"
+                f"{self.truth_hold_target_enu[1]:.3f},"
+                f"{self.truth_hold_target_enu[2]:.3f})"
+            )
+        else:
+            self.truth_hold_target_enu = None
+        self.control_state = FlightControlState.POSITION_HOLD
+        self.hover_transition_pending = False
+        self._clear_velocity_command()
+        self.get_logger().info(
+            "HOVER_POSITION_HOLD_LOCKED "
+            f"NED=({self.target.north:.3f},{self.target.east:.3f},{self.target.down:.3f})"
+        )
+        return True
 
     def handle_key(self, key: str) -> None:
         if key == "t":
@@ -1044,9 +1355,11 @@ class DdsWasdControl(Node):
                 self.exit_requested = True
 
     def _tick(self) -> None:
-        now = time.monotonic()
-        dt = now - self.last_control_tick_monotonic
-        self.last_control_tick_monotonic = now
+        wall_now = time.monotonic()
+        sim_now = self._dynamics_now()
+        dt = sim_now - self._last_dynamics_tick_s
+        self._last_dynamics_tick_s = sim_now
+        now = wall_now  # keep wall-clock for timeout/watchdog checks
         self.publish_rl_observation()
         state_report_period_s = 1.0 / max(0.2, min(20.0, self.STATE_REPORT_HZ))
         if self.status and self.local and now - self.last_state_report >= state_report_period_s:
@@ -1219,10 +1532,25 @@ class DdsWasdControl(Node):
 
         if not self.offboard_requested:
             return
-        if not self.state_fresh():
-            self.get_logger().error("PX4 status timeout: stopping Offboard stream")
+        # Once airborne, the high-rate local position is the control-critical
+        # watchdog. vehicle_status is deliberately low rate and can be delayed
+        # by slow Gazebo lockstep; PX4 itself still owns native Offboard and
+        # failsafe supervision, so a stale status report must not create a
+        # false loss of thrust while position/attitude data remain healthy.
+        local_timeout_s = (
+            self.LANDING_LOCAL_POSITION_TIMEOUT_S
+            if self.landing_requested or self.offboard_landing_active
+            else self.LOCAL_POSITION_TIMEOUT_S
+        )
+        if not self.local_position_fresh(local_timeout_s):
+            self.get_logger().error("OFFBOARD_STREAM_STOPPED reason=local_position_stale")
             self.offboard_requested = False
             return
+        if not self.status_fresh() and not self.status_stale_reported:
+            self.get_logger().warning(
+                "PX4 status report is delayed; continuing with fresh local position"
+            )
+            self.status_stale_reported = True
 
         if (
             self.prestream_started
@@ -1296,6 +1624,7 @@ class DdsWasdControl(Node):
             return
 
         self.update_velocity_control(now, dt)
+        self.complete_hover_transition_if_ready()
         if self.control_state == FlightControlState.VELOCITY_CONTROL:
             self.publish_velocity()
         else:
@@ -1314,7 +1643,7 @@ class DdsWasdControl(Node):
         if self.actuator_outputs is None:
             return "absent"
         age = now - self.last_actuator_monotonic
-        if age >= self.STATUS_TIMEOUT_S:
+        if age >= self.ACTUATOR_OUTPUT_TIMEOUT_S:
             return f"stale({age:.2f}s)"
         count = min(int(self.actuator_outputs.noutputs), 8)
         values = self.actuator_outputs.output[:count]

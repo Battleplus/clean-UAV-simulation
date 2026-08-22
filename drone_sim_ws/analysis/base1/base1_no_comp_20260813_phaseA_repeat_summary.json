@@ -1,0 +1,68 @@
+{
+  "schema": "my_drone.base1-no-compensation-baseline.v1",
+  "scope": "Base 1 4kg only; 7.735kg not exercised",
+  "compensation": {
+    "acceleration_feedforward": false,
+    "torque_feedforward": false,
+    "static_com_gain": 0.0,
+    "disturbance_observer": false
+  },
+  "profile": "full_extend_slow_4kg",
+  "runs_requested": 2,
+  "runs_passed": 1,
+  "dynamic_runs_passed": 2,
+  "all_dynamic_runs_pass": true,
+  "all_runs_pass": false,
+  "maxima": {
+    "horizontal_drift_m": 0.087,
+    "altitude_span_m": 0.175,
+    "max_truth_tilt_deg": 1.03,
+    "rms_truth_tilt_deg": 0.449,
+    "max_arm_torque_nm": 0.035,
+    "motor_saturation_rate": 0.0
+  },
+  "runs": [
+    {
+      "log": "/mnt/e/清洁无人机/drone_sim_ws/analysis/base1/base1_no_comp_20260813_phaseA_repeat_run1_flight.log",
+      "pass": false,
+      "dynamic_gate_pass": true,
+      "failsafe_seen": false,
+      "internal_land_seen": false,
+      "metrics": {
+        "horizontal_drift_m": 0.087,
+        "altitude_span_m": 0.175,
+        "max_com_shift_m": 0.023003,
+        "max_inertia_diag_change_kg_m2": 0.032068234,
+        "max_arm_force_n": 0.00528,
+        "max_arm_torque_nm": 0.035,
+        "motor_saturation_samples": "0/151",
+        "motor_saturation_rate": 0,
+        "rated_motor_output": 1000,
+        "max_truth_tilt_deg": 1.03,
+        "rms_truth_tilt_deg": 0.412,
+        "samples": 154
+      }
+    },
+    {
+      "log": "/mnt/e/清洁无人机/drone_sim_ws/analysis/base1/base1_no_comp_20260813_phaseA_repeat_run2_flight.log",
+      "pass": true,
+      "dynamic_gate_pass": true,
+      "failsafe_seen": false,
+      "internal_land_seen": false,
+      "metrics": {
+        "horizontal_drift_m": 0.082,
+        "altitude_span_m": 0.118,
+        "max_com_shift_m": 0.023003,
+        "max_inertia_diag_change_kg_m2": 0.032068234,
+        "max_arm_force_n": 0.004328,
+        "max_arm_torque_nm": 0.035,
+        "motor_saturation_samples": "0/151",
+        "motor_saturation_rate": 0,
+        "rated_motor_output": 1000,
+        "max_truth_tilt_deg": 1.005,
+        "rms_truth_tilt_deg": 0.449,
+        "samples": 154
+      }
+    }
+  ]
+}

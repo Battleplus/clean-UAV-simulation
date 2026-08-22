@@ -1,4 +1,5 @@
 from types import SimpleNamespace
+import time
 
 import numpy as np
 import pytest
@@ -7,13 +8,41 @@ from px4_ros2_control.dds_wasd_control import (
     DdsWasdControl,
     FlightControlState,
     TargetNed,
+    truth_hold_position_ned,
+    truth_hold_velocity_ned,
 )
+
+
+def test_dds_watchdog_allows_slow_lockstep_status_period():
+    assert DdsWasdControl.STATUS_TIMEOUT_S >= 5.0
+    assert DdsWasdControl.LOCAL_POSITION_TIMEOUT_S <= 1.0
+    assert (
+        DdsWasdControl.LANDING_LOCAL_POSITION_TIMEOUT_S
+        > DdsWasdControl.LOCAL_POSITION_TIMEOUT_S
+    )
+    assert DdsWasdControl.LANDING_LOCAL_POSITION_TIMEOUT_S <= 2.0
+    assert DdsWasdControl.ACTUATOR_OUTPUT_TIMEOUT_S <= 1.0
+
+
+def test_airborne_watchdog_separates_low_rate_status_from_local_position():
+    controller = object.__new__(DdsWasdControl)
+    now = time.monotonic()
+    controller.status = SimpleNamespace()
+    controller.local = SimpleNamespace(xy_valid=True, z_valid=True)
+    controller.last_status_monotonic = now - DdsWasdControl.STATUS_TIMEOUT_S - 1.0
+    controller.last_local_monotonic = now
+
+    assert not controller.status_fresh()
+    assert controller.local_position_fresh()
+    assert not controller.state_fresh()
 
 
 def make_controller(z: float, sign: float = -1.0):
     controller = object.__new__(DdsWasdControl)
     controller.local_z_sign = sign
-    controller.local = SimpleNamespace(x=1.0, y=-2.0, z=z, heading=0.4)
+    controller.local = SimpleNamespace(
+        x=1.0, y=-2.0, z=z, heading=0.4, vx=0.0, vy=0.0, vz=0.0
+    )
     controller.target_initialized = True
     controller.xy_reset_counter = 0
     controller.z_reset_counter = 0
@@ -22,13 +51,51 @@ def make_controller(z: float, sign: float = -1.0):
     controller.control_state = FlightControlState.POSITION_HOLD
     controller.active_velocity_key = None
     controller.last_velocity_key_monotonic = 0.0
+    controller.hover_transition_pending = False
     controller.velocity_command_ned = np.zeros(3)
     controller.acceleration_command_ned = np.zeros(3)
     controller.velocity_acceleration_feedforward_enabled = True
     controller.yaw_rate_command = 0.0
     controller.yaw_hold_rad = 0.4
     controller.yaw_hold_pending = False
+    controller.gazebo_truth_enu = np.array([2.0, 1.0, 1.5])
+    controller.gazebo_truth_velocity_enu = np.zeros(3)
+    controller.last_gazebo_truth_monotonic = time.monotonic()
+    controller.truth_hold_target_enu = None
     return controller
+
+
+def test_truth_hold_outer_loop_uses_enu_to_ned_and_limits_speed():
+    command = truth_hold_velocity_ned(
+        np.array([1.0, 2.0, 3.0]),
+        np.array([0.8, 2.1, 2.7]),
+        np.array([0.1, -0.2, 0.05]),
+        position_gain_xy=1.0,
+        position_gain_z=1.0,
+        velocity_damping_xy=0.5,
+        velocity_damping_z=0.4,
+        maximum_speed_xy=0.2,
+        maximum_speed_z=0.12,
+    )
+    # ENU raw command is [0.15, 0.0, 0.28], so NED swaps XY and negates Z.
+    np.testing.assert_allclose(command, [0.0, 0.15, -0.12], atol=1e-12)
+
+
+def test_truth_hold_position_offset_cancels_ekf_origin_and_limits_error():
+    target = truth_hold_position_ned(
+        np.asarray([10.0, -4.0, -1.2]),
+        np.asarray([1.0, 2.0, 3.0]),
+        np.asarray([0.8, 2.1, 2.7]),
+        position_gain=1.0,
+        maximum_offset_xy_m=0.15,
+        maximum_offset_z_m=0.12,
+    )
+    # Truth ENU correction [+.2,-.1,+.3] is bounded to 0.15 horizontally
+    # and 0.12 vertically, then mapped to NED around the current EKF point.
+    horizontal = np.asarray([-0.1, 0.2]) * (0.15 / np.hypot(0.1, 0.2))
+    np.testing.assert_allclose(
+        target, [10.0 + horizontal[0], -4.0 + horizontal[1], -1.32], atol=1e-12
+    )
 
 
 def test_local_position_resets_shift_hold_and_ground_references(monkeypatch):
@@ -98,7 +165,7 @@ def test_r_commands_up_and_f_commands_down_velocity(monkeypatch):
     assert velocity[2] == pytest.approx(0.15)
 
 
-def test_hover_key_commands_zero_velocity_without_position_switch(monkeypatch):
+def test_hover_key_brakes_then_locks_current_position(monkeypatch):
     quiet_logger(monkeypatch)
     controller = make_controller(-1.45, sign=-1.0)
     controller.target = TargetNed(8.0, 9.0, -4.0, -1.0)
@@ -113,11 +180,17 @@ def test_hover_key_commands_zero_velocity_without_position_switch(monkeypatch):
     assert controller.target.down == pytest.approx(-4.0)
     assert controller.target.yaw == pytest.approx(-1.0)
     assert controller.control_state == FlightControlState.VELOCITY_CONTROL
+    assert controller.hover_transition_pending is True
     assert controller.active_velocity_key is None
     assert np.allclose(controller.velocity_command_ned, [0.2, -0.1, 0.05])
     advance_velocity(controller)
     assert np.allclose(controller.velocity_command_ned, 0.0)
     assert controller.yaw_rate_command == pytest.approx(0.0)
+    assert controller.complete_hover_transition_if_ready() is True
+    assert controller.control_state == FlightControlState.POSITION_HOLD
+    assert controller.target.north == pytest.approx(controller.local.x)
+    assert controller.target.east == pytest.approx(controller.local.y)
+    assert controller.target.down == pytest.approx(controller.local.z)
 
 
 def test_key_commands_full_velocity_and_remains_latched(monkeypatch):
@@ -204,6 +277,8 @@ def test_h_is_the_only_manual_zero_velocity_command(monkeypatch):
     assert controller.velocity_command_ned[0] == pytest.approx(0.4)
     advance_velocity(controller, start=20.0)
     assert np.allclose(controller.velocity_command_ned, 0.0)
+    assert controller.complete_hover_transition_if_ready() is True
+    assert controller.control_state == FlightControlState.POSITION_HOLD
 
 
 def test_vertical_velocity_remains_latched_without_automatic_release(monkeypatch):
@@ -329,7 +404,7 @@ def test_tuned_vertical_s_curve_defaults_preserve_speed_and_jerk_contract():
     assert DdsWasdControl.VERTICAL_ACCEL_LIMIT_M_S2 == pytest.approx(0.18)
     assert DdsWasdControl.VERTICAL_JERK_LIMIT_M_S3 == pytest.approx(0.40)
     assert DdsWasdControl.YAW_RATE_RAD_S == pytest.approx(np.deg2rad(15.0))
-    assert DdsWasdControl.YAW_ACCEL_LIMIT_RAD_S2 == pytest.approx(np.deg2rad(20.0))
+    assert DdsWasdControl.YAW_ACCEL_LIMIT_RAD_S2 == pytest.approx(np.deg2rad(15.0))
 
 
 def test_position_and_velocity_setpoints_are_mutually_exclusive():

@@ -1,0 +1,11 @@
+base1_ref=base-1
+base1_commit=b340ed6
+scope=4kg_only
+profile=full_extend_slow_4kg
+seed=4027
+ARM_FEEDFORWARD_ENABLED=false
+ARM_TORQUE_FEEDFORWARD_ENABLED=false
+ARM_REACTION_TORQUE_FEEDFORWARD_GAIN=0.0
+ARM_STATIC_COM_FEEDFORWARD_GAIN=0.0
+ARM_DISTURBANCE_OBSERVER_ENABLED=false
+test_only_touchdown_disarm_height_m=0.20

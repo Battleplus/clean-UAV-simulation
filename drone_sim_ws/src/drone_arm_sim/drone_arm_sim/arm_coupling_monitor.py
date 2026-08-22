@@ -26,6 +26,17 @@ except ModuleNotFoundError:  # Pure numerical tests do not require ROS.
 
 
 ENU_TO_NED = np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
+ESTIMATOR_SOURCE_TIMEOUT_S = 0.10
+
+
+def estimator_source_is_fresh(age_s: float, timeout_s: float = ESTIMATOR_SOURCE_TIMEOUT_S) -> bool:
+    return bool(
+        np.isfinite(age_s)
+        and age_s >= 0.0
+        and np.isfinite(timeout_s)
+        and timeout_s > 0.0
+        and age_s <= timeout_s
+    )
 
 
 def filtered_joint_acceleration_step(
@@ -86,6 +97,8 @@ class ArmCouplingMonitor(Node):
         self.accelerations: dict[str, float] = {}
         self.previous_velocities: dict[str, float] = {}
         self.previous_joint_time: float | None = None
+        self.last_joint_source_stamp_s: float | None = None
+        self.last_joint_receipt_monotonic_s: float | None = None
         self.rotation = np.eye(3)
         self.payload = payload
         self.feedforward_limit_m_s2 = float(feedforward_limit_m_s2)
@@ -123,6 +136,8 @@ class ArmCouplingMonitor(Node):
 
     def on_joint_state(self, message: JointState) -> None:
         now = self._stamp_seconds(message)
+        self.last_joint_source_stamp_s = now
+        self.last_joint_receipt_monotonic_s = time.monotonic()
         values = dict(zip(message.name, message.position))
         direct_velocity = dict(zip(message.name, message.velocity))
         dt = None if self.previous_joint_time is None else now - self.previous_joint_time
@@ -166,6 +181,32 @@ class ArmCouplingMonitor(Node):
     def on_timer(self) -> None:
         if any(name not in self.positions for name in JOINT_NAMES):
             return
+        monotonic = time.monotonic()
+        source_age_s = (
+            float("inf")
+            if self.last_joint_receipt_monotonic_s is None
+            else monotonic - self.last_joint_receipt_monotonic_s
+        )
+        if not estimator_source_is_fresh(source_age_s):
+            report = {
+                "schema": "my_drone.arm-coupling-state.v2",
+                "estimator_mode": "read_only",
+                "estimator_valid": False,
+                "source_fresh": False,
+                "source_age_s": source_age_s,
+                "source_timeout_s": ESTIMATOR_SOURCE_TIMEOUT_S,
+                "source_joint_state_stamp_s": self.last_joint_source_stamp_s,
+                "output_frame": "base_link_flu",
+            }
+            self.state_publisher.publish(String(data=json.dumps(report, sort_keys=True)))
+            if monotonic - self.last_log_time >= 1.0:
+                self.last_log_time = monotonic
+                self.get_logger().warning(
+                    "ARM_COUPLING_STALE " + json.dumps(report, sort_keys=True)
+                )
+            # Do not refresh WrenchStamped/AccelStamped timestamps from stale
+            # joint data.  Downstream safety gates must observe a real timeout.
+            return
         state = self.dynamics.state(
             self.positions, self.velocities, self.accelerations, self.payload
         )
@@ -208,6 +249,15 @@ class ArmCouplingMonitor(Node):
         self.feedforward_publisher.publish(feedforward)
 
         report = {
+            "schema": "my_drone.arm-coupling-state.v2",
+            "estimator_mode": "read_only",
+            "estimator_valid": True,
+            "source_fresh": True,
+            "source_age_s": source_age_s,
+            "source_timeout_s": ESTIMATOR_SOURCE_TIMEOUT_S,
+            "source_joint_state_stamp_s": self.last_joint_source_stamp_s,
+            "output_stamp_s": float(now.nanoseconds) * 1.0e-9,
+            "output_frame": "base_link_flu",
             "mass_kg": state.mass_kg,
             "com_body_flu_m": state.center_of_mass_m.tolist(),
             "com_shift_m": state.com_shift_m.tolist(),
@@ -216,6 +266,7 @@ class ArmCouplingMonitor(Node):
             "inertia_tensor_frame": "base_link_flu",
             "reaction_force_body_n": state.reaction_force_body_n.tolist(),
             "reaction_torque_body_nm": state.reaction_torque_body_nm.tolist(),
+            "gravity_shift_torque_body_nm": gravity_torque.tolist(),
             "raw_joint_acceleration_peak_rad_s2": self.raw_joint_acceleration_peak_rad_s2,
             "filtered_joint_acceleration_peak_rad_s2": max(
                 (abs(value) for value in self.accelerations.values()), default=0.0
@@ -225,7 +276,6 @@ class ArmCouplingMonitor(Node):
         encoded_report = json.dumps(report, sort_keys=True)
         self.state_publisher.publish(String(data=encoded_report))
 
-        monotonic = time.monotonic()
         if monotonic - self.last_log_time >= 1.0:
             self.last_log_time = monotonic
             self.get_logger().info("ARM_COUPLING_STATE " + encoded_report)
@@ -245,7 +295,7 @@ def main() -> None:
         type=Path,
         default=package / "config/so101_motion_reference.json",
     )
-    parser.add_argument("--rate-hz", type=float, default=3.0)
+    parser.add_argument("--rate-hz", type=float, default=100.0)
     parser.add_argument("--target-mass-kg", type=float, default=7.735)
     parser.add_argument("--payload-mass-kg", type=float, default=0.0)
     parser.add_argument("--payload-offset", nargs=3, type=float, default=(0.08, 0.0, 0.0))

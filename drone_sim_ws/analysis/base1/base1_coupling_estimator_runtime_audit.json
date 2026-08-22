@@ -1,0 +1,93 @@
+{
+  "schema": "my_drone.base1-coupling-estimator-runtime-audit.v1",
+  "scope": "Base 1 4kg only; all compensation disabled; 7.735kg not exercised",
+  "duration_s": 12.0,
+  "samples": 1186,
+  "valid_samples": 1186,
+  "invalid_samples": 0,
+  "valid_fraction": 1.0,
+  "measured_rate_hz": 98.67064060158077,
+  "interval_p50_ms": 9.98640699981479,
+  "interval_p99_ms": 16.913854837767207,
+  "max_source_age_ms": 33.84253699914552,
+  "latest_state": {
+    "com_body_flu_m": [
+      -0.004002203640224274,
+      0.0002570448222629883,
+      -0.20425393756084287
+    ],
+    "com_shift_m": [
+      -2.0158399573495106e-06,
+      0.0009297013405663562,
+      0.00022750750047192958
+    ],
+    "estimator_mode": "read_only",
+    "estimator_valid": true,
+    "feedforward_acceleration_ned_m_s2": [
+      -6.904329780877743e-18,
+      6.448120903904883e-18,
+      8.207132340648399e-16
+    ],
+    "filtered_joint_acceleration_peak_rad_s2": 4.429505732300646e-14,
+    "gravity_shift_torque_body_nm": [
+      -0.03646902353916166,
+      -7.908184609224538e-05,
+      2.98164704318521e-08
+    ],
+    "inertia_diag_kg_m2": [
+      0.20777477925835786,
+      0.20843718285386972,
+      0.21288366381547055
+    ],
+    "inertia_tensor_frame": "base_link_flu",
+    "inertia_tensor_kg_m2": [
+      [
+        0.20777477925835786,
+        -0.00034662745904650996,
+        0.002779340377573404
+      ],
+      [
+        -0.00034662745904650996,
+        0.20843718285386972,
+        4.488953853861409e-05
+      ],
+      [
+        0.002779340377573404,
+        4.488953853861409e-05,
+        0.21288366381547055
+      ]
+    ],
+    "mass_kg": 4.0,
+    "output_frame": "base_link_flu",
+    "output_stamp_s": 1786554723.1183493,
+    "raw_joint_acceleration_peak_rad_s2": 8.241742469944255e-12,
+    "reaction_force_body_n": [
+      -2.578985713441772e-17,
+      2.7616921381170872e-17,
+      3.2828529602398795e-15
+    ],
+    "reaction_torque_body_nm": [
+      -3.203432036353609e-11,
+      -3.788061960324952e-09,
+      -3.3260099701007615e-11
+    ],
+    "schema": "my_drone.arm-coupling-state.v2",
+    "source_age_s": 0.0027255419990979135,
+    "source_fresh": true,
+    "source_joint_state_stamp_s": 181.288,
+    "source_timeout_s": 0.1
+  },
+  "gates": {
+    "runtime_rate_at_least_95_hz": true,
+    "at_least_500_samples": true,
+    "healthy_fraction_at_least_99_percent": true,
+    "invalid_samples_fail_closed": true,
+    "schema_complete": true,
+    "read_only_mode": true,
+    "base_link_flu_frame": true,
+    "source_age_within_100ms": true,
+    "latest_dynamic_arrays_finite": true,
+    "mass_is_4kg": true
+  },
+  "pass": true
+}
