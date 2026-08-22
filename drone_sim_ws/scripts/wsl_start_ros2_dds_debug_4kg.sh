@@ -3,8 +3,14 @@ set -euo pipefail
 
 workspace_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 px4_dir="${PX4_DIR:-/home/asus/PX4-Autopilot}"
+airframe_id="${AIRFRAME_ID:-4027}"
 airframe="${PROJECT_AIRFRAME_FILE:-${workspace_dir}/px4/airframes/4027_gz_my_drone_octorotor_debug_4kg}"
-px4_airframe="${px4_dir}/build/px4_sitl_default/etc/init.d-posix/airframes/4027_gz_my_drone_octorotor_debug_4kg"
+airframe_name="$(basename "${airframe}")"
+if [[ "${airframe_name}" != "${airframe_id}_"* ]]; then
+  echo "Airframe file ${airframe_name} does not match AIRFRAME_ID=${airframe_id}" >&2
+  exit 1
+fi
+px4_airframe="${px4_dir}/build/px4_sitl_default/etc/init.d-posix/airframes/${airframe_name}"
 
 if [[ ! -f "${airframe}" ]]; then
   echo "4 kg debug profile is missing; run scripts/build_4kg_debug_profile.py first" >&2
@@ -13,7 +19,7 @@ fi
 cp "${airframe}" "${px4_airframe}"
 chmod +x "${px4_airframe}"
 
-export AIRFRAME_ID="${AIRFRAME_ID:-4027}"
+export AIRFRAME_ID="${airframe_id}"
 export PROJECT_AIRFRAME_FILE="${PROJECT_AIRFRAME_FILE:-${airframe}}"
 export ROBOT_FILE="${ROBOT_FILE:-${workspace_dir}/src/drone_arm_sim/urdf/my_drone_v3/my_drone_cad_debug_4kg.urdf}"
 export CONFIG_FILE="${CONFIG_FILE:-${workspace_dir}/src/drone_arm_sim/config/my_drone_v3_cad_debug_4kg.json}"

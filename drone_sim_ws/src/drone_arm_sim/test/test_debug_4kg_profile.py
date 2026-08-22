@@ -14,6 +14,9 @@ WORKSPACE = PACKAGE.parents[1]
 URDF = PACKAGE / "urdf/my_drone_v3/my_drone_cad_debug_4kg.urdf"
 CONFIG = PACKAGE / "config/my_drone_v3_cad_debug_4kg.json"
 AIRFRAME = WORKSPACE / "px4/airframes/4027_gz_my_drone_octorotor_debug_4kg"
+ARMCOMP_AIRFRAME = (
+    WORKSPACE / "px4/airframes/4028_gz_my_drone_octorotor_debug_4kg_armcomp"
+)
 WORLD = PACKAGE / "worlds/flight_world_debug_4kg.sdf"
 
 
@@ -49,24 +52,24 @@ class Debug4kgProfileTest(unittest.TestCase):
         airframe = AIRFRAME.read_text(encoding="utf-8")
         self.assertIn(f"MPC_THR_HOVER {hover:.4f}", airframe)
         self.assertIn("MPC_THR_MIN 0.10", airframe)
-        self.assertIn("MPC_Z_P 1.00", airframe)
-        self.assertIn("MPC_Z_VEL_P_ACC 4.00", airframe)
-        self.assertIn("MPC_Z_VEL_I_ACC 2.00", airframe)
-        self.assertIn("MPC_Z_VEL_D_ACC 0.00", airframe)
+        self.assertIn("MPC_Z_P 0.35", airframe)
+        self.assertIn("MPC_Z_VEL_P_ACC 2.20", airframe)
+        self.assertIn("MPC_Z_VEL_I_ACC 0.20", airframe)
+        self.assertIn("MPC_Z_VEL_D_ACC 0.20", airframe)
         self.assertIn("MPC_Z_VEL_MAX_UP 0.25", airframe)
         self.assertIn("MPC_Z_VEL_MAX_DN 0.25", airframe)
-        self.assertIn("MPC_XY_P 0.95", airframe)
-        self.assertIn("MPC_XY_VEL_P_ACC 1.80", airframe)
-        self.assertIn("MPC_XY_VEL_I_ACC 0.40", airframe)
-        self.assertIn("MPC_XY_VEL_D_ACC 0.20", airframe)
+        self.assertIn("MPC_XY_P 2.20", airframe)
+        self.assertIn("MPC_XY_VEL_P_ACC 1.00", airframe)
+        self.assertIn("MPC_XY_VEL_I_ACC 0.10", airframe)
+        self.assertIn("MPC_XY_VEL_D_ACC 0.35", airframe)
         self.assertIn("CA_ROTOR0_KM -0.005000000", airframe)
         self.assertIn("CA_ROTOR2_KM 0.005000000", airframe)
         self.assertIn("EKF2_BARO_DELAY 0", airframe)
         self.assertIn("EKF2_GPS_CTRL 5", airframe)
         self.assertIn("EKF2_BARO_CTRL 1", airframe)
-        self.assertIn("EKF2_EV_CTRL 12", airframe)
-        self.assertIn("EKF2_EVA_NOISE 0.05", airframe)
-        self.assertIn("EKF2_EVV_NOISE 0.05", airframe)
+        self.assertNotIn("EKF2_EV_CTRL", airframe)
+        self.assertNotIn("EKF2_EVA_NOISE", airframe)
+        self.assertNotIn("EKF2_EVV_NOISE", airframe)
         self.assertNotIn("EKF2_EV_NOISE_MD", airframe)
         self.assertNotIn("EKF2_EVP_NOISE", airframe)
         self.assertIn("EKF2_HGT_REF 0", airframe)
@@ -114,6 +117,41 @@ class Debug4kgProfileTest(unittest.TestCase):
             'BASE1_ARM_COMPENSATION_READY gravity=true dynamic_wrench_6d=true',
             launcher,
         )
+
+    def test_armcomp_candidate_uses_separate_numbered_airframe(self):
+        base = AIRFRAME.read_text(encoding="utf-8")
+        candidate = ARMCOMP_AIRFRAME.read_text(encoding="utf-8")
+        self.assertIn("MPC_XY_P 2.20", base)
+        self.assertIn("MPC_XY_P 0.95", candidate)
+        self.assertIn("MPC_XY_VEL_P_ACC 1.80", candidate)
+        self.assertIn("MPC_XY_VEL_I_ACC 0.40", candidate)
+        self.assertIn("MPC_XY_VEL_D_ACC 0.20", candidate)
+        self.assertIn("MPC_Z_P 1.00", candidate)
+        self.assertIn("MPC_Z_VEL_P_ACC 4.00", candidate)
+        self.assertIn("MPC_Z_VEL_I_ACC 2.00", candidate)
+        self.assertIn("MPC_Z_VEL_D_ACC 0.00", candidate)
+        self.assertIn("EKF2_EV_CTRL 12", candidate)
+        self.assertIn("EKF2_EVA_NOISE 0.05", candidate)
+        self.assertIn("EKF2_EVV_NOISE 0.05", candidate)
+
+        backend = (
+            WORKSPACE / "scripts/wsl_start_ros2_dds_debug_4kg.sh"
+        ).read_text(encoding="utf-8")
+        self.assertIn('airframe_id="${AIRFRAME_ID:-4027}"', backend)
+        self.assertIn('airframes/${airframe_name}', backend)
+        self.assertIn('does not match AIRFRAME_ID=', backend)
+
+        windows_backend = (
+            WORKSPACE / "scripts/start_main_model_gazebo.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn('"AIRFRAME_ID=4028"', windows_backend)
+        self.assertIn('"PROJECT_AIRFRAME_FILE=$candidateWslPath"', windows_backend)
+
+        armcomp_launcher = (
+            WORKSPACE / "scripts/wsl_start_ros2_dds_armcomp.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertIn("start_main_model_gazebo.ps1", armcomp_launcher)
+        self.assertNotIn("start_ros2_dds_wasd.ps1", armcomp_launcher)
 
     def test_vehicle_does_not_invent_landing_gear(self):
         root = ET.parse(URDF).getroot()

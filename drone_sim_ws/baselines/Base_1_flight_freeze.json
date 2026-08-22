@@ -1,6 +1,6 @@
 {
   "schema": "my_drone.base1-armcomp-candidate.v1",
-  "generated_utc": "2026-08-21T16:12:34.194124+00:00",
+  "generated_utc": "2026-08-22T11:02:55.499582+00:00",
   "reference": "base-1",
   "reference_commit": "b340ed6ce77ac4f7820be5a80edba783ce7b55ec",
   "expected_base1_commit_prefix": "b340ed6",
@@ -31,8 +31,8 @@
     {
       "path": "drone_sim_ws/scripts/start_main_model_gazebo.ps1",
       "base1_sha256": "a89b177c1e033e971c90b9b5e0aef734cae20db4438776f221db9244542e56a1",
-      "worktree_raw_sha256": "93640135f93b3044ad715ebc0bfd8fd6c27292e77dda82497598f89783c869e4",
-      "worktree_canonical_sha256": "918dcc4c319fd5ee48feef302ce700de246759219fa9c80bc04eae650adb232e",
+      "worktree_raw_sha256": "80fae5ae88013fa17f676a4eb1f15549ded473e8ffca11d1c4e9336d6c2d1192",
+      "worktree_canonical_sha256": "8e94431b921e99aba85c06a77cf1dae25ea370d4aff1ff18da9766e83e7d7590",
       "comparison": "SHA-256 after CRLF/CR to LF normalization",
       "matches_base1": false,
       "intentional": true,
@@ -53,8 +53,8 @@
     {
       "path": "drone_sim_ws/scripts/wsl_start_ros2_dds_debug_4kg.sh",
       "base1_sha256": "f1cb7e4808b34c934e2e56d92349ae5c5c3c3d87a30fe525ebcfb855f5d9c2ec",
-      "worktree_raw_sha256": "6a4159a9f5c33e446fb628bc23bd87dbdc752c5a7c4e025715f7c53fbfe40c21",
-      "worktree_canonical_sha256": "c7a7d69482934e8cf2531a21754aaf4eb1414843e90d61a0f5f07fc250f92cb3",
+      "worktree_raw_sha256": "dd75010442725c3bb0535aa5d5bb68fce7745b991672837903ba58f25275883c",
+      "worktree_canonical_sha256": "80d217b2f91ac68beff5a26f97c670eb911cf7353d5b8b672e89e8a253d045f3",
       "comparison": "SHA-256 after CRLF/CR to LF normalization",
       "matches_base1": false,
       "intentional": true,

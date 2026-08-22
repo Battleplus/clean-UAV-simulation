@@ -14,18 +14,24 @@ $scriptPath = "/mnt/$drive/$relativePath"
 Write-Host "Starting current my_drone 4 kg Gazebo/PX4 backend..."
 Write-Host "Source: $windowsScriptPath"
 
-$wslArgs = @(
-    "-d", "Ubuntu-24.04", "--", "env",
+$wslEnvironment = @(
     "HEADLESS=false",
     "ENABLE_ARM_CONTROL=true",
     "CLEAN_STALE_RUNTIME=1"
 )
 if ($ArmCompensationTest) {
-    # Kept for command-line compatibility.  The rejected legacy feed-forward
-    # experiment is no longer enabled; the validated gravity-only Base 1
-    # overlay starts automatically whenever arm control is enabled.
-    Write-Host "Arm compensation is now part of the validated Base 1 startup." -ForegroundColor Green
+    $candidatePath = (Resolve-Path (Join-Path $PSScriptRoot "..\px4\airframes\4028_gz_my_drone_octorotor_debug_4kg_armcomp")).Path
+    $candidateDrive = $candidatePath.Substring(0, 1).ToLowerInvariant()
+    $candidateRelativePath = $candidatePath.Substring(3).Replace("\", "/")
+    $candidateWslPath = "/mnt/$candidateDrive/$candidateRelativePath"
+    $wslEnvironment += @(
+        "AIRFRAME_ID=4028",
+        "PROJECT_AIRFRAME_FILE=$candidateWslPath",
+        "GZ_RANDOM_SEED=4028"
+    )
+    Write-Host "Arm compensation candidate: PX4 airframe 4028." -ForegroundColor Green
 }
+$wslArgs = @("-d", "Ubuntu-24.04", "--", "env") + $wslEnvironment
 $wslArgs += @("bash", $scriptPath)
 
 # Keep this terminal attached to the backend log. Gazebo itself is launched
