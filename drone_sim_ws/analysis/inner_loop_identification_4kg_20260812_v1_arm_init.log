@@ -1,0 +1,2 @@
+[INFO] [1786464366.723149226] [arm_preset_control]: Sent preset retracted over /arm_controller/joint_trajectory
+[INFO] [1786464366.735952838] [arm_preset_control]: ARM_PRESET_REACHED preset=retracted max_error=0.005423 rad

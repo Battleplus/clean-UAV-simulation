@@ -1,0 +1,113 @@
+{
+  "status": "GENERATED_OFFLINE_NOT_GAZEBO_FLIGHT_ACCEPTED",
+  "source_profile": "Base 1 / 4 kg protected debug profile",
+  "mass_partition": {
+    "source_arm_mass_kg": 1.2050072369455,
+    "source_airframe_mass_kg": 2.7949927630549,
+    "arm_scale": 0.49792232079942,
+    "airframe_scale": 0.25044787566280025,
+    "arm_mass_kg": 0.6,
+    "airframe_mass_kg": 0.7000000000000002,
+    "total_mass_kg": 1.3000000000000003
+  },
+  "computed_mass_properties": {
+    "status": "APPROXIMATE_USER_INPUT_NOT_COMPONENT_SCALE_DATA",
+    "all_up_mass_kg": 1.3,
+    "arm_mass_kg": 0.6,
+    "remaining_aircraft_mass_kg": 0.7000000000000001,
+    "arm_links": [
+      "arm_base_link",
+      "gripper_link",
+      "lower_arm_link",
+      "moving_jaw_link",
+      "shoulder_link",
+      "upper_arm_link",
+      "wrist_link"
+    ],
+    "reference_pose": "retracted/folded ground pose",
+    "center_of_mass_flu_m": [
+      -0.0013766796349346598,
+      -0.0004613521726727403,
+      -0.20546666714886602
+    ],
+    "center_of_mass_frd_m": [
+      -0.0013766796349346598,
+      0.0004613521726727403,
+      0.20546666714886602
+    ],
+    "inertia_at_com_flu_kg_m2": [
+      [
+        0.05343538630385031,
+        -6.265648864763366e-05,
+        0.0012342271847944571
+      ],
+      [
+        -6.265648864763366e-05,
+        0.05542251671545118,
+        -2.5564710434303672e-05
+      ],
+      [
+        0.0012342271847944571,
+        -2.5564710434303672e-05,
+        0.056412636610078254
+      ]
+    ],
+    "inertia_at_com_frd_kg_m2": [
+      [
+        0.05343538630385031,
+        6.265648864763366e-05,
+        -0.0012342271847944571
+      ],
+      [
+        6.265648864763366e-05,
+        0.05542251671545118,
+        -2.5564710434303672e-05
+      ],
+      [
+        -0.0012342271847944571,
+        -2.5564710434303672e-05,
+        0.056412636610078254
+      ]
+    ]
+  },
+  "hover_analysis": {
+    "reference_pose": "retracted/folded",
+    "per_motor_thrust_n": [
+      1.8277870112342725,
+      1.8524298000409123,
+      1.8277870112342753,
+      1.8654444572451527,
+      1.8147723540300398,
+      1.852429800040909,
+      1.814772354030042,
+      1.8654444572451518
+    ],
+    "per_motor_command_fraction": [
+      0.1553186707688382,
+      0.15741272504209833,
+      0.15531867076883843,
+      0.15851866312189117,
+      0.15421273268904603,
+      0.15741272504209805,
+      0.1542127326890462,
+      0.15851866312189108
+    ],
+    "minimum_command_fraction": 0.15421273268904603,
+    "maximum_command_fraction": 0.15851866312189117,
+    "mean_command_fraction": 0.15636569790546845,
+    "allocation_residual_norm": 1.0668537020847312e-14,
+    "vertical_thrust_to_weight": 6.39526452025658
+  },
+  "outputs": {
+    "urdf": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\urdf\\my_drone_v3\\my_drone_cad_candidate_1p3kg.urdf",
+    "config": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\config\\my_drone_v3_cad_candidate_1p3kg.json",
+    "airframe": "E:\\清洁无人机\\drone_sim_ws\\px4\\airframes\\4028_gz_my_drone_octorotor_candidate_1p3kg"
+  },
+  "limitations": [
+    "1.3 kg and 0.6 kg are approximate user inputs, not scale measurements",
+    "per-link mass ratios and all inertias are provisional CAD-volume scaling",
+    "motor thrust axes and opposite-pitch all-up hypothesis are unchanged",
+    "PX4 gains are inherited and require fresh dynamic identification",
+    "no Gazebo/PX4 flight acceptance is implied by this offline build"
+  ]
+}

@@ -1,0 +1,9 @@
+ROS2_DDS_NOARM_READY
+ROS2_DDS_READY arm_control=true
+logs=/tmp/my_drone_ros2_dds
+BASE1_READONLY_ESTIMATOR_READY pid=23959 child_pid=23970 rate_hz=100 mass_kg=1.3
+BASE1_CARTESIAN_VELOCITY_READY pid=24121
+BASE1_WRENCH_OVERLAY_READY enabled=true
+input=/my_drone/command/motor_speed output=/my_drone/base1_compensated/command/motor_speed
+logs=/tmp/my_drone_ros2_dds/base1_reallocator.log /tmp/my_drone_ros2_dds/base1_overlay_motor.log
+BASE1_ARM_COMPENSATION_READY gravity=true dynamic_wrench_6d=false reaction_force_gain=0 reaction_torque_gain=0

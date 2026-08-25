@@ -1,0 +1,6 @@
+PX4_STABILITY_GATE_WAIT horizontal_speed=0.010m/s vertical_speed=0.022m/s horizontal_drift=0.000m vertical_drift=0.000m stable_for=0.0s
+PX4_STABILITY_GATE_WAIT horizontal_speed=0.004m/s vertical_speed=0.021m/s horizontal_drift=0.006m vertical_drift=0.003m stable_for=1.0s
+PX4_STABILITY_GATE_WAIT horizontal_speed=0.001m/s vertical_speed=0.021m/s horizontal_drift=0.015m vertical_drift=0.006m stable_for=2.0s
+PX4_STABILITY_GATE_WAIT horizontal_speed=0.010m/s vertical_speed=0.014m/s horizontal_drift=0.024m vertical_drift=0.002m stable_for=3.1s
+PX4_STABILITY_GATE_WAIT horizontal_speed=0.004m/s vertical_speed=0.009m/s horizontal_drift=0.008m vertical_drift=0.018m stable_for=4.1s
+PX4_STABILITY_GATE_PASS horizontal_speed=0.008m/s vertical_speed=0.019m/s horizontal_drift=0.013m vertical_drift=0.021m hold=5.0s

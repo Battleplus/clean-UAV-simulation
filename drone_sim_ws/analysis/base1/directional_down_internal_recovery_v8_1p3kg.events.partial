@@ -1,0 +1,3 @@
+DIRECTIONAL_RUNTIME_ABORT direction=down error=ARM_DIRECT_XY_MOTION_ABORTED reason=direct_xy_motion_inhibited
+DIRECTIONAL_EMERGENCY_RETRACT_BLOCKED error=ARM_DIRECT_XY_MOTION_ABORTED reason=direct_xy_owner_aborting
+DIRECTIONAL_SEQUENCE_ERROR error=directional leg down aborted: ARM_DIRECT_XY_MOTION_ABORTED reason=direct_xy_motion_inhibited

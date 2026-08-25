@@ -10,3 +10,5 @@
 *.STL filter=lfs diff=lfs merge=lfs -text
 *.stl filter=lfs diff=lfs merge=lfs -text
 
+# Raw Gazebo/PX4 acceptance telemetry can exceed GitHub's 100 MB object limit.
+drone_sim_ws/analysis/**/*.jsonl filter=lfs diff=lfs merge=lfs -text

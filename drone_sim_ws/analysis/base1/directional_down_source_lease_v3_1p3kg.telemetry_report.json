@@ -1,0 +1,164 @@
+{
+  "any_failsafe": false,
+  "direct_xy_handoffs": {
+    "dual_owner_outside_handoff_samples": 0,
+    "entry_count": 1,
+    "entry_force_before_mixed_count": 0,
+    "entry_handoffs": [
+      {
+        "direct_force_on_s": 14783.415657614,
+        "lag_s": 0.01359548199980054,
+        "mixed_setpoint_s": 14783.402062132
+      }
+    ],
+    "exit_count": 0,
+    "exit_force_off_before_finite_count": 1,
+    "exit_handoffs": [],
+    "final_phase": "px4",
+    "incomplete_handoff": false,
+    "initial_state_invalid": false,
+    "invalid_setpoint_samples": 0,
+    "maximum_entry_lag_s": 0.01359548199980054,
+    "maximum_exit_lag_s": 0.0,
+    "maximum_transition_lag_s": 0.1,
+    "pass": false,
+    "unowned_xy_outside_handoff_samples": 1
+  },
+  "directions": [
+    "down"
+  ],
+  "events": "analysis/base1/directional_down_source_lease_v3_1p3kg.events",
+  "interval_evidence": {
+    "complete": true,
+    "duplicate_intervals": [],
+    "expected_stage_count": 3,
+    "missing_intervals": [],
+    "observed_order_matches": true,
+    "observed_stage_count": 3,
+    "unexpected_intervals": []
+  },
+  "limits": {
+    "altitude_peak_to_peak_m": 0.05,
+    "maximum_allocation_residual_norm": 0.02,
+    "maximum_sample_gap_s": 0.2,
+    "maximum_tilt_deg": 1.0,
+    "minimum_sample_rate_hz": 50.0,
+    "xy_peak_to_peak_m": 0.05
+  },
+  "observed_directions": [
+    "down"
+  ],
+  "pass": false,
+  "schema": "my_drone.directional-high-rate-acceptance.v1",
+  "stages": [
+    {
+      "allocator_saturated_motor_count_sum": 0,
+      "altitude_peak_to_peak_m": 0.0013748749082256317,
+      "compensation_continuity": {
+        "allocation_failure_samples": 0,
+        "maximum_sample_gap_s": 0.025871273001030204,
+        "slew_violation_samples": 0
+      },
+      "direct_xy_ownership": {
+        "direct_owner_coverage": 0.9985347985347985,
+        "dual_owner_samples": 0,
+        "inhibit_true_samples": 0,
+        "maximum_ownership_anomaly_window_s": 0.1466559509990475,
+        "maximum_setpoint_gap_s": 0.13232389299992064,
+        "mode_setpoint_timestamp_pair_rate": 1.0,
+        "pass": false,
+        "setpoint_samples": 1365,
+        "unowned_xy_samples": 1,
+        "valid_unique_owner_samples": 1363,
+        "valid_velocity_mode_pair_rate": 1.0
+      },
+      "direction": "down",
+      "duration_s": 68.28927399999884,
+      "effective_odometry_rate_hz": 82.97125744664537,
+      "maximum_allocation_residual_norm": 2.4227409879438395e-14,
+      "maximum_odometry_gap_s": 0.026457731000846252,
+      "maximum_tilt_deg": 0.22406982080218169,
+      "motor_samples": 3411,
+      "motor_saturation_samples": 0,
+      "no_failsafe": true,
+      "odometry_samples": 5666,
+      "pass": false,
+      "phase": "extend",
+      "reallocator_samples": 5617,
+      "xy_peak_to_peak_m": 0.018877694932479667
+    },
+    {
+      "allocator_saturated_motor_count_sum": 0,
+      "altitude_peak_to_peak_m": 0.0002176614427109591,
+      "compensation_continuity": {
+        "allocation_failure_samples": 0,
+        "maximum_sample_gap_s": 0.020510178999757045,
+        "slew_violation_samples": 0
+      },
+      "direct_xy_ownership": {
+        "direct_owner_coverage": 1.0,
+        "dual_owner_samples": 0,
+        "inhibit_true_samples": 0,
+        "maximum_ownership_anomaly_window_s": 0.0658365170002071,
+        "maximum_setpoint_gap_s": 0.09187223900153185,
+        "mode_setpoint_timestamp_pair_rate": 1.0,
+        "pass": true,
+        "setpoint_samples": 60,
+        "unowned_xy_samples": 0,
+        "valid_unique_owner_samples": 60,
+        "valid_velocity_mode_pair_rate": 1.0
+      },
+      "direction": "down",
+      "duration_s": 3.005355999999665,
+      "effective_odometry_rate_hz": 82.67955626266598,
+      "maximum_allocation_residual_norm": 2.4080311947319907e-14,
+      "maximum_odometry_gap_s": 0.023115350000807666,
+      "maximum_tilt_deg": 0.2109316061772049,
+      "motor_samples": 150,
+      "motor_saturation_samples": 0,
+      "no_failsafe": true,
+      "odometry_samples": 248,
+      "pass": true,
+      "phase": "hold",
+      "reallocator_samples": 241,
+      "xy_peak_to_peak_m": 0.0006258783166492245
+    },
+    {
+      "allocator_saturated_motor_count_sum": 0,
+      "altitude_peak_to_peak_m": 0.0036181447465757355,
+      "compensation_continuity": {
+        "allocation_failure_samples": 0,
+        "maximum_sample_gap_s": 0.03550615899985132,
+        "slew_violation_samples": 0
+      },
+      "direct_xy_ownership": {
+        "direct_owner_coverage": 1.0,
+        "dual_owner_samples": 0,
+        "inhibit_true_samples": 0,
+        "maximum_ownership_anomaly_window_s": 0.05328300700057298,
+        "maximum_setpoint_gap_s": 0.11446588600119867,
+        "mode_setpoint_timestamp_pair_rate": 1.0,
+        "pass": false,
+        "setpoint_samples": 1361,
+        "unowned_xy_samples": 0,
+        "valid_unique_owner_samples": 1361,
+        "valid_velocity_mode_pair_rate": 1.0
+      },
+      "direction": "down",
+      "duration_s": 68.1849259999999,
+      "effective_odometry_rate_hz": 82.97792514562322,
+      "maximum_allocation_residual_norm": 2.411839281065015e-14,
+      "maximum_odometry_gap_s": 0.021450388001539977,
+      "maximum_tilt_deg": 0.2289862862097383,
+      "motor_samples": 3405,
+      "motor_saturation_samples": 0,
+      "no_failsafe": true,
+      "odometry_samples": 5658,
+      "pass": false,
+      "phase": "retract",
+      "reallocator_samples": 5535,
+      "xy_peak_to_peak_m": 0.0038153161689685033
+    }
+  ],
+  "telemetry": "analysis/base1/directional_down_source_lease_v3_1p3kg.telemetry.jsonl"
+}

@@ -1,0 +1,24 @@
+[ERROR] [1787654853.562314532] [my_drone_direct_xy_guardian]: DIRECT_XY_GUARDIAN_ABORT {"controller_session_id": "", "intent_generation": 0, "lease_generation": 0, "ownership_epoch": 0, "watchdog_detail": "", "watchdog_reason": "main_intent_missing"}
+[INFO] [1787654853.853494349] [my_drone_direct_xy_guardian]: DIRECT_XY_GUARDIAN_READY producer_watchdog_s=0.040
+[ERROR] [1787654914.567453214] [my_drone_direct_xy_guardian]: DIRECT_XY_GUARDIAN_ABORT {"controller_session_id": "427f8e6c87424c5f84a74e8333b5d639", "intent_generation": 0, "lease_generation": 1, "ownership_epoch": 0, "watchdog_detail": "", "watchdog_reason": "main_intent_stale"}
+[ERROR] [1787654940.440710958] [my_drone_direct_xy_guardian]: DIRECT_XY_GUARDIAN_ABORT {"controller_session_id": "427f8e6c87424c5f84a74e8333b5d639", "intent_generation": 1, "lease_generation": 4, "ownership_epoch": 1, "watchdog_detail": "", "watchdog_reason": "reallocator_report_stale"}
+[ERROR] [1787655042.867075949] [my_drone_direct_xy_guardian]: DIRECT_XY_GUARDIAN_ABORT {"controller_session_id": "427f8e6c87424c5f84a74e8333b5d639", "intent_generation": 4, "lease_generation": 9, "ownership_epoch": 2, "watchdog_detail": "", "watchdog_reason": "main_intent_stale"}
+Traceback (most recent call last):
+  File "/mnt/e/清洁无人机/drone_sim_ws/src/px4_ros2_control/px4_ros2_control/direct_xy_guardian.py", line 714, in <module>
+    main()
+  File "/mnt/e/清洁无人机/drone_sim_ws/src/px4_ros2_control/px4_ros2_control/direct_xy_guardian.py", line 704, in main
+    rclpy.spin(node)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/__init__.py", line 247, in spin
+    executor.spin_once()
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 926, in spin_once
+    self._spin_once_impl(timeout_sec)
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 907, in _spin_once_impl
+    handler, entity, node = self.wait_for_ready_callbacks(
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 877, in wait_for_ready_callbacks
+    return next(self._cb_iter)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/opt/ros/jazzy/lib/python3.12/site-packages/rclpy/executors.py", line 757, in _wait_for_ready_callbacks
+    wait_set = _rclpy.WaitSet(
+               ^^^^^^^^^^^^^^^
+rclpy._rclpy_pybind11.RCLError: failed to initialize wait set: the given context is not valid, either rcl_init() was not called or rcl_shutdown() was called., at ./src/rcl/wait.c:130

@@ -1,0 +1,55 @@
+{
+  "ulog": "/tmp/my_drone_px4_work.Cd86CN/log/2026-08-13/04_15_26.ulg",
+  "streams": {
+    "sensor_combined": {
+      "present": true,
+      "samples": 129028,
+      "max_gap_s": 0.055999999999999994,
+      "gap_start_s": 187.16799999999998,
+      "gap_end_s": 187.224
+    },
+    "vehicle_status": {
+      "present": true,
+      "samples": 1060,
+      "max_gap_s": 0.508,
+      "gap_start_s": 184.624,
+      "gap_end_s": 185.132
+    },
+    "vehicle_local_position": {
+      "present": true,
+      "samples": 66293,
+      "max_gap_s": 0.19999999999999998,
+      "gap_start_s": 234.76,
+      "gap_end_s": 234.95999999999998
+    },
+    "vehicle_attitude": {
+      "present": true,
+      "samples": 117325,
+      "max_gap_s": 0.132,
+      "gap_start_s": 234.828,
+      "gap_end_s": 234.95999999999998
+    },
+    "actuator_motors": {
+      "present": true,
+      "samples": 5311,
+      "max_gap_s": 0.172,
+      "gap_start_s": 234.828,
+      "gap_end_s": 235.0
+    },
+    "vehicle_visual_odometry": {
+      "present": true,
+      "samples": 17699,
+      "max_gap_s": 0.048,
+      "gap_start_s": 184.136,
+      "gap_end_s": 184.184
+    },
+    "vehicle_local_position_groundtruth": {
+      "present": true,
+      "samples": 26546,
+      "max_gap_s": 0.044,
+      "gap_start_s": 194.11599999999999,
+      "gap_end_s": 194.16
+    }
+  },
+  "sensor_timeout_messages": []
+}

@@ -1,0 +1,1 @@
+[INFO] [1787593844.865873805] [base1_arm_wrench_reallocator]: BASE1_REALLOCATOR_READY {"adaptive_enabled": false, "enabled": true, "gravity_torque_gain": 1.0, "input_topic": "/my_drone/command/motor_speed", "output_topic": "/my_drone/base1_compensated/command/motor_speed", "position_feedback_enabled": true, "reaction_force_gain": 0.0, "reaction_torque_gain": 0.0}

@@ -1,0 +1,290 @@
+{
+  "any_failsafe": false,
+  "direct_xy_handoffs": {
+    "dual_owner_outside_handoff_samples": 0,
+    "entry_count": 2,
+    "entry_force_before_mixed_count": 0,
+    "entry_handoffs": [
+      {
+        "direct_force_on_s": 5434.396580123,
+        "lag_s": 0.003933334999601357,
+        "mixed_setpoint_s": 5434.392646788
+      },
+      {
+        "direct_force_on_s": 5452.836245272,
+        "lag_s": 0.011711463000210642,
+        "mixed_setpoint_s": 5452.824533809
+      }
+    ],
+    "exit_count": 1,
+    "exit_force_off_before_finite_count": 1,
+    "exit_handoffs": [
+      {
+        "direct_force_off_s": 5473.386433732,
+        "finite_setpoint_s": 5473.376219447,
+        "lag_s": 0.010214285000074597
+      }
+    ],
+    "final_phase": "px4",
+    "incomplete_handoff": false,
+    "initial_state_invalid": false,
+    "invalid_setpoint_samples": 0,
+    "maximum_entry_lag_s": 0.011711463000210642,
+    "maximum_exit_lag_s": 0.010214285000074597,
+    "maximum_transition_lag_s": 0.1,
+    "pass": false,
+    "unowned_xy_outside_handoff_samples": 1
+  },
+  "directions": [
+    "rear",
+    "left",
+    "right",
+    "up",
+    "front_left",
+    "front_right",
+    "rear_left",
+    "rear_right"
+  ],
+  "events": "analysis/base1/directional_remaining8_full_evidence_v14_1p3kg.events",
+  "interval_evidence": {
+    "complete": false,
+    "duplicate_intervals": [],
+    "expected_stage_count": 24,
+    "missing_intervals": [
+      [
+        "front_left",
+        "extend"
+      ],
+      [
+        "front_left",
+        "hold"
+      ],
+      [
+        "front_left",
+        "retract"
+      ],
+      [
+        "front_right",
+        "extend"
+      ],
+      [
+        "front_right",
+        "hold"
+      ],
+      [
+        "front_right",
+        "retract"
+      ],
+      [
+        "left",
+        "extend"
+      ],
+      [
+        "left",
+        "hold"
+      ],
+      [
+        "left",
+        "retract"
+      ],
+      [
+        "rear",
+        "extend"
+      ],
+      [
+        "rear",
+        "hold"
+      ],
+      [
+        "rear",
+        "retract"
+      ],
+      [
+        "rear_left",
+        "extend"
+      ],
+      [
+        "rear_left",
+        "hold"
+      ],
+      [
+        "rear_left",
+        "retract"
+      ],
+      [
+        "rear_right",
+        "extend"
+      ],
+      [
+        "rear_right",
+        "hold"
+      ],
+      [
+        "rear_right",
+        "retract"
+      ],
+      [
+        "right",
+        "extend"
+      ],
+      [
+        "right",
+        "hold"
+      ],
+      [
+        "right",
+        "retract"
+      ],
+      [
+        "up",
+        "extend"
+      ],
+      [
+        "up",
+        "hold"
+      ],
+      [
+        "up",
+        "retract"
+      ]
+    ],
+    "observed_order_matches": false,
+    "observed_stage_count": 0,
+    "unexpected_intervals": []
+  },
+  "limits": {
+    "altitude_peak_to_peak_m": 0.05,
+    "maximum_allocation_residual_norm": 0.02,
+    "maximum_controller_intent_gap_s": 0.25,
+    "maximum_sample_gap_s": 0.2,
+    "maximum_tilt_deg": 1.0,
+    "minimum_sample_rate_hz": 50.0,
+    "xy_peak_to_peak_m": 0.05
+  },
+  "observed_directions": [],
+  "pass": false,
+  "schema": "my_drone.directional-high-rate-acceptance.v1",
+  "stages": [
+    {
+      "direction": "rear",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "rear",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "rear",
+      "pass": false,
+      "phase": "retract"
+    },
+    {
+      "direction": "left",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "left",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "left",
+      "pass": false,
+      "phase": "retract"
+    },
+    {
+      "direction": "right",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "right",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "right",
+      "pass": false,
+      "phase": "retract"
+    },
+    {
+      "direction": "up",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "up",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "up",
+      "pass": false,
+      "phase": "retract"
+    },
+    {
+      "direction": "front_left",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "front_left",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "front_left",
+      "pass": false,
+      "phase": "retract"
+    },
+    {
+      "direction": "front_right",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "front_right",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "front_right",
+      "pass": false,
+      "phase": "retract"
+    },
+    {
+      "direction": "rear_left",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "rear_left",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "rear_left",
+      "pass": false,
+      "phase": "retract"
+    },
+    {
+      "direction": "rear_right",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "rear_right",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "rear_right",
+      "pass": false,
+      "phase": "retract"
+    }
+  ],
+  "telemetry": "analysis/base1/directional_remaining8_full_evidence_v14_1p3kg.telemetry.jsonl"
+}

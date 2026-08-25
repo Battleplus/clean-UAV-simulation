@@ -1,0 +1,88 @@
+{
+  "any_failsafe": false,
+  "direct_xy_handoffs": {
+    "dual_owner_outside_handoff_samples": 0,
+    "entry_count": 1,
+    "entry_force_before_mixed_count": 0,
+    "entry_handoffs": [
+      {
+        "direct_force_on_s": 14989.139256845,
+        "lag_s": 0.032579323999016196,
+        "mixed_setpoint_s": 14989.106677521
+      }
+    ],
+    "exit_count": 1,
+    "exit_force_off_before_finite_count": 0,
+    "exit_handoffs": [
+      {
+        "direct_force_off_s": 14989.159638112,
+        "finite_setpoint_s": 14989.154633455,
+        "lag_s": 0.005004656999517465
+      }
+    ],
+    "final_phase": "px4",
+    "incomplete_handoff": false,
+    "initial_state_invalid": false,
+    "invalid_setpoint_samples": 0,
+    "maximum_entry_lag_s": 0.032579323999016196,
+    "maximum_exit_lag_s": 0.005004656999517465,
+    "maximum_transition_lag_s": 0.1,
+    "pass": true,
+    "unowned_xy_outside_handoff_samples": 0
+  },
+  "directions": [
+    "down"
+  ],
+  "events": "analysis/base1/directional_down_callback_drain_1p3kg.events",
+  "interval_evidence": {
+    "complete": false,
+    "duplicate_intervals": [],
+    "expected_stage_count": 3,
+    "missing_intervals": [
+      [
+        "down",
+        "extend"
+      ],
+      [
+        "down",
+        "hold"
+      ],
+      [
+        "down",
+        "retract"
+      ]
+    ],
+    "observed_order_matches": false,
+    "observed_stage_count": 0,
+    "unexpected_intervals": []
+  },
+  "limits": {
+    "altitude_peak_to_peak_m": 0.05,
+    "maximum_allocation_residual_norm": 0.02,
+    "maximum_sample_gap_s": 0.2,
+    "maximum_tilt_deg": 1.0,
+    "minimum_sample_rate_hz": 50.0,
+    "xy_peak_to_peak_m": 0.05
+  },
+  "observed_directions": [],
+  "pass": false,
+  "schema": "my_drone.directional-high-rate-acceptance.v1",
+  "stages": [
+    {
+      "direction": "down",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "down",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "down",
+      "pass": false,
+      "phase": "retract"
+    }
+  ],
+  "telemetry": "analysis/base1/directional_down_callback_drain_1p3kg.telemetry.jsonl"
+}

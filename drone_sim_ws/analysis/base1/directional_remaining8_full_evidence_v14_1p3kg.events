@@ -1,0 +1,3 @@
+DIRECTIONAL_RUNTIME_ABORT direction=rear error=ARM_DIRECT_XY_MOTION_ABORTED reason=direct_xy_owner_state_stale
+DIRECTIONAL_EMERGENCY_RETRACT_COMPLETE
+DIRECTIONAL_SEQUENCE_ERROR error=directional leg rear aborted: ARM_DIRECT_XY_MOTION_ABORTED reason=direct_xy_owner_state_stale

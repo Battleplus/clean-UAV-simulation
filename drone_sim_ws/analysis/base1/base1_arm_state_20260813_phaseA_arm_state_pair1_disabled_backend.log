@@ -1,0 +1,3 @@
+ROS2_DDS_NOARM_READY
+ROS2_DDS_READY arm_control=false
+logs=/tmp/my_drone_ros2_dds

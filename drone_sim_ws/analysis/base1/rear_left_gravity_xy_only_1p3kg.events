@@ -1,0 +1,5 @@
+DIRECTIONAL_STAGE_INTERVAL direction=rear_left phase=extend start=8514.970565 end=8538.033676
+DIRECTIONAL_STAGE_INTERVAL direction=rear_left phase=hold start=8538.033834 end=8541.034047
+DIRECTIONAL_STAGE_INTERVAL direction=rear_left phase=retract start=8541.446513 end=8564.510538
+DIRECTIONAL_DIRECTION_COMPLETE direction=rear_left
+DIRECTIONAL_SEQUENCE_COMPLETE directions=1

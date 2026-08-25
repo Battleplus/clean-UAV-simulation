@@ -1,0 +1,6 @@
+Starting >>> drone_arm_sim
+Starting >>> px4_ros2_control
+Finished <<< px4_ros2_control [15.0s]
+Finished <<< drone_arm_sim [28.4s]
+
+Summary: 2 packages finished [31.2s]

@@ -1,0 +1,37 @@
+DIRECTIONAL_STAGE_INTERVAL direction=rear phase=extend start=7323.032121 end=7343.538457
+DIRECTIONAL_STAGE_INTERVAL direction=rear phase=hold start=7343.538623 end=7346.542612
+DIRECTIONAL_STAGE_INTERVAL direction=rear phase=retract start=7346.890029 end=7367.394270
+DIRECTIONAL_DIRECTION_COMPLETE direction=rear
+DIRECTIONAL_STAGE_INTERVAL direction=left phase=extend start=7369.804549 end=7437.983482
+DIRECTIONAL_STAGE_INTERVAL direction=left phase=hold start=7437.983681 end=7440.984157
+DIRECTIONAL_STAGE_INTERVAL direction=left phase=retract start=7441.454254 end=7509.636589
+DIRECTIONAL_DIRECTION_COMPLETE direction=left
+DIRECTIONAL_STAGE_INTERVAL direction=right phase=extend start=7512.051745 end=7557.673134
+DIRECTIONAL_STAGE_INTERVAL direction=right phase=hold start=7557.673269 end=7560.676792
+DIRECTIONAL_STAGE_INTERVAL direction=right phase=retract start=7561.041578 end=7606.661474
+DIRECTIONAL_DIRECTION_COMPLETE direction=right
+DIRECTIONAL_STAGE_INTERVAL direction=up phase=extend start=7609.089616 end=7629.593281
+DIRECTIONAL_STAGE_INTERVAL direction=up phase=hold start=7629.593411 end=7632.596714
+DIRECTIONAL_STAGE_INTERVAL direction=up phase=retract start=7632.982010 end=7653.488179
+DIRECTIONAL_DIRECTION_COMPLETE direction=up
+DIRECTIONAL_STAGE_INTERVAL direction=down phase=extend start=7655.981264 end=7724.162528
+DIRECTIONAL_STAGE_INTERVAL direction=down phase=hold start=7724.162769 end=7727.166392
+DIRECTIONAL_STAGE_INTERVAL direction=down phase=retract start=7727.593300 end=7795.773999
+DIRECTIONAL_DIRECTION_COMPLETE direction=down
+DIRECTIONAL_STAGE_INTERVAL direction=front_left phase=extend start=7798.150796 end=7843.769630
+DIRECTIONAL_STAGE_INTERVAL direction=front_left phase=hold start=7843.769833 end=7846.773084
+DIRECTIONAL_STAGE_INTERVAL direction=front_left phase=retract start=7847.162150 end=7892.786606
+DIRECTIONAL_DIRECTION_COMPLETE direction=front_left
+DIRECTIONAL_STAGE_INTERVAL direction=front_right phase=extend start=7895.320109 end=7918.380308
+DIRECTIONAL_STAGE_INTERVAL direction=front_right phase=hold start=7918.380558 end=7921.384495
+DIRECTIONAL_STAGE_INTERVAL direction=front_right phase=retract start=7921.838047 end=7944.899632
+DIRECTIONAL_DIRECTION_COMPLETE direction=front_right
+DIRECTIONAL_STAGE_INTERVAL direction=rear_left phase=extend start=7947.389054 end=7970.454353
+DIRECTIONAL_STAGE_INTERVAL direction=rear_left phase=hold start=7970.454591 end=7973.456950
+DIRECTIONAL_STAGE_INTERVAL direction=rear_left phase=retract start=7974.024055 end=7997.084194
+DIRECTIONAL_DIRECTION_COMPLETE direction=rear_left
+DIRECTIONAL_STAGE_INTERVAL direction=rear_right phase=extend start=7999.618280 end=8022.678130
+DIRECTIONAL_STAGE_INTERVAL direction=rear_right phase=hold start=8022.678266 end=8025.678685
+DIRECTIONAL_STAGE_INTERVAL direction=rear_right phase=retract start=8026.194145 end=8049.261354
+DIRECTIONAL_DIRECTION_COMPLETE direction=rear_right
+DIRECTIONAL_SEQUENCE_COMPLETE directions=9

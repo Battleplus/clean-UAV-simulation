@@ -1,0 +1,10 @@
+ARM_INIT_RETRY activating joint_state_broadcaster
+waiting for service to become available...
+requester: making request: controller_manager_msgs.srv.SwitchController_Request(activate_controllers=['joint_state_broadcaster'], deactivate_controllers=[], strictness=2, activate_asap=True, timeout=builtin_interfaces.msg.Duration(sec=15, nanosec=0))
+
+response:
+controller_manager_msgs.srv.SwitchController_Response(ok=False, message="Controller with name 'joint_state_broadcaster' is already active.")
+
+[INFO] [1786554238.860307490] [arm_preset_control]: Sent preset retracted over /arm_controller/joint_trajectory
+[INFO] [1786554238.880088056] [arm_preset_control]: ARM_PRESET_REACHED preset=retracted max_error=0.000508 rad
+ARM_STATIC_GATE_PASS preset=retracted samples=502 max_error_rad=0.000508 max_speed_rad_s=0.000000

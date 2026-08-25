@@ -1,0 +1,98 @@
+{
+  "any_failsafe": false,
+  "direct_xy_handoffs": {
+    "dual_owner_outside_handoff_samples": 0,
+    "entry_count": 2,
+    "entry_force_before_mixed_count": 0,
+    "entry_handoffs": [
+      {
+        "direct_force_on_s": 9660.940170855,
+        "lag_s": 0.018030706998615642,
+        "mixed_setpoint_s": 9660.922140148
+      },
+      {
+        "direct_force_on_s": 9681.84574005,
+        "lag_s": 0.005819671998324338,
+        "mixed_setpoint_s": 9681.839920378
+      }
+    ],
+    "exit_count": 2,
+    "exit_force_off_before_finite_count": 0,
+    "exit_handoffs": [
+      {
+        "direct_force_off_s": 9661.122092008,
+        "finite_setpoint_s": 9661.106792628,
+        "lag_s": 0.015299380000215024
+      },
+      {
+        "direct_force_off_s": 9682.026419961,
+        "finite_setpoint_s": 9682.015328372,
+        "lag_s": 0.011091588999988744
+      }
+    ],
+    "final_phase": "px4",
+    "incomplete_handoff": false,
+    "initial_state_invalid": false,
+    "invalid_setpoint_samples": 0,
+    "maximum_entry_lag_s": 0.018030706998615642,
+    "maximum_exit_lag_s": 0.015299380000215024,
+    "maximum_transition_lag_s": 0.1,
+    "pass": true,
+    "unowned_xy_outside_handoff_samples": 0
+  },
+  "directions": [
+    "down"
+  ],
+  "events": "analysis/base1/directional_down_lock_order_fix_1p3kg.events",
+  "interval_evidence": {
+    "complete": false,
+    "duplicate_intervals": [],
+    "expected_stage_count": 3,
+    "missing_intervals": [
+      [
+        "down",
+        "extend"
+      ],
+      [
+        "down",
+        "hold"
+      ],
+      [
+        "down",
+        "retract"
+      ]
+    ],
+    "observed_order_matches": false,
+    "observed_stage_count": 0,
+    "unexpected_intervals": []
+  },
+  "limits": {
+    "altitude_peak_to_peak_m": 0.05,
+    "maximum_allocation_residual_norm": 0.02,
+    "maximum_sample_gap_s": 0.2,
+    "maximum_tilt_deg": 1.0,
+    "minimum_sample_rate_hz": 50.0,
+    "xy_peak_to_peak_m": 0.05
+  },
+  "observed_directions": [],
+  "pass": false,
+  "schema": "my_drone.directional-high-rate-acceptance.v1",
+  "stages": [
+    {
+      "direction": "down",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "down",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "down",
+      "pass": false,
+      "phase": "retract"
+    }
+  ],
+  "telemetry": "analysis/base1/directional_down_lock_order_fix_1p3kg.telemetry.jsonl"
+}

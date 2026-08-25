@@ -1,0 +1,94 @@
+{
+  "any_failsafe": false,
+  "direct_xy_handoffs": {
+    "dual_owner_outside_handoff_samples": 0,
+    "entry_count": 2,
+    "entry_force_before_mixed_count": 0,
+    "entry_handoffs": [
+      {
+        "direct_force_on_s": 3566.893337531,
+        "lag_s": 0.039532106000024214,
+        "mixed_setpoint_s": 3566.853805425
+      },
+      {
+        "direct_force_on_s": 3568.302155572,
+        "lag_s": 0.014084771000398177,
+        "mixed_setpoint_s": 3568.288070801
+      }
+    ],
+    "exit_count": 1,
+    "exit_force_off_before_finite_count": 1,
+    "exit_handoffs": [
+      {
+        "direct_force_off_s": 3568.362809565,
+        "finite_setpoint_s": 3568.35975333,
+        "lag_s": 0.0030562350002583116
+      }
+    ],
+    "final_phase": "px4",
+    "incomplete_handoff": false,
+    "initial_state_invalid": false,
+    "invalid_setpoint_samples": 0,
+    "maximum_entry_lag_s": 0.039532106000024214,
+    "maximum_exit_lag_s": 0.0030562350002583116,
+    "maximum_transition_lag_s": 0.1,
+    "pass": false,
+    "unowned_xy_outside_handoff_samples": 1
+  },
+  "directions": [
+    "front"
+  ],
+  "events": "analysis/base1/directional_front_full_evidence_v12_1p3kg.events",
+  "interval_evidence": {
+    "complete": false,
+    "duplicate_intervals": [],
+    "expected_stage_count": 3,
+    "missing_intervals": [
+      [
+        "front",
+        "extend"
+      ],
+      [
+        "front",
+        "hold"
+      ],
+      [
+        "front",
+        "retract"
+      ]
+    ],
+    "observed_order_matches": false,
+    "observed_stage_count": 0,
+    "unexpected_intervals": []
+  },
+  "limits": {
+    "altitude_peak_to_peak_m": 0.05,
+    "maximum_allocation_residual_norm": 0.02,
+    "maximum_controller_intent_gap_s": 0.25,
+    "maximum_sample_gap_s": 0.2,
+    "maximum_tilt_deg": 1.0,
+    "minimum_sample_rate_hz": 50.0,
+    "xy_peak_to_peak_m": 0.05
+  },
+  "observed_directions": [],
+  "pass": false,
+  "schema": "my_drone.directional-high-rate-acceptance.v1",
+  "stages": [
+    {
+      "direction": "front",
+      "pass": false,
+      "phase": "extend"
+    },
+    {
+      "direction": "front",
+      "pass": false,
+      "phase": "hold"
+    },
+    {
+      "direction": "front",
+      "pass": false,
+      "phase": "retract"
+    }
+  ],
+  "telemetry": "analysis/base1/directional_front_full_evidence_v12_1p3kg.telemetry.jsonl"
+}

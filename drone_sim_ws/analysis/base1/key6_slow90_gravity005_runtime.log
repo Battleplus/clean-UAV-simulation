@@ -1,0 +1,3 @@
+DDS WASD: T takeoff | W/S/A/D move | R/F up/down | Q/E yaw | H hover | L land | O exit Offboard | X twice emergency disarm | Z safe exit
+DDS_ARM_FLIGHT_FAIL missing=['OFFBOARD mode and ARM commands sent', 'PX4 command ack: command=21 result=0', 'LANDING_DISARMED_CONFIRMED', 'arm:cartesian_demo'] climbed=False no_failsafe=True stable=False internal_land=False hover_ready=False
+ARM_FLIGHT_METRICS horizontal_drift_m=inf altitude_span_m=inf max_com_shift_m=inf max_inertia_diag_change_kg_m2=inf max_arm_force_n=inf max_arm_torque_nm=inf motor_saturation_samples=0/0 motor_saturation_rate=inf rated_motor_output=1000.000 max_truth_tilt_deg=inf rms_truth_tilt_deg=inf samples=0

@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/mnt/e/清洁无人机/drone_sim_ws/scripts/test_ros2_dds_arm_flight_pty.py", line 1143, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "/mnt/e/清洁无人机/drone_sim_ws/scripts/test_ros2_dds_arm_flight_pty.py", line 78, in main
+    controller = subprocess.Popen(
+                 ^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/usr/lib/python3.12/subprocess.py", line 1955, in _execute_child
+    raise child_exception_type(errno_num, err_msg, err_filename)
+FileNotFoundError: [Errno 2] No such file or directory: 'ros2'
