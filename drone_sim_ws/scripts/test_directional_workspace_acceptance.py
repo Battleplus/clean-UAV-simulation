@@ -273,6 +273,51 @@ def test_directional_abort_recovery_requires_fresh_armed_stable_hold_state():
         )
 
 
+def test_directional_acceptance_uses_stage_contract_not_full_run_position_range():
+    # A long run may re-lock around slightly different hover points.  The
+    # declared 0.05 m gate is already evaluated inside each of the 30 stages.
+    assert directional_flight_harness.directional_stage_acceptance_stable(
+        directional_stages_stable=True,
+        max_arm_torque=0.20,
+        saturation_samples=0,
+        max_truth_tilt_deg=0.9,
+        acceptance_tilt_deg=1.0,
+        max_arm_force=0.0,
+        max_com_shift=0.06,
+        max_inertia_diag_change=0.03,
+        diagnostic_sample_count=300,
+    )
+
+
+def test_directional_acceptance_still_fails_each_safety_invariant():
+    baseline = dict(
+        directional_stages_stable=True,
+        max_arm_torque=0.20,
+        saturation_samples=0,
+        max_truth_tilt_deg=0.9,
+        acceptance_tilt_deg=1.0,
+        max_arm_force=0.0,
+        max_com_shift=0.06,
+        max_inertia_diag_change=0.03,
+        diagnostic_sample_count=300,
+    )
+    for name, value in (
+        ("directional_stages_stable", False),
+        ("max_arm_torque", 0.50),
+        ("saturation_samples", 1),
+        ("max_truth_tilt_deg", 1.01),
+        ("max_arm_force", float("inf")),
+        ("max_com_shift", float("nan")),
+        ("max_inertia_diag_change", float("inf")),
+        ("diagnostic_sample_count", 0),
+    ):
+        case = dict(baseline)
+        case[name] = value
+        assert not directional_flight_harness.directional_stage_acceptance_stable(
+            **case
+        )
+
+
 def test_directional_abort_path_never_lands_when_retraction_is_blocked():
     source = (SCRIPTS / "test_ros2_dds_arm_flight_pty.py").read_text(
         encoding="utf-8"

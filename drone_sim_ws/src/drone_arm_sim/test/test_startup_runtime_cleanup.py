@@ -22,7 +22,7 @@ def test_estimator_readiness_uses_one_persistent_dds_sample_gate():
         ROOT / "scripts/run_base1_readonly_estimator_overlay.sh"
     ).read_text(encoding="utf-8")
 
-    launch_index = source.index("setsid ros2 run drone_arm_sim arm_coupling_monitor")
+    launch_index = source.index("ros2 run drone_arm_sim arm_coupling_monitor")
     readiness = source[launch_index:]
     assert "wait_base1_ros_samples.py" in readiness
     assert "--coupling-samples 3" in readiness
@@ -77,7 +77,10 @@ def test_external_guardian_uses_the_current_workspace_source():
     )
     assert f'guardian_source="{expected}"' in source
     assert '[[ ! -f "${guardian_source}" ]]' in source
-    assert 'setsid python3 "${guardian_source}"' in source
+    assert (
+        'setsid "${cpu_role_runner}" guardian python3 "${guardian_source}"'
+        in source
+    )
 
 
 def test_clean_restart_targets_estimator_child_and_removes_stale_pidfiles():

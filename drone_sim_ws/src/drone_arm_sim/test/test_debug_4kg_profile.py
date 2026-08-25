@@ -128,8 +128,10 @@ class Debug4kgProfileTest(unittest.TestCase):
             launcher,
         )
         self.assertIn('BASE1_ADAPTIVE_ENABLED="${BASE1_ADAPTIVE_ENABLED:-false}"', launcher)
+        # The read-only estimator does not enable the JTC reaction-wrench
+        # path, so the launcher must report the effective runtime state.
         self.assertIn(
-            'BASE1_ARM_COMPENSATION_READY gravity=true dynamic_wrench_6d=true',
+            'BASE1_ARM_COMPENSATION_READY gravity=true dynamic_wrench_6d=false',
             launcher,
         )
 

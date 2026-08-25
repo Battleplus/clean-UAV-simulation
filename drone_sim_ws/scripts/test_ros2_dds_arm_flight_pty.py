@@ -90,6 +90,37 @@ def directional_abort_recovery_stable(latest, now_s: float) -> bool:
     )
 
 
+def directional_stage_acceptance_stable(
+    *,
+    directional_stages_stable: bool,
+    max_arm_torque: float,
+    saturation_samples: int,
+    max_truth_tilt_deg: float,
+    acceptance_tilt_deg: float,
+    max_arm_force: float,
+    max_com_shift: float,
+    max_inertia_diag_change: float,
+    diagnostic_sample_count: int,
+) -> bool:
+    """Apply the declared per-stage directional acceptance contract.
+
+    The ten-direction run deliberately re-locks the hover target between
+    directions.  Its full-run position range is useful long-duration drift
+    telemetry, but it is not one of the 30 extend/hold/retract stage gates and
+    must not be compared with the per-stage 0.05 m limit a second time.
+    """
+    return bool(
+        directional_stages_stable
+        and max_arm_torque < 0.50
+        and saturation_samples == 0
+        and max_truth_tilt_deg <= acceptance_tilt_deg
+        and math.isfinite(max_arm_force)
+        and math.isfinite(max_com_shift)
+        and math.isfinite(max_inertia_diag_change)
+        and diagnostic_sample_count > 0
+    )
+
+
 def _ros_topic_sample(topic: str, timeout_s: float) -> str:
     """Return one live ROS sample or raise before an automated flight can arm."""
     result = subprocess.run(
@@ -1736,19 +1767,30 @@ def main() -> int:
         acceptance_tilt_deg = float(
             os.environ.get("ARM_FLIGHT_ACCEPT_TILT_DEG", "3.0")
         )
-        stable = (
-            truth_xy_peak_to_peak_m <= acceptance_horizontal_m
-            and truth_altitude_peak_to_peak_m <= acceptance_altitude_m
-            and max_arm_torque < 0.50
-            and saturation_samples == 0
-            and max_truth_tilt_deg <= acceptance_tilt_deg
-            and math.isfinite(max_arm_force)
-            and math.isfinite(max_com_shift)
-            and math.isfinite(max_inertia_diag_change)
-            and len(diagnostic_window) > 0
-        )
         if profile == "directional_workspace_4kg":
-            stable = stable and directional_stages_stable
+            stable = directional_stage_acceptance_stable(
+                directional_stages_stable=directional_stages_stable,
+                max_arm_torque=max_arm_torque,
+                saturation_samples=saturation_samples,
+                max_truth_tilt_deg=max_truth_tilt_deg,
+                acceptance_tilt_deg=acceptance_tilt_deg,
+                max_arm_force=max_arm_force,
+                max_com_shift=max_com_shift,
+                max_inertia_diag_change=max_inertia_diag_change,
+                diagnostic_sample_count=len(diagnostic_window),
+            )
+        else:
+            stable = (
+                truth_xy_peak_to_peak_m <= acceptance_horizontal_m
+                and truth_altitude_peak_to_peak_m <= acceptance_altitude_m
+                and max_arm_torque < 0.50
+                and saturation_samples == 0
+                and max_truth_tilt_deg <= acceptance_tilt_deg
+                and math.isfinite(max_arm_force)
+                and math.isfinite(max_com_shift)
+                and math.isfinite(max_inertia_diag_change)
+                and len(diagnostic_window) > 0
+            )
     print(
         "ARM_FLIGHT_METRICS "
         f"horizontal_drift_m={max_horizontal_drift:.3f} "

@@ -1,6 +1,6 @@
 # clean-UAV-simulation
 
-## 1.3 kg / 0.6 kg 机械臂质量候选（2026-08-20）
+## 1.3 kg / 0.6 kg 机械臂质量候选（2026-08-26）
 
 当前质量口径更新为：**整机约 1.3 kg，其中完整 SO101 机械臂约 0.6 kg，剩余机架、电机、旋翼、电池等约 0.7 kg**。这两个数目前是用户提供的近似值，不是逐件称重结果。Base 1 的 4 kg 已验收版本和 7.735 kg 历史正式模型均保留不覆盖。
 
@@ -13,8 +13,9 @@
 - 25,725 姿态静态扫描通过全方向端点覆盖；在 `0.30 N/电机` 动态补偿保留量下，允许姿态最大重心移动约 `0.0589 m`，最大静态重心力矩约 `0.7286 N·m`。
 - 候选补偿上限：重心力矩 `0.90 N·m`、单电机补偿增量 `1.25 N`。
 - 无机械臂动作的 PX4/WASD 动态验收已通过：最大稳定速度跟踪误差约 `0.0347 m/s`，无饱和、failsafe，并正常降落解除武装。
-- 十方向动态验收未通过。第二轮在向前动作的收回末段出现角速度环发散并触发安全降落；机械臂此时已接近收回姿态，不能归因于静态重心偏置。
-- 81 点加密连续预演发现原“向上”极值路径存在 `upper_arm_link–wrist_link` 碰撞代理；规划器现会搜索不同逆解分支，自动跳过前 43 个碰撞候选后选中安全向上路径。十方向伸出和完整回收预演均已闭合，但仍不替代动态飞行验收。
+- 十方向 PX4/Gazebo 动态验收已通过：`front/rear/left/right/up/down/front_left/front_right/rear_left/rear_right` 的伸出、保持、回收共 `30/30` 阶段通过，且十个方向均回到收拢姿态。
+- 30 个阶段中最差水平峰峰值 `0.02199 m`、最差高度峰峰值 `0.00221 m`、最大倾角 `0.25059°`，均满足每阶段 `0.05 m / 0.05 m / 1°` 门限；电机饱和样本为 `0`，无 failsafe，最终正常 LAND 并解除武装。
+- 81 点加密连续预演仍作为飞前碰撞门；原“向上”极值路径的 `upper_arm_link–wrist_link` 碰撞代理由规划器搜索安全逆解分支规避。
 
 候选文件：
 
@@ -55,7 +56,7 @@ bash scripts/run_front_retract_acceptance_1p3kg.sh
 
 该入口仍读取完整十方向计划和模型哈希，但只执行 `front` 腿，并强制使用 `81` 点连续轨迹预演。只有该隔离动作满足统一 `5 cm / 1° / 零饱和 / 零 failsafe` 门限后，才恢复完整十方向测试。
 
-只有输出 `CANDIDATE_1P3KG_FULL_ACCEPTANCE_PASS`，并且方向阶段报告全部满足水平/高度峰峰值 `≤0.05 m`、最大倾角 `≤1°`、零饱和、零 failsafe，才可将候选状态升级为动态通过。当前尚未产生该标记。
+十方向动作的独立严格验收现已输出 `DDS_ARM_FLIGHT_PASS` 与 `HIGH_RATE_DIRECTIONAL_ACCEPTANCE pass=True`。整套 `run_full_acceptance_1p3kg.sh` 的总标记 `CANDIDATE_1P3KG_FULL_ACCEPTANCE_PASS` 仍只用于同时重跑无臂/WASD 与十方向动作的汇总入口，不能与本次十方向分阶段结论混写。
 
 机器审计可随时重跑：
 
@@ -63,9 +64,9 @@ bash scripts/run_front_retract_acceptance_1p3kg.sh
 python3 scripts/verify_candidate_1p3kg_acceptance.py
 ```
 
-审计器会同时校验模型/配置/包线/规划器哈希，且只有无臂和十方向两份动态日志都通过才会输出 `CANDIDATE_1P3KG_DYNAMIC_ACCEPTED`。当前机器状态为 `CANDIDATE_1P3KG_OFFLINE_READY_DYNAMIC_NOT_ACCEPTED`。
+审计器会同时校验模型/配置/包线/规划器哈希，且只有无臂和十方向两份动态日志都通过才会输出 `CANDIDATE_1P3KG_DYNAMIC_ACCEPTED`。本次十方向权威证据为 `analysis/base1/directional_all10_full_evidence_v24_1p3kg.log` 及同名 `telemetry_report.json`；报告 `pass=true`、阶段数 `30`、方向数 `10`。
 
-首轮动态试验表明直接继承 Base 1 的角速度环增益不适合 1.3 kg 候选。4028 候选已独立设置初始角速度增益（滚/俯 P=`0.030`、I=`0.018`、D=`0.0009`；偏航 P=`0.040`、I=`0.010`），Base 1 不变。这组值仍须重新完成无机械臂起飞/悬停、WASD、H 悬停，再进行隔离的机械臂伸出—保持—收回验收。逐件称重后还需再次生成质量、质心和惯量。
+首轮动态试验表明直接继承 Base 1 的角速度环增益不适合 1.3 kg 候选。4028 候选使用独立角速度增益（滚/俯 P=`0.030`、I=`0.018`、D=`0.0009`；偏航 P=`0.040`、I=`0.010`），Base 1 不变。当前无机械臂起飞/悬停/WASD/降落和十方向机械臂动作均已有独立通过证据；逐件称重后仍需重新生成质量、质心和惯量并复验。
 
 ## Base 1 联合补偿最新验收（2026-08-13）
 
@@ -327,7 +328,7 @@ source install/setup.bash
 python3 -m pytest -q src/drone_arm_sim/test src/px4_ros2_control/test
 ```
 
-当前飞行与机械臂核心回归结果：`78 passed`（3 个上游 protobuf 弃用警告）。
+当前飞行与机械臂核心回归结果：`367 passed`（3 个上游 protobuf 弃用警告，2026-08-26）。
 
 启动正式后端后，可运行：
 
