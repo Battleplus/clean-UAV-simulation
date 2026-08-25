@@ -1,0 +1,2718 @@
+{
+  "schema": 2,
+  "status": "DISCRETE_STATIC_ENVELOPE",
+  "interpretation": "Discrete static CAD/allocator/joint-effort screening with conservative box and rotor swept-volume proxies. Category coverage does not prove continuous-space safety. Flight acceptance still requires trajectory preflight and PX4/Gazebo dynamic/contact validation.",
+  "model_assumptions": {
+    "positive_thrust_direction_status": "UNRESOLVED_FOR_ALL_MOTORS",
+    "rotor_axis_assumption": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+    "motor_model_status": "debug-only ideal mapping u=0..1 to 0..rated thrust; no voltage sag, ESC dead zone, transport delay or nonlinear static-thrust interpolation",
+    "joint_effort_source": "motion_reference joints[*].effort_nm",
+    "joint_effort_measurement_status": "DOCUMENTED_NOT_BENCH_VERIFIED",
+    "static_pose_only": true,
+    "continuous_trajectory_guarantee": false,
+    "formal_physical_release_ready": false
+  },
+  "inputs": {
+    "urdf": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\urdf\\my_drone_v3\\my_drone_cad_debug_4kg.urdf",
+    "motion_reference": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\config\\so101_motion_reference_4kg.json",
+    "flight_config": "E:\\清洁无人机\\drone_sim_ws\\src\\drone_arm_sim\\config\\my_drone_v3_cad_debug_4kg.json",
+    "sha256": {
+      "urdf": "3df3003f3db42b3faad32780a6e3304934fd61f66df4ceb0de22085bcdca261e",
+      "motion_reference": "5c106fbe09a37ca2c7d84053af9c771b7a679b18bac77ec9d5c460883f6cfa0d",
+      "flight_config": "9ec7a85e99f37cd86eb21ce8010b3161ac8e0f5e3b75e807c8a04f828623c141"
+    },
+    "target_mass_kg": 4.0,
+    "grid_counts": {
+      "shoulder_pan": 7,
+      "shoulder_lift": 7,
+      "elbow_flex": 7,
+      "wrist_flex": 5,
+      "wrist_roll": 5,
+      "gripper": 3
+    },
+    "joint_sampling": {
+      "shoulder_pan": {
+        "count": 7,
+        "sampled_min_rad": -1.8046684,
+        "sampled_max_rad": 1.8046684,
+        "maximum_grid_step_rad": 0.6015561333333334
+      },
+      "shoulder_lift": {
+        "count": 7,
+        "sampled_min_rad": -1.6406102,
+        "sampled_max_rad": 1.6406102,
+        "maximum_grid_step_rad": 0.5468700666666667
+      },
+      "elbow_flex": {
+        "count": 7,
+        "sampled_min_rad": -1.5886,
+        "sampled_max_rad": 1.5886,
+        "maximum_grid_step_rad": 0.5295333333333333
+      },
+      "wrist_flex": {
+        "count": 5,
+        "sampled_min_rad": -1.5585764000000002,
+        "sampled_max_rad": 1.5585764000000002,
+        "maximum_grid_step_rad": 0.7792882000000001
+      },
+      "wrist_roll": {
+        "count": 5,
+        "sampled_min_rad": -2.5762982,
+        "sampled_max_rad": 2.6736581999999998,
+        "maximum_grid_step_rad": 1.3124891
+      },
+      "gripper": {
+        "count": 3,
+        "sampled_min_rad": -0.11693710999999998,
+        "sampled_max_rad": 1.68773411,
+        "maximum_grid_step_rad": 0.9023356100000001
+      }
+    },
+    "limit_margin_fraction": 0.03,
+    "radial_band_limits_m": [
+      0.15,
+      0.25
+    ]
+  },
+  "limits": {
+    "gravity_torque_limit_nm": 1.35,
+    "maximum_motor_delta_n": 1.6,
+    "minimum_motor_headroom_n": 0.25,
+    "minimum_delta_headroom_n": 0.05,
+    "allocation_residual_limit": 1e-06,
+    "joint_effort_reserve_fraction": 0.1
+  },
+  "collision_proxy": {
+    "box_count": 16,
+    "urdf_box_count": 8,
+    "rotor_swept_volume_count": 8,
+    "rotor_clearance_m": 0.005,
+    "accepted_calibration_anchors": [
+      "retracted",
+      "flight_straight_forward"
+    ],
+    "ignored_link_pairs": [
+      [
+        "arm_base_link",
+        "base_link"
+      ],
+      [
+        "arm_base_link",
+        "shoulder_link"
+      ],
+      [
+        "arm_base_link",
+        "upper_arm_link"
+      ],
+      [
+        "base_link",
+        "motor_1_link"
+      ],
+      [
+        "base_link",
+        "motor_2_link"
+      ],
+      [
+        "base_link",
+        "motor_3_link"
+      ],
+      [
+        "base_link",
+        "motor_4_link"
+      ],
+      [
+        "base_link",
+        "motor_5_link"
+      ],
+      [
+        "base_link",
+        "motor_6_link"
+      ],
+      [
+        "base_link",
+        "motor_7_link"
+      ],
+      [
+        "base_link",
+        "motor_8_link"
+      ],
+      [
+        "base_link",
+        "shoulder_link"
+      ],
+      [
+        "gripper_link",
+        "moving_jaw_link"
+      ],
+      [
+        "gripper_link",
+        "wrist_link"
+      ],
+      [
+        "lower_arm_link",
+        "upper_arm_link"
+      ],
+      [
+        "lower_arm_link",
+        "wrist_link"
+      ],
+      [
+        "motor_1_link",
+        "rotor_1_link"
+      ],
+      [
+        "motor_2_link",
+        "rotor_2_link"
+      ],
+      [
+        "motor_3_link",
+        "rotor_3_link"
+      ],
+      [
+        "motor_4_link",
+        "rotor_4_link"
+      ],
+      [
+        "motor_5_link",
+        "rotor_5_link"
+      ],
+      [
+        "motor_6_link",
+        "rotor_6_link"
+      ],
+      [
+        "motor_7_link",
+        "rotor_7_link"
+      ],
+      [
+        "motor_8_link",
+        "rotor_8_link"
+      ],
+      [
+        "shoulder_link",
+        "upper_arm_link"
+      ]
+    ],
+    "structural_proxy_exclusions": [
+      [
+        "arm_base_link",
+        "upper_arm_link"
+      ],
+      [
+        "base_link",
+        "shoulder_link"
+      ]
+    ],
+    "anchor_only_collision_overrides": {
+      "retracted": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_straight_forward": []
+    },
+    "calibration_excludes_rotor_swept_volumes": true,
+    "mesh_contact_validation_required": true
+  },
+  "baseline_hover": {
+    "thrust_config_order_n": [
+      5.661872017348422,
+      5.661872017348441,
+      5.661872017348431,
+      5.661872017348453,
+      5.661872017348445,
+      5.661872017348431,
+      5.661872017348451,
+      5.661872017348448
+    ],
+    "commands_motor_order": [
+      0.48112522432468635,
+      0.4811252243246879,
+      0.4811252243246871,
+      0.48112522432468896,
+      0.4811252243246883,
+      0.4811252243246871,
+      0.4811252243246888,
+      0.4811252243246885
+    ]
+  },
+  "coverage": {
+    "front": {
+      "allowed_samples": 1010,
+      "maximum_radial_distance_m": 0.3322574529088013
+    },
+    "front_left": {
+      "allowed_samples": 1476,
+      "maximum_radial_distance_m": 0.28093792744865376
+    },
+    "left": {
+      "allowed_samples": 1060,
+      "maximum_radial_distance_m": 0.24202579960443737
+    },
+    "rear_left": {
+      "allowed_samples": 448,
+      "maximum_radial_distance_m": 0.20209373820357981
+    },
+    "rear": {
+      "allowed_samples": 348,
+      "maximum_radial_distance_m": 0.24049631545790062
+    },
+    "rear_right": {
+      "allowed_samples": 315,
+      "maximum_radial_distance_m": 0.21299795052912868
+    },
+    "right": {
+      "allowed_samples": 2042,
+      "maximum_radial_distance_m": 0.30103898675637636
+    },
+    "front_right": {
+      "allowed_samples": 788,
+      "maximum_radial_distance_m": 0.28078738128928227
+    },
+    "up": {
+      "allowed_samples": 113
+    },
+    "level": {
+      "allowed_samples": 419
+    },
+    "down": {
+      "allowed_samples": 7723
+    },
+    "radial_bands": {
+      "near": {
+        "allowed_samples": 4958
+      },
+      "middle": {
+        "allowed_samples": 2801
+      },
+      "far": {
+        "allowed_samples": 496
+      }
+    },
+    "gripper_states": {
+      "closed": {
+        "allowed_samples": 3400
+      },
+      "middle": {
+        "allowed_samples": 3460
+      },
+      "open": {
+        "allowed_samples": 1395
+      }
+    },
+    "direction_vertical_matrix": {
+      "front": {
+        "up": 72,
+        "level": 125,
+        "down": 813
+      },
+      "front_left": {
+        "up": 14,
+        "level": 107,
+        "down": 1355
+      },
+      "left": {
+        "up": 0,
+        "level": 24,
+        "down": 1036
+      },
+      "rear_left": {
+        "up": 0,
+        "level": 0,
+        "down": 448
+      },
+      "rear": {
+        "up": 0,
+        "level": 0,
+        "down": 348
+      },
+      "rear_right": {
+        "up": 0,
+        "level": 0,
+        "down": 315
+      },
+      "right": {
+        "up": 27,
+        "level": 108,
+        "down": 1907
+      },
+      "front_right": {
+        "up": 0,
+        "level": 55,
+        "down": 733
+      }
+    },
+    "direction_radial_matrix": {
+      "front": {
+        "near": 405,
+        "middle": 365,
+        "far": 240
+      },
+      "front_left": {
+        "near": 704,
+        "middle": 694,
+        "far": 78
+      },
+      "left": {
+        "near": 667,
+        "middle": 393,
+        "far": 0
+      },
+      "rear_left": {
+        "near": 384,
+        "middle": 64,
+        "far": 0
+      },
+      "rear": {
+        "near": 240,
+        "middle": 108,
+        "far": 0
+      },
+      "rear_right": {
+        "near": 240,
+        "middle": 75,
+        "far": 0
+      },
+      "right": {
+        "near": 1146,
+        "middle": 758,
+        "far": 138
+      },
+      "front_right": {
+        "near": 404,
+        "middle": 344,
+        "far": 40
+      }
+    },
+    "direction_gripper_matrix": {
+      "front": {
+        "closed": 419,
+        "middle": 423,
+        "open": 168
+      },
+      "front_left": {
+        "closed": 601,
+        "middle": 621,
+        "open": 254
+      },
+      "left": {
+        "closed": 437,
+        "middle": 444,
+        "open": 179
+      },
+      "rear_left": {
+        "closed": 186,
+        "middle": 187,
+        "open": 75
+      },
+      "rear": {
+        "closed": 145,
+        "middle": 145,
+        "open": 58
+      },
+      "rear_right": {
+        "closed": 131,
+        "middle": 131,
+        "open": 53
+      },
+      "right": {
+        "closed": 841,
+        "middle": 855,
+        "open": 346
+      },
+      "front_right": {
+        "closed": 320,
+        "middle": 334,
+        "open": 134
+      }
+    }
+  },
+  "summary": {
+    "sample_count": 25725,
+    "flight_allowed_count": 8255,
+    "flight_allowed_fraction": 0.32089407191448005,
+    "rejection_counts": {
+      "collision_proxy": 16087,
+      "allocation_residual": 3491,
+      "overlay_delta_headroom": 3953,
+      "gravity_torque_limit": 1133
+    },
+    "maximum_allowed_com_shift_m": 0.03671962475551396,
+    "maximum_allowed_gravity_torque_nm": 1.2750098871542652,
+    "minimum_allowed_physical_motor_headroom_n": 4.112042256660445,
+    "minimum_allowed_overlay_delta_headroom_n": 0.05017023931199782,
+    "minimum_allowed_joint_effort_margin_nm": 0.8706387104868273,
+    "allowed_endpoint_z_min_m": -0.5329180096811645,
+    "allowed_endpoint_z_max_m": -0.13459591761946232,
+    "allowed_endpoint_vertical_span_m": 0.3983220920617022,
+    "vertical_classification_reference": "retracted_endpoint_body_flu_z",
+    "vertical_classification_reference_m": -0.2570193386660657,
+    "vertical_classification_deadband_m": 0.025,
+    "coverage_checks": {
+      "eight_horizontal_directions": true,
+      "four_horizontal_diagonals": true,
+      "up_level_down": true,
+      "near_middle_far": true,
+      "closed_middle_open_gripper": true,
+      "at_least_two_distances_in_each_horizontal_direction": true,
+      "all_gripper_states_in_each_horizontal_direction": true
+    },
+    "required_direction_coverage_complete": true
+  },
+  "boundary_samples": {
+    "maximum_radius_by_direction": {
+      "front": {
+        "positions_rad": {
+          "shoulder_pan": 2.220446049250313e-16,
+          "shoulder_lift": -1.0937401333333332,
+          "elbow_flex": 1.0590666666666664,
+          "wrist_flex": 0.0,
+          "wrist_roll": -2.5762982,
+          "gripper": -0.11693710999999998
+        },
+        "endpoint_body_flu_m": [
+          0.332160642346616,
+          -0.008020142724900417,
+          -0.254695685187291
+        ],
+        "horizontal_direction": "front",
+        "vertical_direction": "level",
+        "radial_band": "far",
+        "gripper_state": "closed",
+        "com_shift_norm_m": 0.03159084409043093,
+        "gravity_torque_norm_nm": 1.2376304625601038,
+        "minimum_physical_motor_headroom_n": 4.331985747823773,
+        "remaining_overlay_delta_headroom_n": 0.2701137304753414,
+        "allocation_residual_norm": 1.4146536982742855e-15,
+        "minimum_joint_effort_margin_nm": 0.8736914239861963,
+        "flight_allowed": true,
+        "rejection_reasons": []
+      },
+      "front_left": {
+        "positions_rad": {
+          "shoulder_pan": -0.6015561333333332,
+          "shoulder_lift": -0.5468700666666666,
+          "elbow_flex": 0.5295333333333332,
+          "wrist_flex": 0.7792882000000003,
+          "wrist_roll": 2.6736581999999998,
+          "gripper": 1.68773411
+        },
+        "endpoint_body_flu_m": [
+          0.23598099237606845,
+          0.15244372836017547,
+          -0.3509954982285454
+        ],
+        "horizontal_direction": "front_left",
+        "vertical_direction": "down",
+        "radial_band": "far",
+        "gripper_state": "open",
+        "com_shift_norm_m": 0.028397071828154142,
+        "gravity_torque_norm_nm": 1.0031845651397595,
+        "minimum_physical_motor_headroom_n": 4.119549303060257,
+        "remaining_overlay_delta_headroom_n": 0.05767728571180486,
+        "allocation_residual_norm": 9.697696659262606e-16,
+        "minimum_joint_effort_margin_nm": 0.8808242052964721,
+        "flight_allowed": true,
+        "rejection_reasons": []
+      },
+      "left": {
+        "positions_rad": {
+          "shoulder_pan": 1.8046684,
+          "shoulder_lift": 1.0937401333333334,
+          "elbow_flex": 1.5886,
+          "wrist_flex": 0.7792882000000003,
+          "wrist_roll": -2.5762982,
+          "gripper": -0.11693710999999998
+        },
+        "endpoint_body_flu_m": [
+          0.053174604476234885,
+          0.23611215367482305,
+          -0.3322464051702326
+        ],
+        "horizontal_direction": "left",
+        "vertical_direction": "down",
+        "radial_band": "middle",
+        "gripper_state": "closed",
+        "com_shift_norm_m": 0.02612421521516231,
+        "gravity_torque_norm_nm": 0.9642132723558822,
+        "minimum_physical_motor_headroom_n": 4.499431775374358,
+        "remaining_overlay_delta_headroom_n": 0.43755975802593605,
+        "allocation_residual_norm": 1.3823334094014424e-15,
+        "minimum_joint_effort_margin_nm": 0.8796934537837096,
+        "flight_allowed": true,
+        "rejection_reasons": []
+      },
+      "rear_left": {
+        "positions_rad": {
+          "shoulder_pan": 0.6015561333333335,
+          "shoulder_lift": 1.0937401333333334,
+          "elbow_flex": 1.5886,
+          "wrist_flex": -0.7792882000000001,
+          "wrist_roll": 0.04868000000000006,
+          "gripper": -0.11693710999999998
+        },
+        "endpoint_body_flu_m": [
+          -0.1684783808931702,
+          0.11161054696001146,
+          -0.40654630484376497
+        ],
+        "horizontal_direction": "rear_left",
+        "vertical_direction": "down",
+        "radial_band": "middle",
+        "gripper_state": "closed",
+        "com_shift_norm_m": 0.03179046689638678,
+        "gravity_torque_norm_nm": 1.0690541281785808,
+        "minimum_physical_motor_headroom_n": 4.1277794456685895,
+        "remaining_overlay_delta_headroom_n": 0.06590742832016394,
+        "allocation_residual_norm": 1.94391074763956e-15,
+        "minimum_joint_effort_margin_nm": 0.8926049413394651,
+        "flight_allowed": true,
+        "rejection_reasons": []
+      },
+      "rear": {
+        "positions_rad": {
+          "shoulder_pan": 2.220446049250313e-16,
+          "shoulder_lift": 1.0937401333333334,
+          "elbow_flex": 1.5886,
+          "wrist_flex": 0.7792882000000003,
+          "wrist_roll": -2.5762982,
+          "gripper": -0.11693710999999998
+        },
+        "endpoint_body_flu_m": [
+          -0.2404629992829021,
+          -0.004002964488610632,
+          -0.3348089417172758
+        ],
+        "horizontal_direction": "rear",
+        "vertical_direction": "down",
+        "radial_band": "middle",
+        "gripper_state": "closed",
+        "com_shift_norm_m": 0.03292500400957267,
+        "gravity_torque_norm_nm": 1.2412017623280664,
+        "minimum_physical_motor_headroom_n": 4.312733772793347,
+        "remaining_overlay_delta_headroom_n": 0.25086175544492084,
+        "allocation_residual_norm": 2.226205020146165e-15,
+        "minimum_joint_effort_margin_nm": 0.8794225724234521,
+        "flight_allowed": true,
+        "rejection_reasons": []
+      },
+      "rear_right": {
+        "positions_rad": {
+          "shoulder_pan": -0.6015561333333332,
+          "shoulder_lift": 1.0937401333333334,
+          "elbow_flex": 1.5886,
+          "wrist_flex": 1.5585764000000002,
+          "wrist_roll": -2.5762982,
+          "gripper": -0.11693710999999998
+        },
+        "endpoint_body_flu_m": [
+          -0.17263154363399505,
+          -0.12476568868143684,
+          -0.2999439249208563
+        ],
+        "horizontal_direction": "rear_right",
+        "vertical_direction": "down",
+        "radial_band": "middle",
+        "gripper_state": "closed",
+        "com_shift_norm_m": 0.028011643426106837,
+        "gravity_torque_norm_nm": 1.0726511100989147,
+        "minimum_physical_motor_headroom_n": 4.116479064294328,
+        "remaining_overlay_delta_headroom_n": 0.054607046945880366,
+        "allocation_residual_norm": 2.3987753094131024e-15,
+        "minimum_joint_effort_margin_nm": 0.8995045997492768,
+        "flight_allowed": true,
+        "rejection_reasons": []
+      },
+      "right": {
+        "positions_rad": {
+          "shoulder_pan": 1.2031122666666667,
+          "shoulder_lift": -1.0937401333333332,
+          "elbow_flex": 0.5295333333333332,
+          "wrist_flex": 0.0,
+          "wrist_roll": 0.04868000000000006,
+          "gripper": 1.68773411
+        },
+        "endpoint_body_flu_m": [
+          0.1010974978290002,
+          -0.28355558093612093,
+          -0.16065856053881916
+        ],
+        "horizontal_direction": "right",
+        "vertical_direction": "up",
+        "radial_band": "far",
+        "gripper_state": "open",
+        "com_shift_norm_m": 0.03327618199358966,
+        "gravity_torque_norm_nm": 1.2718633918204552,
+        "minimum_physical_motor_headroom_n": 4.11359993141401,
+        "remaining_overlay_delta_headroom_n": 0.05172791406557442,
+        "allocation_residual_norm": 7.15250383193839e-15,
+        "minimum_joint_effort_margin_nm": 0.8758291297790688,
+        "flight_allowed": true,
+        "rejection_reasons": []
+      },
+      "front_right": {
+        "positions_rad": {
+          "shoulder_pan": 0.6015561333333335,
+          "shoulder_lift": -0.5468700666666666,
+          "elbow_flex": 0.5295333333333332,
+          "wrist_flex": 0.7792882000000003,
+          "wrist_roll": -2.5762982,
+          "gripper": 0.7853985000000001
+        },
+        "endpoint_body_flu_m": [
+          0.22784311147032632,
+          -0.1641007923406016,
+          -0.35106651643932474
+        ],
+        "horizontal_direction": "front_right",
+        "vertical_direction": "down",
+        "radial_band": "far",
+        "gripper_state": "middle",
+        "com_shift_norm_m": 0.028241089843216334,
+        "gravity_torque_norm_nm": 0.9866697054902022,
+        "minimum_physical_motor_headroom_n": 4.141678792687678,
+        "remaining_overlay_delta_headroom_n": 0.0798067753392444,
+        "allocation_residual_norm": 6.6411394434400865e-16,
+        "minimum_joint_effort_margin_nm": 0.8848727846492025,
+        "flight_allowed": true,
+        "rejection_reasons": []
+      }
+    },
+    "highest_allowed": {
+      "positions_rad": {
+        "shoulder_pan": 2.220446049250313e-16,
+        "shoulder_lift": -1.0937401333333332,
+        "elbow_flex": 0.5295333333333332,
+        "wrist_flex": -0.7792882000000001,
+        "wrist_roll": -2.5762982,
+        "gripper": -0.11693710999999998
+      },
+      "endpoint_body_flu_m": [
+        0.26389331299838137,
+        -0.0073988467819181315,
+        -0.13459591761946232
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "up",
+      "radial_band": "far",
+      "gripper_state": "closed",
+      "com_shift_norm_m": 0.027489614163839077,
+      "gravity_torque_norm_nm": 1.005677113468784,
+      "minimum_physical_motor_headroom_n": 4.582495197646886,
+      "remaining_overlay_delta_headroom_n": 0.5206231802984349,
+      "allocation_residual_norm": 7.148156400936074e-15,
+      "minimum_joint_effort_margin_nm": 0.8819272760687424,
+      "flight_allowed": true,
+      "rejection_reasons": []
+    },
+    "lowest_allowed": {
+      "positions_rad": {
+        "shoulder_pan": 1.8046684,
+        "shoulder_lift": 2.220446049250313e-16,
+        "elbow_flex": 1.5886,
+        "wrist_flex": 0.0,
+        "wrist_roll": -2.5762982,
+        "gripper": -0.11693710999999998
+      },
+      "endpoint_body_flu_m": [
+        -0.01313890557030653,
+        -0.039621470946477944,
+        -0.5329180096811645
+      ],
+      "horizontal_direction": "right",
+      "vertical_direction": "down",
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "com_shift_norm_m": 0.03256509986948991,
+      "gravity_torque_norm_nm": 0.44089817581089386,
+      "minimum_physical_motor_headroom_n": 5.005992129373317,
+      "remaining_overlay_delta_headroom_n": 0.9441201120248714,
+      "allocation_residual_norm": 8.54339753382e-16,
+      "minimum_joint_effort_margin_nm": 0.88678314269595,
+      "flight_allowed": true,
+      "rejection_reasons": []
+    },
+    "maximum_gravity_torque_allowed": {
+      "positions_rad": {
+        "shoulder_pan": 1.2031122666666667,
+        "shoulder_lift": -1.0937401333333332,
+        "elbow_flex": 1.5886,
+        "wrist_flex": -1.5585764000000002,
+        "wrist_roll": 1.3611691000000001,
+        "gripper": -0.11693710999999998
+      },
+      "endpoint_body_flu_m": [
+        0.09446054386832038,
+        -0.2686489903796952,
+        -0.2771837436328779
+      ],
+      "horizontal_direction": "right",
+      "vertical_direction": "level",
+      "radial_band": "far",
+      "gripper_state": "closed",
+      "com_shift_norm_m": 0.03267312290884778,
+      "gravity_torque_norm_nm": 1.2750098871542652,
+      "minimum_physical_motor_headroom_n": 4.133358157819039,
+      "remaining_overlay_delta_headroom_n": 0.07148614047060464,
+      "allocation_residual_norm": 7.067357393594372e-16,
+      "minimum_joint_effort_margin_nm": 0.897988026575008,
+      "flight_allowed": true,
+      "rejection_reasons": []
+    },
+    "minimum_overlay_headroom_allowed": {
+      "positions_rad": {
+        "shoulder_pan": 1.8046684,
+        "shoulder_lift": 2.220446049250313e-16,
+        "elbow_flex": -0.5295333333333334,
+        "wrist_flex": 0.7792882000000003,
+        "wrist_roll": 1.3611691000000001,
+        "gripper": 0.7853985000000001
+      },
+      "endpoint_body_flu_m": [
+        -0.0558252008207178,
+        -0.20940247924682578,
+        -0.2857174452659014
+      ],
+      "horizontal_direction": "right",
+      "vertical_direction": "down",
+      "radial_band": "middle",
+      "gripper_state": "middle",
+      "com_shift_norm_m": 0.02697484344778512,
+      "gravity_torque_norm_nm": 1.0181018542077516,
+      "minimum_physical_motor_headroom_n": 4.112042256660445,
+      "remaining_overlay_delta_headroom_n": 0.05017023931199782,
+      "allocation_residual_norm": 7.351112138359778e-15,
+      "minimum_joint_effort_margin_nm": 0.8889723154197134,
+      "flight_allowed": true,
+      "rejection_reasons": []
+    },
+    "rejection_witness": {
+      "allocation_residual": {
+        "positions_rad": {
+          "shoulder_pan": -1.8046684,
+          "shoulder_lift": -1.6406102,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.7792882000000003,
+          "wrist_roll": -2.5762982,
+          "gripper": -0.11693710999999998
+        },
+        "endpoint_body_flu_m": [
+          -0.03559061034877626,
+          0.16881518269917722,
+          -0.024519639110662662
+        ],
+        "horizontal_direction": "left",
+        "vertical_direction": "up",
+        "radial_band": "middle",
+        "gripper_state": "closed",
+        "com_shift_norm_m": 0.03657066527844187,
+        "gravity_torque_norm_nm": 1.117132274349229,
+        "minimum_physical_motor_headroom_n": 4.017680176965465,
+        "remaining_overlay_delta_headroom_n": -0.04419184038295887,
+        "allocation_residual_norm": 1.328368535513433e-15,
+        "minimum_joint_effort_margin_nm": 0.8736311646370432,
+        "flight_allowed": false,
+        "rejection_reasons": [
+          "collision_proxy",
+          "allocation_residual",
+          "overlay_delta_headroom"
+        ]
+      },
+      "collision_proxy": {
+        "positions_rad": {
+          "shoulder_pan": -1.8046684,
+          "shoulder_lift": -1.6406102,
+          "elbow_flex": -1.5886,
+          "wrist_flex": -1.5585764000000002,
+          "wrist_roll": -2.5762982,
+          "gripper": -0.11693710999999998
+        },
+        "endpoint_body_flu_m": [
+          0.004619804409516086,
+          0.018206065205027794,
+          -0.2730379897306422
+        ],
+        "horizontal_direction": "center",
+        "vertical_direction": "level",
+        "radial_band": "near",
+        "gripper_state": "closed",
+        "com_shift_norm_m": 0.013911028974991635,
+        "gravity_torque_norm_nm": 0.5456495039307073,
+        "minimum_physical_motor_headroom_n": 4.822998945253287,
+        "remaining_overlay_delta_headroom_n": 0.7611269279048636,
+        "allocation_residual_norm": 7.351543101007894e-15,
+        "minimum_joint_effort_margin_nm": 0.8889704496622829,
+        "flight_allowed": false,
+        "rejection_reasons": [
+          "collision_proxy"
+        ]
+      },
+      "gravity_torque_limit": {
+        "positions_rad": {
+          "shoulder_pan": -1.8046684,
+          "shoulder_lift": -1.6406102,
+          "elbow_flex": 0.5295333333333332,
+          "wrist_flex": 0.7792882000000003,
+          "wrist_roll": -2.5762982,
+          "gripper": -0.11693710999999998
+        },
+        "endpoint_body_flu_m": [
+          -0.05433980266959845,
+          0.2534513428854676,
+          -0.06302365588382772
+        ],
+        "horizontal_direction": "left",
+        "vertical_direction": "up",
+        "radial_band": "far",
+        "gripper_state": "closed",
+        "com_shift_norm_m": 0.040921565199692624,
+        "gravity_torque_norm_nm": 1.4171677332660042,
+        "minimum_physical_motor_headroom_n": 3.6141145324528514,
+        "remaining_overlay_delta_headroom_n": -0.4477574848955723,
+        "allocation_residual_norm": 7.30708895889706e-15,
+        "minimum_joint_effort_margin_nm": 0.8716008965975001,
+        "flight_allowed": false,
+        "rejection_reasons": [
+          "collision_proxy",
+          "gravity_torque_limit",
+          "allocation_residual",
+          "overlay_delta_headroom"
+        ]
+      },
+      "overlay_delta_headroom": {
+        "positions_rad": {
+          "shoulder_pan": -1.8046684,
+          "shoulder_lift": -1.6406102,
+          "elbow_flex": 0.0,
+          "wrist_flex": 0.7792882000000003,
+          "wrist_roll": -2.5762982,
+          "gripper": -0.11693710999999998
+        },
+        "endpoint_body_flu_m": [
+          -0.03559061034877626,
+          0.16881518269917722,
+          -0.024519639110662662
+        ],
+        "horizontal_direction": "left",
+        "vertical_direction": "up",
+        "radial_band": "middle",
+        "gripper_state": "closed",
+        "com_shift_norm_m": 0.03657066527844187,
+        "gravity_torque_norm_nm": 1.117132274349229,
+        "minimum_physical_motor_headroom_n": 4.017680176965465,
+        "remaining_overlay_delta_headroom_n": -0.04419184038295887,
+        "allocation_residual_norm": 1.328368535513433e-15,
+        "minimum_joint_effort_margin_nm": 0.8736311646370432,
+        "flight_allowed": false,
+        "rejection_reasons": [
+          "collision_proxy",
+          "allocation_residual",
+          "overlay_delta_headroom"
+        ]
+      }
+    }
+  },
+  "anchors": {
+    "retracted": {
+      "positions_rad": {
+        "shoulder_pan": 0.0,
+        "shoulder_lift": 1.4454515767948966,
+        "elbow_flex": -1.40681746,
+        "wrist_flex": -0.012711265,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "endpoint_body_flu_m": [
+        0.11095755007211634,
+        -0.007061805470191572,
+        -0.2570193386660657
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11118204447888622,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.004002110349643958,
+        0.0002571236017457103,
+        -0.20426297837820054
+      ],
+      "com_shift_body_flu_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "com_shift_norm_m": 0.0,
+      "inertia_at_com_kg_m2": [
+        [
+          0.2077780028719201,
+          -0.0003466662755116402,
+          0.002783614610141058
+        ],
+        [
+          -0.0003466662755116402,
+          0.20844069062355425,
+          4.473392073061407e-05
+        ],
+        [
+          0.002783614610141058,
+          4.473392073061407e-05,
+          0.21288394190862017
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        -0.0,
+        0.0,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.0,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.000303467784324764,
+        "shoulder_lift": 0.0695058153979869,
+        "elbow_flex": 0.6983938628401287,
+        "wrist_flex": 0.21011084602451624,
+        "wrist_roll": -0.013950497264594141,
+        "gripper": -6.791019546200972e-05
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.6996965322156754,
+        "shoulder_lift": 2.6304941846020133,
+        "elbow_flex": 2.0016061371598717,
+        "wrist_flex": 1.5898891539754838,
+        "wrist_roll": 1.786049502735406,
+        "gripper": 0.899932089804538
+      },
+      "minimum_joint_effort_margin_nm": 0.899932089804538,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.661872017348422,
+        5.661872017348441,
+        5.661872017348431,
+        5.661872017348453,
+        5.661872017348445,
+        5.661872017348431,
+        5.661872017348451,
+        5.661872017348448
+      ],
+      "motor_command_normalized": [
+        0.48112522432468635,
+        0.4811252243246879,
+        0.4811252243246871,
+        0.48112522432468896,
+        0.4811252243246883,
+        0.4811252243246871,
+        0.4811252243246888,
+        0.4811252243246885
+      ],
+      "minimum_physical_motor_headroom_n": 5.661872017348422,
+      "remaining_overlay_delta_headroom_n": 1.6,
+      "allocation_residual_norm": 0.0,
+      "collision_proxy_pairs": [],
+      "flight_allowed": true,
+      "rejection_reasons": [],
+      "anchor_collision_override_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ]
+    },
+    "work_a": {
+      "positions_rad": {
+        "shoulder_pan": 0.4,
+        "shoulder_lift": 0.8454515767948966,
+        "elbow_flex": -0.60681746,
+        "wrist_flex": -0.512711265,
+        "wrist_roll": -0.4853981633925517,
+        "gripper": 0.8
+      },
+      "endpoint_body_flu_m": [
+        0.1270423571667867,
+        -0.06046767938963044,
+        -0.32500546536326674
+      ],
+      "horizontal_direction": "front_right",
+      "vertical_direction": "down",
+      "radial_distance_m": 0.14069861678517148,
+      "radial_band": "near",
+      "gripper_state": "middle",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.0013982658938463538,
+        -0.003941323454561856,
+        -0.2135219915103038
+      ],
+      "com_shift_body_flu_m": [
+        0.0026038444557976038,
+        -0.004198447056307566,
+        -0.009259013132103255
+      ],
+      "com_shift_norm_m": 0.010494583737102969,
+      "inertia_at_com_kg_m2": [
+        [
+          0.21424861433954978,
+          0.002102091837011633,
+          0.005756293538186743
+        ],
+        [
+          0.002102091837011633,
+          0.21390652475508876,
+          -0.0016829472566995754
+        ],
+        [
+          0.005756293538186743,
+          -0.0016829472566995754,
+          0.2139479200314077
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        0.16469080329895439,
+        0.10213996492979027,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.19379275819058273,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.0017406479259288563,
+        "shoulder_lift": 0.2175676320435932,
+        "elbow_flex": 0.6491965821302405,
+        "wrist_flex": 0.17380922314645764,
+        "wrist_roll": -0.017574511670611442,
+        "gripper": 0.007248474416516466
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.6982593520740714,
+        "shoulder_lift": 2.482432367956407,
+        "elbow_flex": 2.05080341786976,
+        "wrist_flex": 1.6261907768535424,
+        "wrist_roll": 1.7824254883293886,
+        "gripper": 0.8927515255834836
+      },
+      "minimum_joint_effort_margin_nm": 0.8927515255834836,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        -0.16469080329895439,
+        0.10213996492979027,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.953660456119757,
+        5.3700835785771055,
+        5.953660456119767,
+        5.7345063305495545,
+        5.589237704147343,
+        5.370083578577096,
+        5.589237704147349,
+        5.73450633054955
+      ],
+      "motor_command_normalized": [
+        0.5059203411392403,
+        0.4563301075101339,
+        0.5059203411392411,
+        0.48729742322382896,
+        0.47495302542554824,
+        0.4563301075101331,
+        0.47495302542554874,
+        0.4872974232238286
+      ],
+      "minimum_physical_motor_headroom_n": 5.370083578577096,
+      "remaining_overlay_delta_headroom_n": 1.308211561228664,
+      "allocation_residual_norm": 8.126001590500445e-16,
+      "collision_proxy_pairs": [],
+      "flight_allowed": true,
+      "rejection_reasons": [],
+      "anchor_collision_override_pairs": []
+    },
+    "work_b": {
+      "positions_rad": {
+        "shoulder_pan": -0.4,
+        "shoulder_lift": 1.1454515767948965,
+        "elbow_flex": -0.9068174600000001,
+        "wrist_flex": 0.187288735,
+        "wrist_roll": -1.0853981633925518,
+        "gripper": 0.3
+      },
+      "endpoint_body_flu_m": [
+        0.10996977112632272,
+        0.039313081176805334,
+        -0.33831508353100065
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "down",
+      "radial_distance_m": 0.11678556808608626,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.0033425540870666726,
+        0.004061539924397853,
+        -0.21353026161818184
+      ],
+      "com_shift_body_flu_m": [
+        0.000659556262577285,
+        0.0038044163226521426,
+        -0.0092672832399813
+      ],
+      "com_shift_norm_m": 0.010039478904286083,
+      "inertia_at_com_kg_m2": [
+        [
+          0.214500304584005,
+          -0.002714268970613112,
+          0.00621511659375075
+        ],
+        [
+          -0.002714268970613112,
+          0.21334670339867431,
+          0.0017597725662829525
+        ],
+        [
+          0.00621511659375075,
+          0.0017597725662829525,
+          0.21298193733048498
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        -0.14923431732214654,
+        0.025872149689614123,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.15146038952864516,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": -0.000998830783688748,
+        "shoulder_lift": 0.11416760736154939,
+        "elbow_flex": 0.6693037926367159,
+        "wrist_flex": 0.19397074648395296,
+        "wrist_roll": -0.024206472222004505,
+        "gripper": -0.0038413904757320667
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.6990011692163116,
+        "shoulder_lift": 2.585832392638451,
+        "elbow_flex": 2.030696207363284,
+        "wrist_flex": 1.6060292535160472,
+        "wrist_roll": 1.7757935277779955,
+        "gripper": 0.896158609524268
+      },
+      "minimum_joint_effort_margin_nm": 0.896158609524268,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        0.14923431732214654,
+        0.025872149689614123,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.5245174337247995,
+        5.799226600972062,
+        5.524517433724809,
+        5.469005486508606,
+        5.854738548188292,
+        5.799226600972053,
+        5.8547385481882985,
+        5.469005486508601
+      ],
+      "motor_command_normalized": [
+        0.46945333300403297,
+        0.49279711564534123,
+        0.4694533330040338,
+        0.46473613028817234,
+        0.4975143183612049,
+        0.4927971156453404,
+        0.49751431836120547,
+        0.46473613028817184
+      ],
+      "minimum_physical_motor_headroom_n": 5.469005486508601,
+      "remaining_overlay_delta_headroom_n": 1.407133469160153,
+      "allocation_residual_norm": 6.813664062899856e-16,
+      "collision_proxy_pairs": [],
+      "flight_allowed": true,
+      "rejection_reasons": [],
+      "anchor_collision_override_pairs": []
+    },
+    "flight_work_a": {
+      "positions_rad": {
+        "shoulder_pan": 0.08,
+        "shoulder_lift": 1.3254515767948964,
+        "elbow_flex": -1.2468174600000002,
+        "wrist_flex": -0.112711265,
+        "wrist_roll": -0.7253981633925517,
+        "gripper": 0.16
+      },
+      "endpoint_body_flu_m": [
+        0.1138956235808716,
+        -0.016033095252156574,
+        -0.27215733872260683
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11501857769178125,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.0036491126920338342,
+        -0.00031256602665261264,
+        -0.20631028638175616
+      ],
+      "com_shift_body_flu_m": [
+        0.00035299765761012333,
+        -0.0005696896283983229,
+        -0.0020473080035556257
+      ],
+      "com_shift_norm_m": 0.002154210686169246,
+      "inertia_at_com_kg_m2": [
+        [
+          0.2086781571329948,
+          9.42234046361224e-05,
+          0.0032775295589664247
+        ],
+        [
+          9.42234046361224e-05,
+          0.20934044555676395,
+          -0.00011443286901356969
+        ],
+        [
+          0.0032775295589664247,
+          -0.00011443286901356969,
+          0.21297397148178218
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        0.022346987177329653,
+        0.013846897916009264,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.026289245287762022,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.0004984795612582933,
+        "shoulder_lift": 0.08689067769603165,
+        "elbow_flex": 0.6926531485851304,
+        "wrist_flex": 0.2053954282873785,
+        "wrist_roll": -0.01617594637785759,
+        "gripper": -0.00010843797251543893
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.699501520438742,
+        "shoulder_lift": 2.6131093223039685,
+        "elbow_flex": 2.00734685141487,
+        "wrist_flex": 1.5946045717126216,
+        "wrist_roll": 1.7838240536221424,
+        "gripper": 0.8998915620274845
+      },
+      "minimum_joint_effort_margin_nm": 0.8998915620274845,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        -0.022346987177329653,
+        0.013846897916009264,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.701451510291784,
+        5.622292524405078,
+        5.701451510291793,
+        5.671741251366925,
+        5.652002783329973,
+        5.6222925244050685,
+        5.652002783329979,
+        5.67174125136692
+      ],
+      "motor_command_normalized": [
+        0.484488545212669,
+        0.4777619034367052,
+        0.48448854521266976,
+        0.4819638758195481,
+        0.4802865728298292,
+        0.4777619034367044,
+        0.48028657282982967,
+        0.48196387581954764
+      ],
+      "minimum_physical_motor_headroom_n": 5.6222925244050685,
+      "remaining_overlay_delta_headroom_n": 1.5604205070566377,
+      "allocation_residual_norm": 8.594562876255494e-16,
+      "collision_proxy_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_allowed": false,
+      "rejection_reasons": [
+        "collision_proxy"
+      ],
+      "anchor_collision_override_pairs": []
+    },
+    "flight_work_b": {
+      "positions_rad": {
+        "shoulder_pan": -0.08,
+        "shoulder_lift": 1.3854515767948965,
+        "elbow_flex": -1.30681746,
+        "wrist_flex": 0.027288735,
+        "wrist_roll": -0.8453981633925518,
+        "gripper": 0.06
+      },
+      "endpoint_body_flu_m": [
+        0.11268005888407731,
+        0.0020923133933253724,
+        -0.27372635287502534
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11269948289790428,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.0037218336120803854,
+        0.0009719558731707614,
+        -0.2061664762391842
+      ],
+      "com_shift_body_flu_m": [
+        0.00028027673756357216,
+        0.0007148322714250512,
+        -0.0019034978609836495
+      ],
+      "com_shift_norm_m": 0.0020525214572957103,
+      "inertia_at_com_kg_m2": [
+        [
+          0.20858420616450182,
+          -0.0008850933630582742,
+          0.003526257354957796
+        ],
+        [
+          -0.0008850933630582742,
+          0.2093024549623436,
+          0.00016228649088994695
+        ],
+        [
+          0.003526257354957796,
+          0.00016228649088994695,
+          0.21299623752179436
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        -0.02804043957828191,
+        0.010994303473711218,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.030118780862035854,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 5.8771892893588463e-05,
+        "shoulder_lift": 0.07894092783619855,
+        "elbow_flex": 0.6973861140996095,
+        "wrist_flex": 0.21013303146680404,
+        "wrist_roll": -0.01667051122255684,
+        "gripper": -7.077349181041453e-05
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.6999412281071065,
+        "shoulder_lift": 2.621059072163802,
+        "elbow_flex": 2.0026138859003906,
+        "wrist_flex": 1.589866968533196,
+        "wrist_roll": 1.7833294887774431,
+        "gripper": 0.8999292265081896
+      },
+      "minimum_joint_effort_margin_nm": 0.8999292265081896,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        0.02804043957828191,
+        0.010994303473711218,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.642643335155687,
+        5.681100699541176,
+        5.642643335155696,
+        5.61905367594944,
+        5.704690358747459,
+        5.681100699541166,
+        5.704690358747465,
+        5.619053675949434
+      ],
+      "motor_command_normalized": [
+        0.479491241075842,
+        0.48275920757353225,
+        0.47949124107584273,
+        0.4774866779132391,
+        0.48476377073613813,
+        0.4827592075735314,
+        0.4847637707361387,
+        0.4774866779132387
+      ],
+      "minimum_physical_motor_headroom_n": 5.619053675949434,
+      "remaining_overlay_delta_headroom_n": 1.5571816586009866,
+      "allocation_residual_norm": 1.1145041085451203e-15,
+      "collision_proxy_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_allowed": false,
+      "rejection_reasons": [
+        "collision_proxy"
+      ],
+      "anchor_collision_override_pairs": []
+    },
+    "demo_extended": {
+      "positions_rad": {
+        "shoulder_pan": 0.0,
+        "shoulder_lift": 0.6454515767948965,
+        "elbow_flex": 0.24318253999999984,
+        "wrist_flex": -0.012711265,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 1.2
+      },
+      "endpoint_body_flu_m": [
+        0.09771995909269784,
+        -0.005303772481671179,
+        -0.4723639806276324
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "down",
+      "radial_distance_m": 0.09786378496469403,
+      "radial_band": "near",
+      "gripper_state": "open",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.0027413862869873473,
+        0.0007009522788497223,
+        -0.22740851874522952
+      ],
+      "com_shift_body_flu_m": [
+        0.0012607240626566103,
+        0.000443828677104012,
+        -0.023145540367028983
+      ],
+      "com_shift_norm_m": 0.023184099032279634,
+      "inertia_at_com_kg_m2": [
+        [
+          0.23145793355672364,
+          -0.0005408015912167397,
+          0.010513938042195472
+        ],
+        [
+          -0.0005408015912167397,
+          0.22996478374259718,
+          1.589644498941733e-05
+        ],
+        [
+          0.010513938042195472,
+          1.589644498941733e-05,
+          0.21079925245358044
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        -0.017409889985288238,
+        0.049453918516205786,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.052428945496808925,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.00015153976130732807,
+        "shoulder_lift": 0.11880592862245176,
+        "elbow_flex": 0.4455551114655899,
+        "wrist_flex": 0.13484369224511117,
+        "wrist_roll": -0.017296214914863047,
+        "gripper": -0.021281803630594547
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.6998484602386927,
+        "shoulder_lift": 2.5811940713775483,
+        "elbow_flex": 2.2544448885344104,
+        "wrist_flex": 1.6651563077548888,
+        "wrist_roll": 1.782703785085137,
+        "gripper": 0.8787181963694055
+      },
+      "minimum_joint_effort_margin_nm": 0.8787181963694055,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        0.017409889985288238,
+        0.049453918516205786,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.695664779679654,
+        5.628079255017209,
+        5.695664779679663,
+        5.589555185106291,
+        5.734188849590607,
+        5.628079255017199,
+        5.7341888495906135,
+        5.589555185106287
+      ],
+      "motor_command_normalized": [
+        0.4839968099605586,
+        0.47825363868881565,
+        0.4839968099605593,
+        0.4749800037989775,
+        0.4872704448503998,
+        0.4782536386888148,
+        0.4872704448504003,
+        0.4749800037989771
+      ],
+      "minimum_physical_motor_headroom_n": 5.589555185106287,
+      "remaining_overlay_delta_headroom_n": 1.527683167757838,
+      "allocation_residual_norm": 7.248809314304571e-15,
+      "collision_proxy_pairs": [],
+      "flight_allowed": true,
+      "rejection_reasons": [],
+      "anchor_collision_override_pairs": []
+    },
+    "flight_micro_a": {
+      "positions_rad": {
+        "shoulder_pan": 0.002,
+        "shoulder_lift": 1.4424515767948967,
+        "elbow_flex": -1.40281746,
+        "wrist_flex": -0.014711265,
+        "wrist_roll": -0.7833981633925517,
+        "gripper": 0.004
+      },
+      "endpoint_body_flu_m": [
+        0.11102560826963365,
+        -0.007278843481177978,
+        -0.2574327122106389
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11126395307585306,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.003994590563957482,
+        0.00024358378744595427,
+        -0.20431744383948788
+      ],
+      "com_shift_body_flu_m": [
+        7.519785686475183e-06,
+        -1.3539814299756009e-05,
+        -5.4465461287345196e-05
+      ],
+      "com_shift_norm_m": 5.6624731533895084e-05,
+      "inertia_at_com_kg_m2": [
+        [
+          0.20779841131096127,
+          -0.0003357248718329755,
+          0.0027969213257761924
+        ],
+        [
+          -0.0003357248718329755,
+          0.20846253580203916,
+          4.144475121883005e-05
+        ],
+        [
+          0.0027969213257761924,
+          4.144475121883005e-05,
+          0.21288609165262576
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        0.000531120879610809,
+        0.0002949756252090874,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.0006075360139333729,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.00030810262953577647,
+        "shoulder_lift": 0.06987019521624221,
+        "elbow_flex": 0.6982889834769567,
+        "wrist_flex": 0.2100220495193415,
+        "wrist_roll": -0.014002014924581096,
+        "gripper": -9.916953486808862e-05
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.699691897370464,
+        "shoulder_lift": 2.630129804783758,
+        "elbow_flex": 2.0017110165230436,
+        "wrist_flex": 1.5899779504806586,
+        "wrist_roll": 1.7859979850754188,
+        "gripper": 0.8999008304651319
+      },
+      "minimum_joint_effort_margin_nm": 0.8999008304651319,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        -0.000531120879610809,
+        0.0002949756252090874,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.662776094963752,
+        5.660967939733111,
+        5.66277609496376,
+        5.662143187705085,
+        5.6616008469918135,
+        5.660967939733101,
+        5.66160084699182,
+        5.662143187705079
+      ],
+      "motor_command_normalized": [
+        0.4812020495415315,
+        0.48104839910784275,
+        0.48120204954153223,
+        0.48114826739211697,
+        0.4811021812572603,
+        0.4810483991078419,
+        0.4811021812572608,
+        0.4811482673921165
+      ],
+      "minimum_physical_motor_headroom_n": 5.660967939733101,
+      "remaining_overlay_delta_headroom_n": 1.5990959223846706,
+      "allocation_residual_norm": 7.227792855510145e-15,
+      "collision_proxy_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_allowed": false,
+      "rejection_reasons": [
+        "collision_proxy"
+      ],
+      "anchor_collision_override_pairs": []
+    },
+    "flight_micro_b": {
+      "positions_rad": {
+        "shoulder_pan": -0.002,
+        "shoulder_lift": 1.4434515767948966,
+        "elbow_flex": -1.4038174600000002,
+        "wrist_flex": -0.011711264999999998,
+        "wrist_roll": -0.7873981633925518,
+        "gripper": 0.002
+      },
+      "endpoint_body_flu_m": [
+        0.11102651887171672,
+        -0.006835186782962249,
+        -0.2574946813490058
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11123671907751348,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.003992498981266603,
+        0.00027521057191908643,
+        -0.20431889064464584
+      ],
+      "com_shift_body_flu_m": [
+        9.61136837735431e-06,
+        1.8086970173376155e-05,
+        -5.591226644530156e-05
+      ],
+      "com_shift_norm_m": 5.954576753379034e-05,
+      "inertia_at_com_kg_m2": [
+        [
+          0.20779750902212205,
+          -0.0003604158810657709,
+          0.002804167249315784
+        ],
+        [
+          -0.0003604158810657709,
+          0.20846503100947247,
+          4.6128958046608506e-05
+        ],
+        [
+          0.002804167249315784,
+          4.6128958046608506e-05,
+          0.21288792229627354
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        -0.0007094903442029571,
+        0.00037702130279112654,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.0008034435955781518,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.00029727639164877213,
+        "shoulder_lift": 0.06981313359726975,
+        "elbow_flex": 0.6983891135806758,
+        "wrist_flex": 0.21012254984749862,
+        "wrist_roll": -0.014044621061188005,
+        "gripper": -5.128183733574587e-05
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.6997027236083513,
+        "shoulder_lift": 2.6301868664027306,
+        "elbow_flex": 2.0016108864193245,
+        "wrist_flex": 1.5898774501525015,
+        "wrist_roll": 1.785955378938812,
+        "gripper": 0.8999487181626643
+      },
+      "minimum_joint_effort_margin_nm": 0.8999487181626643,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        0.0007094903442029571,
+        0.00037702130279112654,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.661491521408893,
+        5.66225251328797,
+        5.661491521408902,
+        5.6606825748424034,
+        5.663061459854495,
+        5.66225251328796,
+        5.663061459854501,
+        5.660682574842398
+      ],
+      "motor_command_normalized": [
+        0.4810928911681438,
+        0.48115755748123046,
+        0.4810928911681446,
+        0.48102414984070363,
+        0.4812262988086736,
+        0.4811575574812296,
+        0.4812262988086741,
+        0.4810241498407032
+      ],
+      "minimum_physical_motor_headroom_n": 5.660682574842398,
+      "remaining_overlay_delta_headroom_n": 1.5988105574939504,
+      "allocation_residual_norm": 6.396668108043938e-16,
+      "collision_proxy_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_allowed": false,
+      "rejection_reasons": [
+        "collision_proxy"
+      ],
+      "anchor_collision_override_pairs": []
+    },
+    "gripper_open": {
+      "positions_rad": {
+        "shoulder_pan": 0.0,
+        "shoulder_lift": 1.4454515767948966,
+        "elbow_flex": -1.40681746,
+        "wrist_flex": -0.012711265,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 1.0
+      },
+      "endpoint_body_flu_m": [
+        0.11095755007211634,
+        -0.007061805470191572,
+        -0.2570193386660657
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11118204447888622,
+      "radial_band": "near",
+      "gripper_state": "middle",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.004640150226935898,
+        0.0005871122368832516,
+        -0.20426571529192714
+      ],
+      "com_shift_body_flu_m": [
+        -0.0006380398772919404,
+        0.00032998863513754133,
+        -2.7369137265975674e-06
+      ],
+      "com_shift_norm_m": 0.0007183278325607317,
+      "inertia_at_com_kg_m2": [
+        [
+          0.20781141243345264,
+          -0.0005505377966707166,
+          0.0027368679680337335
+        ],
+        [
+          -0.0005505377966707166,
+          0.20761112806169024,
+          7.00605871701435e-05
+        ],
+        [
+          0.0027368679680337335,
+          7.00605871701435e-05,
+          0.21208696599010593
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        -0.012944332195086278,
+        -0.02502813505058003,
+        -0.0
+      ],
+      "gravity_torque_norm_nm": 0.028177354029199044,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.00019050860989329183,
+        "shoulder_lift": 0.044365678468811454,
+        "elbow_flex": 0.6732556689126465,
+        "wrist_flex": 0.18508850270867838,
+        "wrist_roll": -0.026894311308119253,
+        "gripper": 0.0002644310277539695
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.699809491390107,
+        "shoulder_lift": 2.655634321531189,
+        "elbow_flex": 2.026744331087354,
+        "wrist_flex": 1.6149114972913217,
+        "wrist_roll": 1.7731056886918808,
+        "gripper": 0.899735568972246
+      },
+      "minimum_joint_effort_margin_nm": 0.899735568972246,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        0.012944332195086278,
+        -0.02502813505058003,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.620700103073011,
+        5.703043931623852,
+        5.62070010307302,
+        5.6744011108561745,
+        5.649342923840724,
+        5.703043931623842,
+        5.64934292384073,
+        5.674401110856169
+      ],
+      "motor_command_normalized": [
+        0.47762658528252183,
+        0.4846238633668524,
+        0.47762658528252255,
+        0.482189900973334,
+        0.4800605476760433,
+        0.4846238633668516,
+        0.48006054767604384,
+        0.48218990097333353
+      ],
+      "minimum_physical_motor_headroom_n": 5.620700103073011,
+      "remaining_overlay_delta_headroom_n": 1.5588280857245889,
+      "allocation_residual_norm": 5.580241470072428e-16,
+      "collision_proxy_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_allowed": false,
+      "rejection_reasons": [
+        "collision_proxy"
+      ],
+      "anchor_collision_override_pairs": []
+    },
+    "gripper_closed": {
+      "positions_rad": {
+        "shoulder_pan": 0.0,
+        "shoulder_lift": 1.4454515767948966,
+        "elbow_flex": -1.40681746,
+        "wrist_flex": -0.012711265,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "endpoint_body_flu_m": [
+        0.11095755007211634,
+        -0.007061805470191572,
+        -0.2570193386660657
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11118204447888622,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.004002110349643958,
+        0.0002571236017457103,
+        -0.20426297837820054
+      ],
+      "com_shift_body_flu_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "com_shift_norm_m": 0.0,
+      "inertia_at_com_kg_m2": [
+        [
+          0.2077780028719201,
+          -0.0003466662755116402,
+          0.002783614610141058
+        ],
+        [
+          -0.0003466662755116402,
+          0.20844069062355425,
+          4.473392073061407e-05
+        ],
+        [
+          0.002783614610141058,
+          4.473392073061407e-05,
+          0.21288394190862017
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        -0.0,
+        0.0,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.0,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.000303467784324764,
+        "shoulder_lift": 0.0695058153979869,
+        "elbow_flex": 0.6983938628401287,
+        "wrist_flex": 0.21011084602451624,
+        "wrist_roll": -0.013950497264594141,
+        "gripper": -6.791019546200972e-05
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.6996965322156754,
+        "shoulder_lift": 2.6304941846020133,
+        "elbow_flex": 2.0016061371598717,
+        "wrist_flex": 1.5898891539754838,
+        "wrist_roll": 1.786049502735406,
+        "gripper": 0.899932089804538
+      },
+      "minimum_joint_effort_margin_nm": 0.899932089804538,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.661872017348422,
+        5.661872017348441,
+        5.661872017348431,
+        5.661872017348453,
+        5.661872017348445,
+        5.661872017348431,
+        5.661872017348451,
+        5.661872017348448
+      ],
+      "motor_command_normalized": [
+        0.48112522432468635,
+        0.4811252243246879,
+        0.4811252243246871,
+        0.48112522432468896,
+        0.4811252243246883,
+        0.4811252243246871,
+        0.4811252243246888,
+        0.4811252243246885
+      ],
+      "minimum_physical_motor_headroom_n": 5.661872017348422,
+      "remaining_overlay_delta_headroom_n": 1.6,
+      "allocation_residual_norm": 0.0,
+      "collision_proxy_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_allowed": false,
+      "rejection_reasons": [
+        "collision_proxy"
+      ],
+      "anchor_collision_override_pairs": []
+    },
+    "wrist_roll_test": {
+      "positions_rad": {
+        "shoulder_pan": 0.0,
+        "shoulder_lift": 1.4454515767948966,
+        "elbow_flex": -1.40681746,
+        "wrist_flex": -0.012711265,
+        "wrist_roll": -0.5853981633925518,
+        "gripper": 0.0
+      },
+      "endpoint_body_flu_m": [
+        0.11095755007211634,
+        -0.007061805470191572,
+        -0.2570193386660657
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11118204447888622,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.004002631662602351,
+        0.00013597267826760684,
+        -0.2042037677595591
+      ],
+      "com_shift_body_flu_m": [
+        -5.213129583934301e-07,
+        -0.00012115092347810344,
+        5.921061864144761e-05
+      ],
+      "com_shift_norm_m": 0.0001348470073331285,
+      "inertia_at_com_kg_m2": [
+        [
+          0.2077601594556648,
+          -0.0002615478246800007,
+          0.0027491470876214747
+        ],
+        [
+          -0.0002615478246800007,
+          0.20841611129015147,
+          3.749152590318879e-05
+        ],
+        [
+          0.0027491470876214747,
+          3.749152590318879e-05,
+          0.2128894676417608
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        0.004752338814906172,
+        -2.0449334893715722e-05,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.004752382811491662,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.00034493923770373153,
+        "shoulder_lift": 0.06952683671601276,
+        "elbow_flex": 0.6984145214555918,
+        "wrist_flex": 0.21008967288312583,
+        "wrist_roll": -0.009198342562410027,
+        "gripper": -0.004903226818775207
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.6996550607622964,
+        "shoulder_lift": 2.6304731632839875,
+        "elbow_flex": 2.0015854785444085,
+        "wrist_flex": 1.5899103271168742,
+        "wrist_roll": 1.79080165743759,
+        "gripper": 0.8950967731812248
+      },
+      "minimum_joint_effort_margin_nm": 0.8950967731812248,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        -0.004752338814906172,
+        -2.0449334893715722e-05,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.667107993733899,
+        5.6566360409629635,
+        5.667107993733908,
+        5.667151870350788,
+        5.65659216434611,
+        5.656636040962954,
+        5.656592164346116,
+        5.667151870350783
+      ],
+      "motor_command_normalized": [
+        0.481570158492273,
+        0.4806802901571012,
+        0.4815701584922738,
+        0.4815738869670741,
+        0.48067656168230316,
+        0.48068029015710034,
+        0.4806765616823037,
+        0.48157388696707365
+      ],
+      "minimum_physical_motor_headroom_n": 5.65659216434611,
+      "remaining_overlay_delta_headroom_n": 1.5947201469976648,
+      "allocation_residual_norm": 1.2450770914058034e-15,
+      "collision_proxy_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_allowed": false,
+      "rejection_reasons": [
+        "collision_proxy"
+      ],
+      "anchor_collision_override_pairs": []
+    },
+    "wrist_roll_home": {
+      "positions_rad": {
+        "shoulder_pan": 0.0,
+        "shoulder_lift": 1.4454515767948966,
+        "elbow_flex": -1.40681746,
+        "wrist_flex": -0.012711265,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "endpoint_body_flu_m": [
+        0.11095755007211634,
+        -0.007061805470191572,
+        -0.2570193386660657
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11118204447888622,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.004002110349643958,
+        0.0002571236017457103,
+        -0.20426297837820054
+      ],
+      "com_shift_body_flu_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "com_shift_norm_m": 0.0,
+      "inertia_at_com_kg_m2": [
+        [
+          0.2077780028719201,
+          -0.0003466662755116402,
+          0.002783614610141058
+        ],
+        [
+          -0.0003466662755116402,
+          0.20844069062355425,
+          4.473392073061407e-05
+        ],
+        [
+          0.002783614610141058,
+          4.473392073061407e-05,
+          0.21288394190862017
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        -0.0,
+        0.0,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.0,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.000303467784324764,
+        "shoulder_lift": 0.0695058153979869,
+        "elbow_flex": 0.6983938628401287,
+        "wrist_flex": 0.21011084602451624,
+        "wrist_roll": -0.013950497264594141,
+        "gripper": -6.791019546200972e-05
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.6996965322156754,
+        "shoulder_lift": 2.6304941846020133,
+        "elbow_flex": 2.0016061371598717,
+        "wrist_flex": 1.5898891539754838,
+        "wrist_roll": 1.786049502735406,
+        "gripper": 0.899932089804538
+      },
+      "minimum_joint_effort_margin_nm": 0.899932089804538,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.661872017348422,
+        5.661872017348441,
+        5.661872017348431,
+        5.661872017348453,
+        5.661872017348445,
+        5.661872017348431,
+        5.661872017348451,
+        5.661872017348448
+      ],
+      "motor_command_normalized": [
+        0.48112522432468635,
+        0.4811252243246879,
+        0.4811252243246871,
+        0.48112522432468896,
+        0.4811252243246883,
+        0.4811252243246871,
+        0.4811252243246888,
+        0.4811252243246885
+      ],
+      "minimum_physical_motor_headroom_n": 5.661872017348422,
+      "remaining_overlay_delta_headroom_n": 1.6,
+      "allocation_residual_norm": 0.0,
+      "collision_proxy_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_allowed": false,
+      "rejection_reasons": [
+        "collision_proxy"
+      ],
+      "anchor_collision_override_pairs": []
+    },
+    "shoulder_pan_slow_test": {
+      "positions_rad": {
+        "shoulder_pan": 0.1,
+        "shoulder_lift": 1.4454515767948966,
+        "elbow_flex": -1.40681746,
+        "wrist_flex": -0.012711265,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "endpoint_body_flu_m": [
+        0.10969089917414684,
+        -0.018052197018414783,
+        -0.2570303925609921
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11116643008941374,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.004128551217480682,
+        -0.0004966360252273844,
+        -0.2042640818109378
+      ],
+      "com_shift_body_flu_m": [
+        -0.0001264408678367246,
+        -0.0007537596269730946,
+        -1.1034327372649866e-06
+      ],
+      "com_shift_norm_m": 0.0007642918852622528,
+      "inertia_at_com_kg_m2": [
+        [
+          0.2078532657399444,
+          0.00024312508845375242,
+          0.0027631119958778845
+        ],
+        [
+          0.00024312508845375242,
+          0.20836031000243566,
+          -6.412086037338189e-05
+        ],
+        [
+          0.0027631119958778845,
+          -6.412086037338189e-05,
+          0.21287809616237652
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        0.029567427383422794,
+        -0.0049598453462840605,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.029980540821223284,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.0005614889890464257,
+        "shoulder_lift": 0.06949818301093448,
+        "elbow_flex": 0.6983886004352517,
+        "wrist_flex": 0.21010854489610595,
+        "wrist_roll": -0.013930876954353407,
+        "gripper": -8.984980101351127e-05
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.699438511010954,
+        "shoulder_lift": 2.6305018169890655,
+        "elbow_flex": 2.0016113995647484,
+        "wrist_flex": 1.589891455103894,
+        "wrist_roll": 1.7860691230456467,
+        "gripper": 0.8999101501989865
+      },
+      "minimum_joint_effort_margin_nm": 0.8999101501989865,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        -0.029567427383422794,
+        -0.0049598453462840605,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.689263979382517,
+        5.634480055314346,
+        5.689263979382526,
+        5.6999059506283345,
+        5.623838084068564,
+        5.634480055314336,
+        5.62383808406857,
+        5.699905950628329
+      ],
+      "motor_command_normalized": [
+        0.4834528933073065,
+        0.4787975553420677,
+        0.4834528933073073,
+        0.4843572091920903,
+        0.47789323945728696,
+        0.4787975553420669,
+        0.4778932394572875,
+        0.48435720919208985
+      ],
+      "minimum_physical_motor_headroom_n": 5.623838084068564,
+      "remaining_overlay_delta_headroom_n": 1.5619660667201187,
+      "allocation_residual_norm": 1.2472944654571131e-15,
+      "collision_proxy_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_allowed": false,
+      "rejection_reasons": [
+        "collision_proxy"
+      ],
+      "anchor_collision_override_pairs": []
+    },
+    "shoulder_pan_home": {
+      "positions_rad": {
+        "shoulder_pan": 0.0,
+        "shoulder_lift": 1.4454515767948966,
+        "elbow_flex": -1.40681746,
+        "wrist_flex": -0.012711265,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "endpoint_body_flu_m": [
+        0.11095755007211634,
+        -0.007061805470191572,
+        -0.2570193386660657
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "level",
+      "radial_distance_m": 0.11118204447888622,
+      "radial_band": "near",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        -0.004002110349643958,
+        0.0002571236017457103,
+        -0.20426297837820054
+      ],
+      "com_shift_body_flu_m": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "com_shift_norm_m": 0.0,
+      "inertia_at_com_kg_m2": [
+        [
+          0.2077780028719201,
+          -0.0003466662755116402,
+          0.002783614610141058
+        ],
+        [
+          -0.0003466662755116402,
+          0.20844069062355425,
+          4.473392073061407e-05
+        ],
+        [
+          0.002783614610141058,
+          4.473392073061407e-05,
+          0.21288394190862017
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        -0.0,
+        0.0,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 0.0,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.000303467784324764,
+        "shoulder_lift": 0.0695058153979869,
+        "elbow_flex": 0.6983938628401287,
+        "wrist_flex": 0.21011084602451624,
+        "wrist_roll": -0.013950497264594141,
+        "gripper": -6.791019546200972e-05
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.6996965322156754,
+        "shoulder_lift": 2.6304941846020133,
+        "elbow_flex": 2.0016061371598717,
+        "wrist_flex": 1.5898891539754838,
+        "wrist_roll": 1.786049502735406,
+        "gripper": 0.899932089804538
+      },
+      "minimum_joint_effort_margin_nm": 0.899932089804538,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "motor_thrust_n": [
+        5.661872017348422,
+        5.661872017348441,
+        5.661872017348431,
+        5.661872017348453,
+        5.661872017348445,
+        5.661872017348431,
+        5.661872017348451,
+        5.661872017348448
+      ],
+      "motor_command_normalized": [
+        0.48112522432468635,
+        0.4811252243246879,
+        0.4811252243246871,
+        0.48112522432468896,
+        0.4811252243246883,
+        0.4811252243246871,
+        0.4811252243246888,
+        0.4811252243246885
+      ],
+      "minimum_physical_motor_headroom_n": 5.661872017348422,
+      "remaining_overlay_delta_headroom_n": 1.6,
+      "allocation_residual_norm": 0.0,
+      "collision_proxy_pairs": [
+        [
+          "upper_arm_link",
+          "wrist_link"
+        ]
+      ],
+      "flight_allowed": false,
+      "rejection_reasons": [
+        "collision_proxy"
+      ],
+      "anchor_collision_override_pairs": []
+    },
+    "flight_straight_forward": {
+      "positions_rad": {
+        "shoulder_pan": 0.0,
+        "shoulder_lift": -1.4454515767948966,
+        "elbow_flex": 1.40681746,
+        "wrist_flex": 0.012711265,
+        "wrist_roll": 0.7853981633974483,
+        "gripper": 0.0
+      },
+      "endpoint_body_flu_m": [
+        0.3392448555894319,
+        -0.008602877980336942,
+        -0.2146792953606867
+      ],
+      "horizontal_direction": "front",
+      "vertical_direction": "up",
+      "radial_distance_m": 0.33935391784012026,
+      "radial_band": "far",
+      "gripper_state": "closed",
+      "mass_kg": 4.0,
+      "center_of_mass_body_flu_m": [
+        0.028515966569029164,
+        -0.0009097761994436753,
+        -0.19940100576619813
+      ],
+      "com_shift_body_flu_m": [
+        0.032518076918673124,
+        -0.0011668998011893856,
+        0.004861972612002413
+      ],
+      "com_shift_norm_m": 0.03290023950238993,
+      "inertia_at_com_kg_m2": [
+        [
+          0.2066838259267933,
+          0.0019147218246428309,
+          0.003738862070572789
+        ],
+        [
+          0.0019147218246428309,
+          0.2449010467955213,
+          0.00010755315362374462
+        ],
+        [
+          0.003738862070572789,
+          0.00010755315362374462,
+          0.2507400577775077
+        ]
+      ],
+      "gravity_torque_body_flu_nm": [
+        0.04577351174133555,
+        1.275573596058023,
+        0.0
+      ],
+      "gravity_torque_norm_nm": 1.2763946150534835,
+      "joint_gravity_torque_nm": {
+        "shoulder_pan": 0.0007029119595214235,
+        "shoulder_lift": 1.3454302704875976,
+        "elbow_flex": 0.6975118846994472,
+        "wrist_flex": 0.2091843614714815,
+        "wrist_roll": 0.022226971582827985,
+        "gripper": -0.023322739475134364
+      },
+      "joint_usable_effort_nm": {
+        "shoulder_pan": 2.7,
+        "shoulder_lift": 2.7,
+        "elbow_flex": 2.7,
+        "wrist_flex": 1.8,
+        "wrist_roll": 1.8,
+        "gripper": 0.9
+      },
+      "joint_effort_margin_nm": {
+        "shoulder_pan": 2.699297088040479,
+        "shoulder_lift": 1.3545697295124026,
+        "elbow_flex": 2.0024881153005527,
+        "wrist_flex": 1.5908156385285186,
+        "wrist_roll": 1.777773028417172,
+        "gripper": 0.8766772605248656
+      },
+      "minimum_joint_effort_margin_nm": 0.8766772605248656,
+      "requested_compensation_wrench_frd": [
+        0.0,
+        0.0,
+        0.0,
+        -0.04577351174133555,
+        1.275573596058023,
+        0.0
+      ],
+      "motor_thrust_n": [
+        7.080966821791315,
+        4.242777212905544,
+        7.080966821791328,
+        4.34406343400644,
+        6.979680600690458,
+        4.242777212905534,
+        6.979680600690466,
+        4.344063434006436
+      ],
+      "motor_command_normalized": [
+        0.6017147226449497,
+        0.36053572600442424,
+        0.6017147226449509,
+        0.3691426594884118,
+        0.5931077891609655,
+        0.3605357260044234,
+        0.5931077891609662,
+        0.36914265948841146
+      ],
+      "minimum_physical_motor_headroom_n": 4.242777212905534,
+      "remaining_overlay_delta_headroom_n": 0.1809051955571026,
+      "allocation_residual_norm": 9.441433773296309e-16,
+      "collision_proxy_pairs": [],
+      "flight_allowed": true,
+      "rejection_reasons": [],
+      "anchor_collision_override_pairs": []
+    }
+  }
+}

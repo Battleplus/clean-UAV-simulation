@@ -1,5 +1,72 @@
 # clean-UAV-simulation
 
+## 1.3 kg / 0.6 kg 机械臂质量候选（2026-08-20）
+
+当前质量口径更新为：**整机约 1.3 kg，其中完整 SO101 机械臂约 0.6 kg，剩余机架、电机、旋翼、电池等约 0.7 kg**。这两个数目前是用户提供的近似值，不是逐件称重结果。Base 1 的 4 kg 已验收版本和 7.735 kg 历史正式模型均保留不覆盖。
+
+新候选采用同一套 CAD 几何、关节和真实电机轴，只在机械臂组与非机械臂组内分别按原 CAD 体积分布重标质量和惯量。折叠姿态离线计算结果：
+
+- 整机质量：`1.300 kg`；机械臂：`0.600 kg`；其余：`0.700 kg`。
+- 折叠质心（ROS FLU）：`[-0.00138, -0.00046, -0.20547] m`。
+- 理想八电机悬停指令：约 `0.1542～0.1585`，平均 `0.1564`。
+- 按当前 `11.76798 N/电机` 假设，理想垂向推重比约 `6.40`。
+- 25,725 姿态静态扫描通过全方向端点覆盖；在 `0.30 N/电机` 动态补偿保留量下，允许姿态最大重心移动约 `0.0589 m`，最大静态重心力矩约 `0.7286 N·m`。
+- 候选补偿上限：重心力矩 `0.90 N·m`、单电机补偿增量 `1.25 N`。
+- 无机械臂动作的 PX4/WASD 动态验收已通过：最大稳定速度跟踪误差约 `0.0347 m/s`，无饱和、failsafe，并正常降落解除武装。
+- 十方向动态验收未通过。第二轮在向前动作的收回末段出现角速度环发散并触发安全降落；机械臂此时已接近收回姿态，不能归因于静态重心偏置。
+- 81 点加密连续预演发现原“向上”极值路径存在 `upper_arm_link–wrist_link` 碰撞代理；规划器现会搜索不同逆解分支，自动跳过前 43 个碰撞候选后选中安全向上路径。十方向伸出和完整回收预演均已闭合，但仍不替代动态飞行验收。
+
+候选文件：
+
+- `drone_sim_ws/src/drone_arm_sim/urdf/my_drone_v3/my_drone_cad_candidate_1p3kg.urdf`
+- `drone_sim_ws/src/drone_arm_sim/config/my_drone_v3_cad_candidate_1p3kg.json`
+- `drone_sim_ws/px4/airframes/4028_gz_my_drone_octorotor_candidate_1p3kg`
+- `drone_sim_ws/analysis/base1/candidate_1p3kg_mass_allocation.json`
+- `drone_sim_ws/analysis/base1/arm_workspace_envelope_1p3kg.json`
+- `drone_sim_ws/analysis/base1/directional_workspace_flight_plan_1p3kg.json`
+
+重新生成和启动：
+
+```bash
+cd /mnt/e/清洁无人机/drone_sim_ws
+source /opt/ros/jazzy/setup.bash
+source install/setup.bash
+python3 scripts/build_1p3kg_candidate_profile.py
+ENABLE_ARM_CONTROL=true bash scripts/wsl_start_ros2_dds_candidate_1p3kg.sh
+```
+
+Windows 下需要同时打开 Gazebo、WASD 和机械臂键盘窗口时运行：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\drone_sim_ws\scripts\start_candidate_1p3kg_joint_debug.ps1
+```
+
+WSL 动态验收入口会先测试无机械臂动作的起飞、悬停、WASD 和降落，再以独立新后端测试十方向机械臂伸出、保持及完整回收：
+
+```bash
+bash scripts/run_full_acceptance_1p3kg.sh
+```
+
+调定 4028 候选角速度环时，先运行隔离的向前伸出—保持—完整回收，不覆盖历史十方向失败日志：
+
+```bash
+bash scripts/run_front_retract_acceptance_1p3kg.sh
+```
+
+该入口仍读取完整十方向计划和模型哈希，但只执行 `front` 腿，并强制使用 `81` 点连续轨迹预演。只有该隔离动作满足统一 `5 cm / 1° / 零饱和 / 零 failsafe` 门限后，才恢复完整十方向测试。
+
+只有输出 `CANDIDATE_1P3KG_FULL_ACCEPTANCE_PASS`，并且方向阶段报告全部满足水平/高度峰峰值 `≤0.05 m`、最大倾角 `≤1°`、零饱和、零 failsafe，才可将候选状态升级为动态通过。当前尚未产生该标记。
+
+机器审计可随时重跑：
+
+```bash
+python3 scripts/verify_candidate_1p3kg_acceptance.py
+```
+
+审计器会同时校验模型/配置/包线/规划器哈希，且只有无臂和十方向两份动态日志都通过才会输出 `CANDIDATE_1P3KG_DYNAMIC_ACCEPTED`。当前机器状态为 `CANDIDATE_1P3KG_OFFLINE_READY_DYNAMIC_NOT_ACCEPTED`。
+
+首轮动态试验表明直接继承 Base 1 的角速度环增益不适合 1.3 kg 候选。4028 候选已独立设置初始角速度增益（滚/俯 P=`0.030`、I=`0.018`、D=`0.0009`；偏航 P=`0.040`、I=`0.010`），Base 1 不变。这组值仍须重新完成无机械臂起飞/悬停、WASD、H 悬停，再进行隔离的机械臂伸出—保持—收回验收。逐件称重后还需再次生成质量、质心和惯量。
+
 ## Base 1 联合补偿最新验收（2026-08-13）
 
 4 kg Base 1 已通过 SO101 动作 6 的完整联合实测：末端伸出 `0.10 m / 90 s`、保持 `8 s`、`90 s` 原路收回。世界 X/Y 峰峰值分别为 `0.035 / 0.033 m`，高度 `0.011 m`，最大倾角 `0.6°`，无电机饱和、failsafe 或异常落地。WASD 水平输入整形更新为 `0.15 m/s²`、`0.30 m/s³`，偏航加速度为 `15°/s²`；`0.40 m/s` 目标的实测峰值为 `0.4366 m/s`，并完成起飞、各向速度、H 悬停和正常降落。
@@ -93,10 +160,10 @@ The detailed evidence and explicit provisional assumptions are in
 
 This repository contains a CAD-based octocopter simulation with an SO101 arm. PX4 is responsible for flight control, while ROS 2 / `ros2_control` drives the arm. The vehicle model, motor allocation and launch scripts are kept reproducible so that the simulation can be calibrated with measured propeller data later.
 
-## 当前正式版本
+## 旧 7.735 kg 正式基线（保留，不再代表当前质量口径）
 
 - 几何基准：`零件/` 中的完整 CAD 总装；不使用早期的 0.35 m 虚拟旋翼布局。
-- 正式整机质量：**7.735 kg**（当前仿真冻结值）。CAD 材料密度估算得到的 8.567252 kg 仅作为审计证据保存，不作为飞行质量。
+- 历史冻结整机质量：**7.735 kg**。CAD 材料密度估算得到的 8.567252 kg 仅作为审计证据保存。当前 1.3 kg / 0.6 kg 质量候选独立生成，不覆盖此回退基线。
 - 正式 URDF：`drone_sim_ws/src/drone_arm_sim/urdf/my_drone_v3/my_drone_cad_formal_dynamic.urdf`
 - 正式飞行参数：`drone_sim_ws/src/drone_arm_sim/config/my_drone_v3_cad_7p735_flight.json`
 - PX4 airframe：`drone_sim_ws/px4/airframes/4026_gz_my_drone_octorotor_7p735`
@@ -495,3 +562,68 @@ Offboard 保持 XY 缓降，最后 `0.18 m` 交给 PX4 NAV_LAND。
 `0.811 m` 略超 `0.8 m` 门槛，因此尚未形成连续两次通过。提高垂向增益的
 run45 触发位置安全门并被否决。结论仍是：0.05 kg 负载已经从“必然失败”
 推进到“单次可飞”，但可重复负载飞行尚未验收；0.25 kg 仍未通过。
+
+## 2026-08-15 Base1 全工作空间补偿与机头方向完整动作
+
+4 kg Base1 调试配置已将机械臂补偿统一为实时六维刚体动力学接口，不再为
+键盘动作分别手写补偿量。分配器在可行域边界连续缩放补偿，不会在回收过程
+因单点残差超限突然清零。当前机头方向完全伸直姿态需要约 `1.2764 N·m`
+重力矩；该调试配置使用 `1.35 N·m` 重力矩上限和 `1.60 N` 单电机补偿余量。
+这些是 4 kg 仿真验收参数，不替代正式 7.735 kg 机型的实物标定。
+
+离散安全工作空间 schema 2 扫描遍历 `25,725` 个关节姿态，其中 `8,255` 个
+通过静态飞行安全门。除了前、后、左、右、四个斜向以及相对收回末端的
+上/平/下方向，还检查近/中/远伸距、夹爪闭/中/开、八个 CAD 旋翼扫掠区和
+机械臂舵机 10% 静态力矩余量。机器可读结果
+见 `drone_sim_ws/analysis/base1/arm_workspace_envelope_4kg.json`。这是离散静态
+包线，CAD 网格接触的进一步校核仍在进行，不能把网格点之间未经验证的空间
+直接视为连续安全域。
+
+空中轨迹在发布前会按五次样条逐点预演位置、速度和加速度，检查碰撞、重力
+矩、动态反作用力/力矩、电机余量和分配残差；不可行时先自动延长时间，再按
+允许条件缩短伸出距离，回收轨迹禁止缩短。最终完整 `90 s` 机头方向伸直和
+`120 s` 原路回收均以距离比例 `1.0` 通过飞前预检。
+轨迹碰撞检查现与 schema 2 共用八个 CAD 旋翼扫掠代理；折叠姿态已知的
+`upper_arm_link/wrist_link` 粗箱重叠只允许在收回姿态附近 `0.20 rad` 的局部
+邻域，不再作为全工作空间排除项。
+
+世界位置外环采用位置 P 生成目标速度，速度阻尼由 PX4 内部速度环负责；关闭
+重复的外层 XY 速度 D 后，干净 PX4/Gazebo 联合验收结果为：伸出/回收水平
+漂移分别约 `0.005/0.007 m`，
+真值前后峰峰值 `0.012 m`、横向 `0.005 m`、高度小于 `0.001 m`，最大倾角
+`0.200 deg`，电机饱和 `0/155`，无 failsafe，并正常 LAND 和解除武装，最终
+输出 `DDS_ARM_FLIGHT_PASS`。原始日志为
+`drone_sim_ws/analysis/nose_forward_straight_preflight_touchdown_fix_20260815.log`。
+4 kg 调试模型另有 `0.02 m` 的折叠机械臂接触几何余量，仅用于落地解除武装；
+正式控制器默认余量仍为零。上一轮完整 ROS/WSL 回归为 `155 passed`；本次
+schema 2、轨迹预演、末端速度、十方向入口和慢速自适应证据链的当前纯测试为
+`64 passed`。这 64 项不包含尚未运行的 PX4/Gazebo 十方向与自适应 A/B 飞行。
+
+十方向联合验收入口为：
+
+```bash
+bash scripts/run_directional_workspace_acceptance_4kg.sh
+```
+
+每个方向都独立执行 `retracted → extend → hold → retract → PX4稳定门`；每段
+分别要求水平/高度峰峰值不超过 `0.05 m`、最大倾角不超过 `1°`、无电机
+饱和及 failsafe。计划状态仍明确为 `PREFLIGHTED_NOT_FLIGHT_ACCEPTED`；只有
+约 690 秒的 PX4/Gazebo 序列全部通过后才会升级。计划还携带 URDF、运动参考
+和飞行配置 SHA-256，模型变化后会在发布轨迹前拒绝旧计划。
+计划还记录规划器、轨迹预演器和工作空间实现的 SHA-256；安全代码变化后同样
+必须重新生成计划，不能拿旧预演结果运行新控制代码。
+入口会先用 `--symlink-install` 构建当前源码并默认干净重启 headless 后端，避免
+再次运行到旧安装文件；只在已确认后端正确时才可设置
+`DIRECTIONAL_RESTART_BACKEND=0` 复用现有进程。
+
+末端另有常驻六方向笛卡尔速度控制器。一次命令锁存目标速度，随后按三维合成
+速度、加速度和 jerk 限制生成短轨迹；停止命令才把目标速度降为零。每一小段
+仍须通过同一套轨迹预演，回收到收回姿态时禁止缩短目标。因此它不是按键位移
+步进，也不会因为键盘长按的重复率而改变目标速度。
+
+慢速自适应已重构为 PX4 原始电机命令对应六维 wrench 的额外控制 effort 残差
+积分，不再使用第二套世界位置/姿态 P/D。它只在关节速度、关节加速度、机体
+速度和角速度同时进入准静态门后更新，使用 5 秒悬停基准、15 秒积分和 60 秒
+泄漏，并在分配受限时按实际交付量立即回算。学习值跨机械臂动作保留，解除
+武装才清除。该功能仍默认关闭；严格 nominal/未建模末端负载三对 OFF/ON
+入口已经建立，但当前机器状态为 `NOT_RUN`，A/B 未通过前不能称为已启用。

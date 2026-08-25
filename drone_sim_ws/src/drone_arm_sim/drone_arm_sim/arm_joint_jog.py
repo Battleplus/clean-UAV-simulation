@@ -65,6 +65,7 @@ def main(args=None) -> None:
 
     rclpy.init()
     node = ArmPresetCommander()
+    node.start_direct_xy_owner_ingress()
     try:
         connection_deadline = time.monotonic() + 10.0
         while node.publisher.get_subscription_count() == 0:
@@ -109,7 +110,8 @@ def main(args=None) -> None:
         sys.exit(1)
     finally:
         node.publish_motion_active(False)
-        rclpy.spin_once(node, timeout_sec=0.1)
+        node.spin_callbacks(0.1)
+        node.stop_direct_xy_owner_ingress()
         node.destroy_node()
         rclpy.shutdown()
 

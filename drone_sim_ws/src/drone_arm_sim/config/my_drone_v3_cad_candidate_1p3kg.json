@@ -1,0 +1,1057 @@
+{
+  "description": "Independent 1.3 kg all-up mass candidate with a 0.6 kg SO101 arm and a 0.7 kg remaining aircraft. Geometry and rotor axes are inherited from Base 1; the mass split is an approximate user input, not measured per-link inertia evidence.",
+  "source_manifest": "analysis/cad_direct/assembly_manifest.json",
+  "axis_source": "analysis/cad_direct/motor_axis_evidence.json",
+  "axis_extraction_method": "SolidWorks IFace2.GetSurface / ISurface.IsCylinder / CylinderParams",
+  "body_frame_frozen": {
+    "ros_flu": "+X nose, +Y left, +Z up",
+    "px4_frd": "+X nose, +Y right, +Z down",
+    "clockwise_motor_order_from_nose_right": [
+      1,
+      3,
+      8,
+      4,
+      2,
+      6,
+      7,
+      5
+    ],
+    "pusher_motors": [
+      3,
+      6,
+      7,
+      8
+    ],
+    "puller_motors": [
+      1,
+      2,
+      4,
+      5
+    ],
+    "cad_propeller_side_ray_upward_component_motors": [
+      1,
+      2,
+      4,
+      5
+    ],
+    "cad_propeller_side_ray_downward_component_motors": [
+      3,
+      6,
+      7,
+      8
+    ],
+    "positive_thrust_direction_status": "UNRESOLVED_FOR_ALL_MOTORS"
+  },
+  "assembly_sha256": "0cbd1455f3bf9c4acee91a4f5ee997f8fc823cd7817ba7f4a217f9fc029ee202",
+  "coordinate_frame": "PX4 body FRD; ROS FLU uses X=-CAD Z, Y=-CAD X, Z=CAD Y",
+  "cad_origin_mm": [
+    253.34846091270447,
+    295.8022003173828,
+    252.7075457572937
+  ],
+  "density_kg_m3": 1300.0,
+  "mesh_volume_m3": 0.003218255976636863,
+  "estimated_all_up_mass_kg": 1.3,
+  "maximum_thrust_n": 11.76798,
+  "minimum_thrust_n": 0.0,
+  "command_model": "piecewise-linear interpolation of supplied 14.8 V static thrust table; capped at rated 1.2 kgf",
+  "static_thrust_model": {
+    "method": "piecewise-linear interpolation of supplied 14.8 V static test table",
+    "rated_cap_n": 11.76798,
+    "points": [
+      {
+        "throttle_percent": 0,
+        "measured_thrust_gf": 0,
+        "measured_thrust_n": 0.0,
+        "rated_capped_thrust_n": 0.0
+      },
+      {
+        "throttle_percent": 15,
+        "measured_thrust_gf": 26,
+        "measured_thrust_n": 0.25497289999999995,
+        "rated_capped_thrust_n": 0.25497289999999995
+      },
+      {
+        "throttle_percent": 20,
+        "measured_thrust_gf": 79,
+        "measured_thrust_n": 0.77472535,
+        "rated_capped_thrust_n": 0.77472535
+      },
+      {
+        "throttle_percent": 25,
+        "measured_thrust_gf": 142,
+        "measured_thrust_n": 1.3925442999999997,
+        "rated_capped_thrust_n": 1.3925442999999997
+      },
+      {
+        "throttle_percent": 30,
+        "measured_thrust_gf": 160,
+        "measured_thrust_n": 1.569064,
+        "rated_capped_thrust_n": 1.569064
+      },
+      {
+        "throttle_percent": 35,
+        "measured_thrust_gf": 254,
+        "measured_thrust_n": 2.4908891,
+        "rated_capped_thrust_n": 2.4908891
+      },
+      {
+        "throttle_percent": 40,
+        "measured_thrust_gf": 372,
+        "measured_thrust_n": 3.6480737999999997,
+        "rated_capped_thrust_n": 3.6480737999999997
+      },
+      {
+        "throttle_percent": 45,
+        "measured_thrust_gf": 457,
+        "measured_thrust_n": 4.48163905,
+        "rated_capped_thrust_n": 4.48163905
+      },
+      {
+        "throttle_percent": 50,
+        "measured_thrust_gf": 545,
+        "measured_thrust_n": 5.34462425,
+        "rated_capped_thrust_n": 5.34462425
+      },
+      {
+        "throttle_percent": 55,
+        "measured_thrust_gf": 562,
+        "measured_thrust_n": 5.5113373,
+        "rated_capped_thrust_n": 5.5113373
+      },
+      {
+        "throttle_percent": 60,
+        "measured_thrust_gf": 630,
+        "measured_thrust_n": 6.178189499999999,
+        "rated_capped_thrust_n": 6.178189499999999
+      },
+      {
+        "throttle_percent": 65,
+        "measured_thrust_gf": 673,
+        "measured_thrust_n": 6.59987545,
+        "rated_capped_thrust_n": 6.59987545
+      },
+      {
+        "throttle_percent": 70,
+        "measured_thrust_gf": 725,
+        "measured_thrust_n": 7.1098212499999995,
+        "rated_capped_thrust_n": 7.1098212499999995
+      },
+      {
+        "throttle_percent": 75,
+        "measured_thrust_gf": 831,
+        "measured_thrust_n": 8.149326149999998,
+        "rated_capped_thrust_n": 8.149326149999998
+      },
+      {
+        "throttle_percent": 80,
+        "measured_thrust_gf": 909,
+        "measured_thrust_n": 8.91424485,
+        "rated_capped_thrust_n": 8.91424485
+      },
+      {
+        "throttle_percent": 85,
+        "measured_thrust_gf": 1041,
+        "measured_thrust_n": 10.208722649999999,
+        "rated_capped_thrust_n": 10.208722649999999
+      },
+      {
+        "throttle_percent": 90,
+        "measured_thrust_gf": 1283,
+        "measured_thrust_n": 12.581931949999998,
+        "rated_capped_thrust_n": 11.76798
+      }
+    ],
+    "status": "measured table supplied by user; 90 percent point capped from 1.283 kgf to rated 1.2 kgf"
+  },
+  "motor_dynamics": {
+    "rise_time_constant_s": 0.001,
+    "fall_time_constant_s": 0.001,
+    "status": "near-instant ideal response for control-logic validation"
+  },
+  "static_current_model": {
+    "method": "piecewise-linear interpolation of supplied 14.8 V static test table",
+    "points": [
+      {
+        "throttle_percent": 0,
+        "current_a": 0.0
+      },
+      {
+        "throttle_percent": 15,
+        "current_a": 0.66
+      },
+      {
+        "throttle_percent": 20,
+        "current_a": 1.3
+      },
+      {
+        "throttle_percent": 25,
+        "current_a": 2.12
+      },
+      {
+        "throttle_percent": 30,
+        "current_a": 2.87
+      },
+      {
+        "throttle_percent": 35,
+        "current_a": 4.75
+      },
+      {
+        "throttle_percent": 40,
+        "current_a": 7.23
+      },
+      {
+        "throttle_percent": 45,
+        "current_a": 8.91
+      },
+      {
+        "throttle_percent": 50,
+        "current_a": 10.4
+      },
+      {
+        "throttle_percent": 55,
+        "current_a": 11.65
+      },
+      {
+        "throttle_percent": 60,
+        "current_a": 12.96
+      },
+      {
+        "throttle_percent": 65,
+        "current_a": 14.16
+      },
+      {
+        "throttle_percent": 70,
+        "current_a": 15.92
+      },
+      {
+        "throttle_percent": 75,
+        "current_a": 18.07
+      },
+      {
+        "throttle_percent": 80,
+        "current_a": 21.51
+      },
+      {
+        "throttle_percent": 85,
+        "current_a": 25.25
+      },
+      {
+        "throttle_percent": 90,
+        "current_a": 32.01
+      }
+    ]
+  },
+  "reaction_moment_ratio_m": 0.005,
+  "maximum_vertical_force_n": 81.53095704981759,
+  "maximum_supported_mass_kg": 8.313843876330612,
+  "estimated_vertical_thrust_to_weight": 6.39526452025658,
+  "full_throttle_signed_vertical_force_n": 3.9195247047985046e-15,
+  "best_case_upward_force_n_nonreversible": 40.765478524908794,
+  "best_case_supported_mass_kg_nonreversible": 4.156921938165306,
+  "best_case_thrust_to_weight_nonreversible": 0.9935916481910003,
+  "flight_feasibility_nonreversible": "FEASIBLE_WITH_OPPOSITE_PITCH_HYPOTHESIS",
+  "flight_feasibility_reason": "Even the optimistic upward-only thrust bound is below vehicle weight; downward-pointing fixed-pitch rotors cannot be used for lift.",
+  "rotors": [
+    {
+      "motor": 1,
+      "name": "rotor_1_link",
+      "cad_instance": "f机架总成-2 f电机-2",
+      "position_m": [
+        0.1829825670852389,
+        0.07614453527763189,
+        -0.19715282327253533
+      ],
+      "axis_body": [
+        0.3535533905932742,
+        0.3535533905932739,
+        -0.8660254037844385
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 30.000000000000018,
+      "azimuth_deg": 44.99999999999998,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.3535533905932742,
+        0.3535533905932739,
+        -0.8660254037844385
+      ],
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 3.274864922277287e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-2",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-2",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": false,
+      "wrench_position_m": [
+        0.18160588745030426,
+        0.07660588745030462,
+        0.008313843876330683
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+    },
+    {
+      "motor": 2,
+      "name": "rotor_2_link",
+      "cad_instance": "f机架总成-2 f电机-3",
+      "position_m": [
+        -0.1802292078153697,
+        -0.0770672396229773,
+        -0.19715282327253555
+      ],
+      "axis_body": [
+        -0.35355339059327323,
+        -0.3535533905932737,
+        -0.866025403784439
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 29.999999999999954,
+      "azimuth_deg": -134.99999999999997,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.35355339059327323,
+        -0.3535533905932737,
+        -0.866025403784439
+      ],
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 1.4827827331669353e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-3",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-3",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": false,
+      "wrench_position_m": [
+        -0.18160588745030434,
+        -0.07660588745030457,
+        0.008313843876330461
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+    },
+    {
+      "motor": 3,
+      "name": "rotor_3_link",
+      "cad_instance": "f机架总成-1 f电机-3",
+      "position_m": [
+        0.07798256708523933,
+        0.18114453527763155,
+        -0.2137805110251966
+      ],
+      "axis_body": [
+        -0.35355339059327384,
+        -0.3535533905932736,
+        -0.8660254037844387
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 29.999999999999993,
+      "azimuth_deg": -135.00000000000003,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.35355339059327384,
+        0.3535533905932736,
+        0.8660254037844387
+      ],
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 1.811234284755796e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-3",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-3",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": false,
+      "wrench_position_m": [
+        0.07660588745030467,
+        0.1816058874503043,
+        -0.008313843876330572
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+    },
+    {
+      "motor": 4,
+      "name": "rotor_4_link",
+      "cad_instance": "f机架总成-2 f电机-4",
+      "position_m": [
+        -0.18022920781536955,
+        0.0761445352776319,
+        -0.19715282327253564
+      ],
+      "axis_body": [
+        -0.3535533905932735,
+        0.3535533905932738,
+        -0.8660254037844388
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 150.00000000000003,
+      "azimuth_deg": -45.00000000000003,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.3535533905932735,
+        0.3535533905932738,
+        -0.8660254037844388
+      ],
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 2.6165013088452685e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-4",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-4",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": true,
+      "wrench_position_m": [
+        -0.1816058874503042,
+        0.07660588745030464,
+        0.008313843876330392
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+    },
+    {
+      "motor": 5,
+      "name": "rotor_5_link",
+      "cad_instance": "f机架总成-2 f电机-1",
+      "position_m": [
+        0.1829825670852387,
+        -0.0770672396229773,
+        -0.19715282327253544
+      ],
+      "axis_body": [
+        0.3535533905932745,
+        -0.3535533905932735,
+        -0.8660254037844385
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 149.99999999999997,
+      "azimuth_deg": 135.00000000000009,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.3535533905932745,
+        -0.3535533905932735,
+        -0.8660254037844385
+      ],
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+      "propulsion_mode": "puller",
+      "motor_propeller_line_offset_mm": 9.488200048182762e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-2/f电机-1",
+      "axis_evidence_propeller": "f机架总成-2/f螺旋桨-1",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": true,
+      "wrench_position_m": [
+        0.18160588745030404,
+        -0.07660588745030457,
+        0.008313843876330586
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+    },
+    {
+      "motor": 6,
+      "name": "rotor_6_link",
+      "cad_instance": "f机架总成-1 f电机-2",
+      "position_m": [
+        -0.0752292078153699,
+        -0.18206723962297705,
+        -0.2137805110251966
+      ],
+      "axis_body": [
+        0.35355339059327373,
+        0.3535533905932736,
+        -0.8660254037844387
+      ],
+      "direction": 1,
+      "turning_direction": "CCW",
+      "tilt_deg": 29.999999999999993,
+      "azimuth_deg": 44.99999999999999,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.35355339059327373,
+        -0.3535533905932736,
+        0.8660254037844387
+      ],
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 7.735613448393047e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-2",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-2",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": false,
+      "wrench_position_m": [
+        -0.07660588745030457,
+        -0.18160588745030432,
+        -0.008313843876330572
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+    },
+    {
+      "motor": 7,
+      "name": "rotor_7_link",
+      "cad_instance": "f机架总成-1 f电机-1",
+      "position_m": [
+        0.07798256708523929,
+        -0.18206723962297683,
+        -0.21378051102519652
+      ],
+      "axis_body": [
+        -0.3535533905932736,
+        0.3535533905932741,
+        -0.8660254037844386
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 150.0,
+      "azimuth_deg": -45.00000000000004,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        0.3535533905932736,
+        -0.3535533905932741,
+        0.8660254037844386
+      ],
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 2.091245844657973e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-1",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-1",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": true,
+      "wrench_position_m": [
+        0.07660588745030462,
+        -0.1816058874503041,
+        -0.008313843876330503
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+    },
+    {
+      "motor": 8,
+      "name": "rotor_8_link",
+      "cad_instance": "f机架总成-1 f电机-4",
+      "position_m": [
+        -0.07522920781536988,
+        0.1811445352776314,
+        -0.2137805110251965
+      ],
+      "axis_body": [
+        0.3535533905932736,
+        -0.353553390593274,
+        -0.8660254037844387
+      ],
+      "direction": -1,
+      "turning_direction": "CW",
+      "tilt_deg": 150.0,
+      "azimuth_deg": 134.99999999999997,
+      "axis_source": "motor shaft r=2.5 mm cylindrical face; cross-checked against rotor/body cylinders and propeller cylindrical face",
+      "cad_propeller_side_axis_body": [
+        -0.3535533905932736,
+        0.353553390593274,
+        0.8660254037844387
+      ],
+      "thrust_sign_status": "UNRESOLVED_PROP_PITCH_OR_SIGNED_TEST_REQUIRED",
+      "propulsion_mode": "pusher",
+      "motor_propeller_line_offset_mm": 2.455281089561238e-14,
+      "motor_propeller_axis_angle_deg": 0.0,
+      "axis_role": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+      "axis_evidence_motor": "f机架总成-1/f电机-4",
+      "axis_evidence_propeller": "f机架总成-1/f螺旋桨-4",
+      "vertical_thrust_direction": "upward_in_debug_hypothesis",
+      "opposite_pitch_required_if_all_up": true,
+      "wrench_position_m": [
+        -0.07660588745030454,
+        0.18160588745030415,
+        -0.008313843876330475
+      ],
+      "thrust_sign_source": "explicit opposite-pitch flight hypothesis; not present in current CAD propeller geometry"
+    }
+  ],
+  "axis_assumption": "ALL_UP_HYPOTHESIS_NOT_PHYSICAL_FACT",
+  "positive_thrust_direction_status": "UNRESOLVED_FOR_ALL_MOTORS",
+  "scenario": "candidate_1p3kg_arm_0p6kg_ideal_linear_supply",
+  "authoritative_source": "config/my_drone_v2_cad.json",
+  "debug_hypothesis_vertical_capacity": "FEASIBLE",
+  "reaction_moment_estimate": {
+    "value_m": 0.005,
+    "status": "temporary debug Q/T estimate retained only to validate yaw control"
+  },
+  "environment_dynamics": {
+    "air_density_kg_m3": 1.225,
+    "quadratic_drag_area_cd_m2_body_flu": [
+      0.1,
+      0.1,
+      0.18
+    ],
+    "angular_damping_n_m_per_rad_s_body_flu": [
+      0.025,
+      0.025,
+      0.04
+    ],
+    "wind_velocity_world_enu_m_s": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "ground_effect": {
+      "enabled": false,
+      "maximum_thrust_gain": 0.08,
+      "decay_height_m": 0.25,
+      "status": "initial bounded estimate; replace after propeller diameter and test data are available"
+    },
+    "status": "initial estimates for runtime testing; drag and ground-effect coefficients require identification",
+    "wind": {
+      "enabled": false
+    }
+  },
+  "battery_dynamics": {
+    "enabled": false,
+    "reference_voltage_v": 14.8,
+    "full_voltage_v": 14.8,
+    "empty_voltage_v": 13.2,
+    "minimum_loaded_voltage_v": 12.0,
+    "capacity_ah": 10.0,
+    "pack_internal_resistance_ohm": 0.005,
+    "thrust_voltage_exponent": 2.0,
+    "status": "disabled in 4 kg ideal control-logic debug profile"
+  },
+  "actuator_transport_delay_s": 0.0,
+  "actuator_transport_delay_status": "disabled in 4 kg control-logic debug profile",
+  "rl_work_pose_rad": [
+    0.4,
+    -0.6,
+    0.8,
+    -0.5,
+    0.3,
+    0.8
+  ],
+  "rl_trajectory_duration_s": 2.0,
+  "temporary_fixed_mass_kg": 1.3,
+  "mass_override_source": "user approximate split: all-up 1.3 kg including SO101 arm 0.6 kg; group-internal link mass/inertia ratios inherited from Base 1 CAD volumes",
+  "formal_urdf": "urdf/my_drone_v3/my_drone_cad_candidate_1p3kg.urdf",
+  "allocation_reference": "vehicle COM in PX4 FRD",
+  "wrench_reference": "URDF base_link origin in PX4 FRD",
+  "motor_dynamics_table": {
+    "schema": 1,
+    "input": "PX4 normalized_thrust in [0,1]; no RPM telemetry is available",
+    "model_status": "normalized static thrust and first-order actuator model; real k_f, C_T, C_Q and RPM response remain uncalibrated",
+    "maximum_thrust_n": 11.76798,
+    "minimum_effective_command": 0.15,
+    "minimum_effective_thrust_n": 0.25497289999999995,
+    "reaction_torque_model": {
+      "method": "Q = (Q/T) * T",
+      "q_over_t_m": 0.005,
+      "status": "temporary estimate; replace with measured C_Q/C_T or RPM-thrust-torque table"
+    },
+    "motors": [
+      {
+        "motor": 1,
+        "px4_output": 0,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          0.3535533905932742,
+          0.3535533905932739,
+          -0.8660254037844385
+        ],
+        "position_frd_m": [
+          0.1829825670852389,
+          0.07614453527763189,
+          -0.19715282327253533
+        ],
+        "wrench_position_frd_m": [
+          0.18160588745030426,
+          0.07660588745030462,
+          0.008313843876330683
+        ],
+        "turning_direction": "CW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.001,
+        "fall_time_constant_s": 0.001
+      },
+      {
+        "motor": 2,
+        "px4_output": 1,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          -0.35355339059327323,
+          -0.3535533905932737,
+          -0.866025403784439
+        ],
+        "position_frd_m": [
+          -0.1802292078153697,
+          -0.0770672396229773,
+          -0.19715282327253555
+        ],
+        "wrench_position_frd_m": [
+          -0.18160588745030434,
+          -0.07660588745030457,
+          0.008313843876330461
+        ],
+        "turning_direction": "CW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.001,
+        "fall_time_constant_s": 0.001
+      },
+      {
+        "motor": 3,
+        "px4_output": 2,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          -0.35355339059327384,
+          -0.3535533905932736,
+          -0.8660254037844387
+        ],
+        "position_frd_m": [
+          0.07798256708523933,
+          0.18114453527763155,
+          -0.2137805110251966
+        ],
+        "wrench_position_frd_m": [
+          0.07660588745030467,
+          0.1816058874503043,
+          -0.008313843876330572
+        ],
+        "turning_direction": "CCW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.001,
+        "fall_time_constant_s": 0.001
+      },
+      {
+        "motor": 4,
+        "px4_output": 3,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          -0.3535533905932735,
+          0.3535533905932738,
+          -0.8660254037844388
+        ],
+        "position_frd_m": [
+          -0.18022920781536955,
+          0.0761445352776319,
+          -0.19715282327253564
+        ],
+        "wrench_position_frd_m": [
+          -0.1816058874503042,
+          0.07660588745030464,
+          0.008313843876330392
+        ],
+        "turning_direction": "CCW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.001,
+        "fall_time_constant_s": 0.001
+      },
+      {
+        "motor": 5,
+        "px4_output": 4,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          0.3535533905932745,
+          -0.3535533905932735,
+          -0.8660254037844385
+        ],
+        "position_frd_m": [
+          0.1829825670852387,
+          -0.0770672396229773,
+          -0.19715282327253544
+        ],
+        "wrench_position_frd_m": [
+          0.18160588745030404,
+          -0.07660588745030457,
+          0.008313843876330586
+        ],
+        "turning_direction": "CCW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.001,
+        "fall_time_constant_s": 0.001
+      },
+      {
+        "motor": 6,
+        "px4_output": 5,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          0.35355339059327373,
+          0.3535533905932736,
+          -0.8660254037844387
+        ],
+        "position_frd_m": [
+          -0.0752292078153699,
+          -0.18206723962297705,
+          -0.2137805110251966
+        ],
+        "wrench_position_frd_m": [
+          -0.07660588745030457,
+          -0.18160588745030432,
+          -0.008313843876330572
+        ],
+        "turning_direction": "CCW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.001,
+        "fall_time_constant_s": 0.001
+      },
+      {
+        "motor": 7,
+        "px4_output": 6,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          -0.3535533905932736,
+          0.3535533905932741,
+          -0.8660254037844386
+        ],
+        "position_frd_m": [
+          0.07798256708523929,
+          -0.18206723962297683,
+          -0.21378051102519652
+        ],
+        "wrench_position_frd_m": [
+          0.07660588745030462,
+          -0.1816058874503041,
+          -0.008313843876330503
+        ],
+        "turning_direction": "CW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.001,
+        "fall_time_constant_s": 0.001
+      },
+      {
+        "motor": 8,
+        "px4_output": 7,
+        "max_thrust_n": 11.76798,
+        "min_effective_thrust_n": 0.25497289999999995,
+        "thrust_axis_frd": [
+          0.3535533905932736,
+          -0.353553390593274,
+          -0.8660254037844387
+        ],
+        "position_frd_m": [
+          -0.07522920781536988,
+          0.1811445352776314,
+          -0.2137805110251965
+        ],
+        "wrench_position_frd_m": [
+          -0.07660588745030454,
+          0.18160588745030415,
+          -0.008313843876330475
+        ],
+        "turning_direction": "CW",
+        "thrust_coefficient_kf": null,
+        "thrust_coefficient_status": "unavailable_without RPM",
+        "reaction_torque_coefficient_kq": null,
+        "reaction_torque_coefficient_status": "represented only by temporary Q/T ratio",
+        "rise_time_constant_s": 0.001,
+        "fall_time_constant_s": 0.001
+      }
+    ]
+  },
+  "bounded_hover_thrust_n": [
+    1.8277870112342725,
+    1.8524298000409123,
+    1.8277870112342753,
+    1.8654444572451527,
+    1.8147723540300398,
+    1.852429800040909,
+    1.814772354030042,
+    1.8654444572451518
+  ],
+  "bounded_hover_residual": [
+    1.0266824771083951e-17,
+    -9.214239124566217e-17,
+    -1.0658141036401503e-14,
+    1.734723475976807e-17,
+    -4.440892098500626e-16,
+    1.249000902703301e-16
+  ],
+  "bounded_hover_residual_norm": 1.0668537020847312e-14,
+  "actuator_input_model": "ideal_linear_thrust",
+  "actuator_normalization": {
+    "px4_hover_command": 0.15636569790546842,
+    "physical_hover_thrust_n": 1.8401084056375943,
+    "physical_hover_fraction": 0.15636569790546842,
+    "linear_thrust_per_command_n": 11.76798,
+    "rated_thrust_command": 1.0,
+    "maximum_command": 1.0,
+    "maximum_thrust_n": 11.76798,
+    "status": "1.3 kg candidate folded-COM hover allocation with the unchanged ideal linear Base 1 motor interface"
+  },
+  "actuator_input_model_status": "debug-only ideal mapping u=0..1 to 0..rated thrust; no voltage sag, ESC dead zone, transport delay or nonlinear static-thrust interpolation",
+  "takeoff_support_release": {
+    "enabled": true,
+    "model_name": "my_drone_bringup_landing_support",
+    "release_up_force_n": 13.003617899995398,
+    "maximum_horizontal_force_n": 0.5,
+    "maximum_com_torque_nm": 0.05,
+    "hold_time_s": 0.15,
+    "restore_on_land": false,
+    "restore_clearance_m": 0.05,
+    "restore_sdf_filename": "../worlds/landing_support.sdf",
+    "status": "candidate support release threshold is 102 percent of the 1.3 kg estimated weight; dynamic validation remains required"
+  },
+  "arm_installation": {
+    "profile": "base1_cad_connected_folded_ground_nose_forward_straight_flight",
+    "ground_spawn_z_m": 0.289,
+    "mount_xyz_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mount_rpy_rad": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "joint_zero_offsets_rad": {
+      "shoulder_pan": 0.0,
+      "shoulder_lift": -1.4454515767948966,
+      "elbow_flex": 1.40681746,
+      "wrist_flex": 0.012711265,
+      "wrist_roll": -0.7853981633974483
+    },
+    "folded_command_rad": {
+      "shoulder_pan": 0.0,
+      "shoulder_lift": 1.4454515767948966,
+      "elbow_flex": -1.40681746,
+      "wrist_flex": -0.012711265,
+      "wrist_roll": -0.7853981633974483,
+      "gripper": 0.0
+    },
+    "nose_forward_straight_command_rad": {
+      "shoulder_pan": 0.0,
+      "shoulder_lift": -1.4454515767948966,
+      "elbow_flex": 1.40681746,
+      "wrist_flex": 0.012711265,
+      "wrist_roll": 0.7853981633974483,
+      "gripper": 0.0
+    },
+    "status": "1.3 kg candidate reuses the connected Base 1 CAD geometry and joint re-indexing; Base 1 / 4 kg files remain unchanged"
+  },
+  "mass_partition": {
+    "status": "APPROXIMATE_USER_INPUT_NOT_COMPONENT_SCALE_DATA",
+    "all_up_mass_kg": 1.3,
+    "arm_mass_kg": 0.6,
+    "remaining_aircraft_mass_kg": 0.7000000000000001,
+    "arm_links": [
+      "arm_base_link",
+      "gripper_link",
+      "lower_arm_link",
+      "moving_jaw_link",
+      "shoulder_link",
+      "upper_arm_link",
+      "wrist_link"
+    ],
+    "reference_pose": "retracted/folded ground pose",
+    "center_of_mass_flu_m": [
+      -0.0013766796349346598,
+      -0.0004613521726727403,
+      -0.20546666714886602
+    ],
+    "center_of_mass_frd_m": [
+      -0.0013766796349346598,
+      0.0004613521726727403,
+      0.20546666714886602
+    ],
+    "inertia_at_com_flu_kg_m2": [
+      [
+        0.05343538630385031,
+        -6.265648864763366e-05,
+        0.0012342271847944571
+      ],
+      [
+        -6.265648864763366e-05,
+        0.05542251671545118,
+        -2.5564710434303672e-05
+      ],
+      [
+        0.0012342271847944571,
+        -2.5564710434303672e-05,
+        0.056412636610078254
+      ]
+    ],
+    "inertia_at_com_frd_kg_m2": [
+      [
+        0.05343538630385031,
+        6.265648864763366e-05,
+        -0.0012342271847944571
+      ],
+      [
+        6.265648864763366e-05,
+        0.05542251671545118,
+        -2.5564710434303672e-05
+      ],
+      [
+        -0.0012342271847944571,
+        -2.5564710434303672e-05,
+        0.056412636610078254
+      ]
+    ]
+  },
+  "candidate_hover_analysis": {
+    "reference_pose": "retracted/folded",
+    "per_motor_thrust_n": [
+      1.8277870112342725,
+      1.8524298000409123,
+      1.8277870112342753,
+      1.8654444572451527,
+      1.8147723540300398,
+      1.852429800040909,
+      1.814772354030042,
+      1.8654444572451518
+    ],
+    "per_motor_command_fraction": [
+      0.1553186707688382,
+      0.15741272504209833,
+      0.15531867076883843,
+      0.15851866312189117,
+      0.15421273268904603,
+      0.15741272504209805,
+      0.1542127326890462,
+      0.15851866312189108
+    ],
+    "minimum_command_fraction": 0.15421273268904603,
+    "maximum_command_fraction": 0.15851866312189117,
+    "mean_command_fraction": 0.15636569790546845,
+    "allocation_residual_norm": 1.0668537020847312e-14,
+    "vertical_thrust_to_weight": 6.39526452025658
+  },
+  "candidate_compensation_limits": {
+    "gravity_torque_limit_nm": 0.9,
+    "maximum_motor_delta_n": 1.25,
+    "minimum_motor_headroom_n": 0.25,
+    "minimum_delta_headroom_n": 0.3,
+    "basis": "standard 25,725-pose static scan: maximum collision-free gravity torque 0.82446 N m and maximum required motor delta 1.18362 N",
+    "status": "OFFLINE_STATIC_LIMITS_NOT_DYNAMIC_FLIGHT_ACCEPTED"
+  }
+}

@@ -24,6 +24,10 @@ def generate_launch_description():
         "MY_DRONE_URDF",
         str(package_share / "urdf" / "my_drone_v2" / "my_drone_cad_dynamic.urdf"),
     ))
+    motion_reference = Path(os.environ.get(
+        "SO101_MOTION_REFERENCE",
+        str(package_share / "config" / "so101_motion_reference.json"),
+    ))
     robot_xml = robot.read_text(encoding="utf-8").replace(
         "$(find drone_arm_sim)", str(package_share)
     )
@@ -211,7 +215,7 @@ def generate_launch_description():
                 arguments=[
                     "--urdf", str(robot),
                     "--motion-reference",
-                    str(package_share / "config" / "so101_motion_reference.json"),
+                    str(motion_reference),
                     "--rate-hz", LaunchConfiguration("arm_coupling_rate_hz"),
                     "--target-mass-kg", LaunchConfiguration("arm_coupling_target_mass_kg"),
                     "--payload-mass-kg", LaunchConfiguration("arm_payload_mass_kg"),

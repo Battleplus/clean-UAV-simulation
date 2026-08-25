@@ -39,3 +39,13 @@ PX4-main.tar.gz
 drone_sim_ws/analysis/*.log
 drone_sim_ws/analysis/*.status
 drone_sim_ws/analysis/*.exit
+
+# Nested flight-test output. Keep compact curated Markdown / JSON reports in
+# Git, but leave raw high-rate telemetry and process artifacts local.
+drone_sim_ws/analysis/**/*.log
+drone_sim_ws/analysis/**/*.jsonl
+drone_sim_ws/analysis/**/*.partial.jsonl
+drone_sim_ws/analysis/**/*.pid
+
+# Local media used while reviewing simulator behaviour.
+tmp_video_review/

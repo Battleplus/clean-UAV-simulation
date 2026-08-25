@@ -1,0 +1,504 @@
+{
+  "schema": "my_drone.directional-workspace-flight-plan.v1",
+  "status": "PREFLIGHTED_NOT_FLIGHT_ACCEPTED",
+  "frame": "base_link ROS FLU (+X front, +Y left, +Z up)",
+  "direction_order": [
+    "front",
+    "rear",
+    "left",
+    "right",
+    "up",
+    "down",
+    "front_left",
+    "front_right",
+    "rear_left",
+    "rear_right"
+  ],
+  "home_positions_rad": {
+    "shoulder_pan": 0.0,
+    "shoulder_lift": 1.4454515767948966,
+    "elbow_flex": -1.40681746,
+    "wrist_flex": -0.012711265,
+    "wrist_roll": -0.7853981633925518,
+    "gripper": 0.0
+  },
+  "requested_duration_s": 20.0,
+  "total_motion_s": 690.0,
+  "acceptance_limits": {
+    "xy_peak_to_peak_m": 0.05,
+    "altitude_peak_to_peak_m": 0.05,
+    "maximum_tilt_deg": 1.0,
+    "motor_saturation_samples": 0,
+    "failsafe": false,
+    "return_required_after_every_direction": true
+  },
+  "legs": [
+    {
+      "direction": "front",
+      "source": "maximum_radius_by_direction.front",
+      "endpoint_body_flu_m": [
+        0.332160642346616,
+        -0.008020142724900417,
+        -0.254695685187291
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 2.220446049250313e-16,
+        "shoulder_lift": -1.0937401333333332,
+        "elbow_flex": 1.0590666666666664,
+        "wrist_flex": 0.0,
+        "wrist_roll": -2.5762982,
+        "gripper": -0.11693710999999998
+      },
+      "outward": {
+        "decision": "slowed",
+        "effective_duration_s": 40.0,
+        "distance_scale": 1.0,
+        "time_scale": 2.0,
+        "maximum_gravity_torque_nm": 1.2376304625601038,
+        "maximum_reaction_force_n": 0.0009347492083740068,
+        "maximum_reaction_torque_nm": 0.0002639576811620787,
+        "minimum_physical_motor_headroom_n": 4.331985747665238,
+        "minimum_overlay_delta_headroom_n": 0.27011373031053987,
+        "maximum_allocation_residual_norm": 1.1777142980769002e-13
+      },
+      "return": {
+        "decision": "slowed",
+        "effective_duration_s": 40.0,
+        "distance_scale": 1.0,
+        "time_scale": 2.0,
+        "maximum_gravity_torque_nm": 1.2376304625601038,
+        "maximum_reaction_force_n": 0.0009347492083740068,
+        "maximum_reaction_torque_nm": 0.0002639576811688735,
+        "minimum_physical_motor_headroom_n": 4.331985747665238,
+        "minimum_overlay_delta_headroom_n": 0.27011373031053987,
+        "maximum_allocation_residual_norm": 1.1902546632638502e-13
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "rear",
+      "source": "maximum_radius_by_direction.rear",
+      "endpoint_body_flu_m": [
+        -0.2404629992829021,
+        -0.004002964488610632,
+        -0.3348089417172758
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 2.220446049250313e-16,
+        "shoulder_lift": 1.0937401333333334,
+        "elbow_flex": 1.5886,
+        "wrist_flex": 0.7792882000000003,
+        "wrist_roll": -2.5762982,
+        "gripper": -0.11693710999999998
+      },
+      "outward": {
+        "decision": "slowed",
+        "effective_duration_s": 40.0,
+        "distance_scale": 1.0,
+        "time_scale": 2.0,
+        "maximum_gravity_torque_nm": 1.2412017623280664,
+        "maximum_reaction_force_n": 0.001376680787379089,
+        "maximum_reaction_torque_nm": 0.00039894395987068615,
+        "minimum_physical_motor_headroom_n": 4.312733771394614,
+        "minimum_overlay_delta_headroom_n": 0.25086175386157405,
+        "maximum_allocation_residual_norm": 1.1970355099698618e-13
+      },
+      "return": {
+        "decision": "slowed",
+        "effective_duration_s": 40.0,
+        "distance_scale": 1.0,
+        "time_scale": 2.0,
+        "maximum_gravity_torque_nm": 1.2412017623280664,
+        "maximum_reaction_force_n": 0.0013766807873589726,
+        "maximum_reaction_torque_nm": 0.0003989439598851734,
+        "minimum_physical_motor_headroom_n": 4.312733771394614,
+        "minimum_overlay_delta_headroom_n": 0.25086175386157405,
+        "maximum_allocation_residual_norm": 1.1885758950050913e-13
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "left",
+      "source": "maximum_radius_by_direction.left",
+      "endpoint_body_flu_m": [
+        0.053174604476234885,
+        0.23611215367482305,
+        -0.3322464051702326
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 1.8046684,
+        "shoulder_lift": 1.0937401333333334,
+        "elbow_flex": 1.5886,
+        "wrist_flex": 0.7792882000000003,
+        "wrist_roll": -2.5762982,
+        "gripper": -0.11693710999999998
+      },
+      "outward": {
+        "decision": "slowed",
+        "effective_duration_s": 40.0,
+        "distance_scale": 1.0,
+        "time_scale": 2.0,
+        "maximum_gravity_torque_nm": 0.9750139682767838,
+        "maximum_reaction_force_n": 0.0020765721012328264,
+        "maximum_reaction_torque_nm": 0.0007412485093177803,
+        "minimum_physical_motor_headroom_n": 4.308295914088157,
+        "minimum_overlay_delta_headroom_n": 0.24608445125210254,
+        "maximum_allocation_residual_norm": 1.0238969160032933e-13
+      },
+      "return": {
+        "decision": "slowed",
+        "effective_duration_s": 40.0,
+        "distance_scale": 1.0,
+        "time_scale": 2.0,
+        "maximum_gravity_torque_nm": 0.975013968276784,
+        "maximum_reaction_force_n": 0.0020765721010535874,
+        "maximum_reaction_torque_nm": 0.0007412485093195628,
+        "minimum_physical_motor_headroom_n": 4.30829591408888,
+        "minimum_overlay_delta_headroom_n": 0.2460844512513387,
+        "maximum_allocation_residual_norm": 1.0453786016397603e-13
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "right",
+      "source": "mirrored_left",
+      "endpoint_body_flu_m": [
+        0.061155730067225175,
+        -0.23401186128088527,
+        -0.3321767549423613
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": -1.8046684,
+        "shoulder_lift": 1.0937401333333334,
+        "elbow_flex": 1.5886,
+        "wrist_flex": 0.7792882000000003,
+        "wrist_roll": -2.5762982,
+        "gripper": -0.11693710999999998
+      },
+      "outward": {
+        "decision": "slowed",
+        "effective_duration_s": 40.0,
+        "distance_scale": 1.0,
+        "time_scale": 2.0,
+        "maximum_gravity_torque_nm": 0.8967953646375024,
+        "maximum_reaction_force_n": 0.0021065182944563997,
+        "maximum_reaction_torque_nm": 0.000752794728112033,
+        "minimum_physical_motor_headroom_n": 4.40751103809634,
+        "minimum_overlay_delta_headroom_n": 0.34536616992334457,
+        "maximum_allocation_residual_norm": 9.304233526781346e-14
+      },
+      "return": {
+        "decision": "slowed",
+        "effective_duration_s": 40.0,
+        "distance_scale": 1.0,
+        "time_scale": 2.0,
+        "maximum_gravity_torque_nm": 0.8967953646375025,
+        "maximum_reaction_force_n": 0.0021065182944143583,
+        "maximum_reaction_torque_nm": 0.0007527947281105289,
+        "minimum_physical_motor_headroom_n": 4.407511038111646,
+        "minimum_overlay_delta_headroom_n": 0.34536616990791513,
+        "maximum_allocation_residual_norm": 9.278473995211501e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": [
+        {
+          "source": "maximum_radius_by_direction.right",
+          "failure_counts": {
+            "collision_proxy": 1
+          }
+        }
+      ]
+    },
+    {
+      "direction": "up",
+      "source": "highest_allowed",
+      "endpoint_body_flu_m": [
+        0.2622520828884033,
+        -0.007284728235827051,
+        -0.16968464464438274
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 1.9984014443252818e-16,
+        "shoulder_lift": -0.8398209623205104,
+        "elbow_flex": 0.33589825399999995,
+        "wrist_flex": -0.7026305065000001,
+        "wrist_roll": -2.397208196339255,
+        "gripper": -0.10524339899999999
+      },
+      "outward": {
+        "decision": "shortened_and_slowed",
+        "effective_duration_s": 30.0,
+        "distance_scale": 0.9,
+        "time_scale": 1.5,
+        "maximum_gravity_torque_nm": 0.9681940669628584,
+        "maximum_reaction_force_n": 0.0012652071447643578,
+        "maximum_reaction_torque_nm": 0.00033837765155172496,
+        "minimum_physical_motor_headroom_n": 4.619200300728327,
+        "minimum_overlay_delta_headroom_n": 0.5573282833798792,
+        "maximum_allocation_residual_norm": 9.210207879582551e-14
+      },
+      "return": {
+        "decision": "slowed",
+        "effective_duration_s": 30.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.5,
+        "maximum_gravity_torque_nm": 0.9681940669628584,
+        "maximum_reaction_force_n": 0.0012652071446882084,
+        "maximum_reaction_torque_nm": 0.0003383776515459067,
+        "minimum_physical_motor_headroom_n": 4.619200300728327,
+        "minimum_overlay_delta_headroom_n": 0.5573282833798792,
+        "maximum_allocation_residual_norm": 9.201173543861607e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "down",
+      "source": "lowest_allowed",
+      "endpoint_body_flu_m": [
+        -0.01313890557030653,
+        -0.039621470946477944,
+        -0.5329180096811645
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 1.8046684,
+        "shoulder_lift": 2.220446049250313e-16,
+        "elbow_flex": 1.5886,
+        "wrist_flex": 0.0,
+        "wrist_roll": -2.5762982,
+        "gripper": -0.11693710999999998
+      },
+      "outward": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.44089817581089386,
+        "maximum_reaction_force_n": 0.0031215055064382075,
+        "maximum_reaction_torque_nm": 0.0006167572966889416,
+        "minimum_physical_motor_headroom_n": 5.005948512745474,
+        "minimum_overlay_delta_headroom_n": 0.9440316235851696,
+        "maximum_allocation_residual_norm": 4.924167241035139e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.44089817581089386,
+        "maximum_reaction_force_n": 0.003121505506457112,
+        "maximum_reaction_torque_nm": 0.0006167572966331925,
+        "minimum_physical_motor_headroom_n": 5.005948512744864,
+        "minimum_overlay_delta_headroom_n": 0.9440316235857797,
+        "maximum_allocation_residual_norm": 4.8208554618907064e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "front_left",
+      "source": "mirrored_front_right",
+      "endpoint_body_flu_m": [
+        0.23028889667282332,
+        0.1297202685748906,
+        -0.36087088285724556
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": -0.5414005200000002,
+        "shoulder_lift": -0.3476379023205103,
+        "elbow_flex": 0.33589825399999995,
+        "wrist_flex": 0.7000882535000003,
+        "wrist_roll": -2.397208196339255,
+        "gripper": 0.7068586500000001
+      },
+      "outward": {
+        "decision": "shortened",
+        "effective_duration_s": 20.0,
+        "distance_scale": 0.9,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.9178256421358062,
+        "maximum_reaction_force_n": 0.002122007089855007,
+        "maximum_reaction_torque_nm": 0.0006200633639618117,
+        "minimum_physical_motor_headroom_n": 4.253634957409034,
+        "minimum_overlay_delta_headroom_n": 0.19176294006058603,
+        "maximum_allocation_residual_norm": 8.903029101768948e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.9178256421358062,
+        "maximum_reaction_force_n": 0.002122007089788828,
+        "maximum_reaction_torque_nm": 0.0006200633639318114,
+        "minimum_physical_motor_headroom_n": 4.253634957409034,
+        "minimum_overlay_delta_headroom_n": 0.19176294006058603,
+        "maximum_allocation_residual_norm": 8.897367273453345e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": [
+        {
+          "source": "maximum_radius_by_direction.front_left",
+          "failure_counts": {
+            "collision_proxy": 7
+          }
+        }
+      ]
+    },
+    {
+      "direction": "front_right",
+      "source": "maximum_radius_by_direction.front_right",
+      "endpoint_body_flu_m": [
+        0.22784311147032632,
+        -0.1641007923406016,
+        -0.35106651643932474
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 0.6015561333333335,
+        "shoulder_lift": -0.5468700666666666,
+        "elbow_flex": 0.5295333333333332,
+        "wrist_flex": 0.7792882000000003,
+        "wrist_roll": -2.5762982,
+        "gripper": 0.7853985000000001
+      },
+      "outward": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.9866697054902022,
+        "maximum_reaction_force_n": 0.00275332854810243,
+        "maximum_reaction_torque_nm": 0.0007637427725127133,
+        "minimum_physical_motor_headroom_n": 4.141678791726607,
+        "minimum_overlay_delta_headroom_n": 0.07980677426875227,
+        "maximum_allocation_residual_norm": 9.768905718683807e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.9866697054902022,
+        "maximum_reaction_force_n": 0.0027533285481710747,
+        "maximum_reaction_torque_nm": 0.0007637427725246454,
+        "minimum_physical_motor_headroom_n": 4.141678791726607,
+        "minimum_overlay_delta_headroom_n": 0.07980677426875227,
+        "maximum_allocation_residual_norm": 9.765312633802435e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "rear_left",
+      "source": "maximum_radius_by_direction.rear_left",
+      "endpoint_body_flu_m": [
+        -0.1684783808931702,
+        0.11161054696001146,
+        -0.40654630484376497
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 0.6015561333333335,
+        "shoulder_lift": 1.0937401333333334,
+        "elbow_flex": 1.5886,
+        "wrist_flex": -0.7792882000000001,
+        "wrist_roll": 0.04868000000000006,
+        "gripper": -0.11693710999999998
+      },
+      "outward": {
+        "decision": "slowed",
+        "effective_duration_s": 30.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.5,
+        "maximum_gravity_torque_nm": 1.0690541281785808,
+        "maximum_reaction_force_n": 0.0017782723849711331,
+        "maximum_reaction_torque_nm": 0.0005197450378340176,
+        "minimum_physical_motor_headroom_n": 4.127779444951141,
+        "minimum_overlay_delta_headroom_n": 0.06590742750329914,
+        "maximum_allocation_residual_norm": 1.0362733147728238e-13
+      },
+      "return": {
+        "decision": "slowed",
+        "effective_duration_s": 30.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.5,
+        "maximum_gravity_torque_nm": 1.0690541281785808,
+        "maximum_reaction_force_n": 0.001778272384906311,
+        "maximum_reaction_torque_nm": 0.0005197450378182456,
+        "minimum_physical_motor_headroom_n": 4.127779444951141,
+        "minimum_overlay_delta_headroom_n": 0.06590742750329914,
+        "maximum_allocation_residual_norm": 1.0362733147728238e-13
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "rear_right",
+      "source": "maximum_radius_by_direction.rear_right",
+      "endpoint_body_flu_m": [
+        -0.18053742437694384,
+        -0.11416888729311048,
+        -0.34182387952473925
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": -0.5414005199999999,
+        "shoulder_lift": 1.1289112776794896,
+        "elbow_flex": 1.289058254,
+        "wrist_flex": 1.4014476335000001,
+        "wrist_roll": -2.397208196339255,
+        "gripper": -0.10524339899999999
+      },
+      "outward": {
+        "decision": "shortened_and_slowed",
+        "effective_duration_s": 40.0,
+        "distance_scale": 0.9,
+        "time_scale": 2.0,
+        "maximum_gravity_torque_nm": 1.0957953489124632,
+        "maximum_reaction_force_n": 0.0013845222088970542,
+        "maximum_reaction_torque_nm": 0.0003914855779975828,
+        "minimum_physical_motor_headroom_n": 4.113322149931485,
+        "minimum_overlay_delta_headroom_n": 0.0514501325830401,
+        "maximum_allocation_residual_norm": 1.0964673087180668e-13
+      },
+      "return": {
+        "decision": "slowed",
+        "effective_duration_s": 40.0,
+        "distance_scale": 1.0,
+        "time_scale": 2.0,
+        "maximum_gravity_torque_nm": 1.0957953489124632,
+        "maximum_reaction_force_n": 0.001384522208880543,
+        "maximum_reaction_torque_nm": 0.000391485578011926,
+        "minimum_physical_motor_headroom_n": 4.113322149931485,
+        "minimum_overlay_delta_headroom_n": 0.0514501325830401,
+        "maximum_allocation_residual_norm": 1.109356430740384e-13
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    }
+  ],
+  "source_evidence": {
+    "envelope_sha256": "39477446bf55782d16a2e6137e50aadb80e060d031e8c9fdbf3eac7135c6b6f7",
+    "model_sha256": {
+      "urdf": "3df3003f3db42b3faad32780a6e3304934fd61f66df4ceb0de22085bcdca261e",
+      "motion_reference": "5c106fbe09a37ca2c7d84053af9c771b7a679b18bac77ec9d5c460883f6cfa0d",
+      "flight_config": "9ec7a85e99f37cd86eb21ce8010b3161ac8e0f5e3b75e807c8a04f828623c141"
+    },
+    "implementation_sha256": {
+      "planner": "6de7110a43e119ddd17f877c885e7310ead892a3ef156cdcd717db3aac70cb4a",
+      "trajectory_preflight": "0e4adf4417a4760510df9525819eba5e8fd9a7aef582da125864d1496ebf654b",
+      "workspace_envelope": "6efca732a8db5256a059d022546cfa5bb38362bcc12e747159b3fd60fbcb3d53"
+    }
+  }
+}

@@ -43,6 +43,51 @@ CARTESIAN_BEGIN_RE = re.compile(
 CARTESIAN_COMPLETE_RE = re.compile(
     r"CARTESIAN_DEMO_COMPLETE cycle=(\d+) monotonic=([-+0-9.e]+)"
 )
+DIRECTIONAL_STAGE_RE = re.compile(
+    r"DIRECTIONAL_STAGE_INTERVAL direction=([a-z_]+) phase=(extend|hold|retract) "
+    r"start=([-+0-9.e]+) end=([-+0-9.e]+)"
+)
+DIRECTIONAL_ORDER = (
+    "front", "rear", "left", "right", "up", "down",
+    "front_left", "front_right", "rear_left", "rear_right",
+)
+DIRECTIONAL_RECOVERY_LABEL = "directional_abort_retracted"
+DIRECTIONAL_RECOVERY_STABLE_HOLD_S = 2.0
+
+
+def directional_abort_recovery_command() -> list[str]:
+    """Return the one allowed arm command after a directional-motion abort."""
+    return cpu_role_command("arm", [
+        "ros2", "run", "drone_arm_sim", "arm_preset_control",
+        "--preset", "retracted", "--duration", "20", "--wait",
+        "--tolerance", "0.08", "--flight-preflight",
+    ])
+
+
+def cpu_role_command(role: str, command: list[str]) -> list[str]:
+    """Wrap a child in the candidate's non-root inherited CPU affinity."""
+    runner = Path(__file__).resolve().parent / "run_with_cpu_role.sh"
+    return [str(runner), role, *command]
+
+
+def directional_abort_recovery_reached(returncode: int, output: str) -> bool:
+    """Require both a successful child and measured retracted-pose evidence."""
+    return bool(
+        int(returncode) == 0
+        and "ARM_PRESET_REACHED preset=retracted" in str(output)
+    )
+
+
+def directional_abort_recovery_stable(latest, now_s: float) -> bool:
+    """Validate the fresh PX4 hold required before abort-recovery LAND."""
+    return bool(
+        latest is not None
+        and float(now_s) - float(latest[0]) < 1.5
+        and int(latest[1]) == 2
+        and int(latest[2]) == 14
+        and math.hypot(float(latest[6]), float(latest[7])) < 0.10
+        and abs(float(latest[8])) < 0.08
+    )
 
 
 def _ros_topic_sample(topic: str, timeout_s: float) -> str:
@@ -120,8 +165,8 @@ def main() -> int:
     profile = os.environ.get("ARM_FLIGHT_PROFILE", "safe")
     cartesian_distance_m = float(os.environ.get("ARM_CARTESIAN_DISTANCE_M", "0.10"))
     cartesian_hold_s = float(os.environ.get("ARM_CARTESIAN_HOLD_S", "3.0"))
-    if not 0.0 < cartesian_distance_m <= 0.25:
-        parser.error("ARM_CARTESIAN_DISTANCE_M must be in (0, 0.25]")
+    if cartesian_distance_m == 0.0 or abs(cartesian_distance_m) > 0.25:
+        parser.error("ARM_CARTESIAN_DISTANCE_M magnitude must be in (0, 0.25]")
     if not 0.0 <= cartesian_hold_s <= 30.0:
         parser.error("ARM_CARTESIAN_HOLD_S must be in [0, 30]")
     try:
@@ -133,7 +178,14 @@ def main() -> int:
         return 2
     print("ARM_FLIGHT_BACKEND_READY clock joint_states odometry px4_status", flush=True)
     rated_motor_output = 999.0
-    if profile.endswith("_4kg") or profile == "cartesian_formal_7p735":
+    selected_flight_config = os.environ.get("MY_DRONE_FLIGHT_CONFIG", "").strip()
+    if selected_flight_config:
+        config_path = Path(selected_flight_config).expanduser().resolve()
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        rated_motor_output = 1000.0 * float(
+            config["actuator_normalization"]["rated_thrust_command"]
+        )
+    elif profile.endswith("_4kg") or profile == "cartesian_formal_7p735":
         config_name = (
             "my_drone_v3_cad_debug_4kg.json"
             if profile.endswith("_4kg")
@@ -148,6 +200,7 @@ def main() -> int:
             config["actuator_normalization"]["rated_thrust_command"]
         )
     controller_environment = ros2_child_environment()
+    arm_environment = ros2_child_environment()
     if profile.endswith("_4kg") or profile == "cartesian_formal_7p735":
         controller_environment.update(
             {
@@ -168,8 +221,29 @@ def main() -> int:
         controller_environment["PX4_TRUTH_HOLD_ENABLED"] = os.environ.get(
             "PX4_TRUTH_HOLD_ENABLED", "true"
         )
+        # The debug model re-indexes all joint zeroes while preserving the
+        # formal CAD geometry.  Never let an automated flight silently fall
+        # back to the formal 7.735 kg preset file: identically named presets
+        # would then command a different physical pose.
+        arm_environment["SO101_MOTION_REFERENCE"] = str(
+            Path(__file__).resolve().parents[1]
+            / "src/drone_arm_sim/config/so101_motion_reference_4kg.json"
+        )
+    # Formal acceptance must execute the controller from this checkout.  A
+    # second PX4 message workspace is sourced for px4_msgs and can expose an
+    # older px4_ros2_control console entry point through Python distribution
+    # metadata even when the local colcon prefix is first.  Launching the
+    # authoritative source file also makes the process identity auditable in
+    # `ps` and prevents a stale installed controller from silently running.
+    controller_source = (
+        Path(__file__).resolve().parents[1]
+        / "src/px4_ros2_control/px4_ros2_control/dds_wasd_control.py"
+    )
+    if not controller_source.is_file():
+        parser.error(f"current-workspace controller not found: {controller_source}")
+    print(f"ARM_FLIGHT_CONTROLLER_SOURCE path={controller_source}", flush=True)
     controller = subprocess.Popen(
-        ["ros2", "run", "px4_ros2_control", "dds_wasd_control"],
+        cpu_role_command("controller", [sys.executable, str(controller_source)]),
         stdin=slave,
         stdout=slave,
         stderr=slave,
@@ -199,6 +273,9 @@ def main() -> int:
     sent = set()
     arm_process = None
     arm_label = None
+    arm_return_duration = None
+    directional_plan_path = None
+    directional_order = DIRECTIONAL_ORDER
     arm_results = {}
     arm_action_started = {}
     arm_action_completed = {}
@@ -216,6 +293,15 @@ def main() -> int:
     cartesian_sequence_event_file = Path("/tmp/my_drone_cartesian_sequence.events")
     cartesian_sequence_event_file.unlink(missing_ok=True)
     cartesian_sequence_events_seen = set()
+    directional_event_file = Path("/tmp/my_drone_directional_workspace.events")
+    directional_event_file.unlink(missing_ok=True)
+    directional_events_seen = set()
+    directional_stage_intervals = {}
+    directional_recovery_pending = False
+    directional_recovery_started = False
+    directional_recovery_reached = False
+    directional_recovery_stable_since = None
+    directional_recovery_blocked = False
     if profile == "full_a":
         # Diagnostic only: wait for the PX4 takeoff transient to settle before
         # commanding full work_a at a deliberately slow 30 s trajectory.
@@ -311,6 +397,89 @@ def main() -> int:
         ]
         arm_duration = "90"
         land_after_s = 196.0
+    elif profile == "nose_forward_straight_4kg":
+        # Instrument the exact operator key-6 pose: zero shoulder-pan yaw,
+        # complete nose-forward extension, hold through preset completion and
+        # a lower-acceleration return to the CAD folded pose.  The aircraft is
+        # dynamically asymmetric: measured pitch-rate during the old 90 s
+        # return was over twice the extension value as articulated inertia
+        # decreased.  Keep the proven extension unchanged and validate the
+        # return with an independent duration.
+        arm_duration = os.environ.get(
+            "ARM_NOSE_FORWARD_EXTENSION_DURATION_S", "90"
+        )
+        arm_hold_duration = os.environ.get(
+            "ARM_NOSE_FORWARD_HOLD_S", "5"
+        )
+        arm_return_duration = os.environ.get(
+            "ARM_NOSE_FORWARD_RETURN_DURATION_S", "120"
+        )
+        if (
+            float(arm_duration) <= 0.0
+            or float(arm_hold_duration) < 0.0
+            or float(arm_return_duration) <= 0.0
+        ):
+            parser.error(
+                "nose-forward extension/return must be positive and hold nonnegative"
+            )
+        return_start_s = 5.0 + float(arm_duration) + float(arm_hold_duration)
+        arm_schedule = [
+            (5.0, "flight_straight_forward"),
+            (return_start_s, "retracted"),
+        ]
+        land_after_s = return_start_s + float(arm_return_duration) + 6.0
+    elif profile == "directional_workspace_4kg":
+        # One clean PX4/Gazebo flight covers ten endpoint directions.  The
+        # dedicated child returns home after every direction and writes exact
+        # extend/hold/retract monotonic intervals for per-stage acceptance.
+        directional_plan_path = Path(
+            os.environ.get(
+                "ARM_DIRECTIONAL_PLAN",
+                str(
+                    Path(__file__).resolve().parents[1]
+                    / "analysis/base1/directional_workspace_flight_plan_4kg.json"
+                ),
+            )
+        ).resolve()
+        if not directional_plan_path.is_file():
+            parser.error(f"directional plan not found: {directional_plan_path}")
+        directional_plan = json.loads(
+            directional_plan_path.read_text(encoding="utf-8")
+        )
+        if directional_plan.get("direction_order") != list(DIRECTIONAL_ORDER):
+            parser.error("directional plan does not contain the required ten directions")
+        requested_directions = [
+            item.strip()
+            for item in os.environ.get("ARM_DIRECTIONAL_ONLY", "").split(",")
+            if item.strip()
+        ]
+        if requested_directions:
+            if len(set(requested_directions)) != len(requested_directions):
+                parser.error("ARM_DIRECTIONAL_ONLY contains duplicate directions")
+            unknown = [
+                direction for direction in requested_directions
+                if direction not in DIRECTIONAL_ORDER
+            ]
+            if unknown:
+                parser.error(
+                    "ARM_DIRECTIONAL_ONLY contains unknown directions: "
+                    + ",".join(unknown)
+                )
+            directional_order = tuple(requested_directions)
+        arm_schedule = [(5.0, "directional_workspace_sequence")]
+        arm_duration = "0"
+        selected_legs = [
+            leg for leg in directional_plan["legs"]
+            if leg["direction"] in directional_order
+        ]
+        selected_motion_s = sum(
+            float(leg["outward"]["effective_duration_s"])
+            + float(leg["hold_s"])
+            + float(leg["return"]["effective_duration_s"])
+            + float(leg["settle_s"])
+            for leg in selected_legs
+        )
+        land_after_s = 5.0 + selected_motion_s + 45.0
     elif profile == "combined_4kg":
         # Integrated 4 kg bring-up: deliberately overlap bounded arm motion
         # with paired position and yaw commands.  Opposing key pairs return
@@ -415,6 +584,8 @@ def main() -> int:
         flight_key_schedule = [
             (0.2, b"h", "H_INITIAL"),
         ]
+    elif profile in {"nose_forward_straight_4kg", "directional_workspace_4kg"}:
+        flight_key_schedule = [(0.2, b"h", "H_INITIAL")]
     elif profile == "cartesian_velocity_4kg":
         flight_key_schedule = [(8.0, b"h", "H_BEFORE_ARM")]
     elif profile == "cartesian_formal_7p735":
@@ -449,6 +620,44 @@ def main() -> int:
                             os.write(master, b"l")
                             sent.add("LAND")
                             print("ARM_FLIGHT_SEQUENCE_ERROR_LAND", flush=True)
+            if directional_event_file.exists():
+                for event in directional_event_file.read_text(
+                    encoding="utf-8", errors="replace"
+                ).splitlines():
+                    if event in directional_events_seen:
+                        continue
+                    directional_events_seen.add(event)
+                    print(event, flush=True)
+                    interval = DIRECTIONAL_STAGE_RE.fullmatch(event)
+                    if interval:
+                        direction, phase, interval_start, interval_end = interval.groups()
+                        directional_stage_intervals[(direction, phase)] = (
+                            float(interval_start), float(interval_end)
+                        )
+                    if event == "DIRECTIONAL_EMERGENCY_RETRACT_COMPLETE":
+                        directional_recovery_reached = True
+                        directional_recovery_pending = False
+                        directional_recovery_started = True
+                    elif event.startswith(
+                        "DIRECTIONAL_EMERGENCY_RETRACT_BLOCKED"
+                    ):
+                        directional_recovery_blocked = True
+                        directional_recovery_pending = False
+                        directional_recovery_started = True
+                    if event.startswith("DIRECTIONAL_SEQUENCE_ERROR"):
+                        safety_abort = True
+                        safety_abort_reason = event
+                        if (
+                            not directional_recovery_pending
+                            and not directional_recovery_blocked
+                            and not directional_recovery_reached
+                        ):
+                            directional_recovery_pending = True
+                            print(
+                                "ARM_FLIGHT_DIRECTIONAL_RECOVERY_PENDING "
+                                f"reason={event}",
+                                flush=True,
+                            )
             if select.select([master], [], [], 0.1)[0]:
                 try:
                     data = os.read(master, 65536).decode(errors="replace")
@@ -583,9 +792,14 @@ def main() -> int:
                     print("ARM_FLIGHT_TAKEOFF_ESTIMATOR_READY", flush=True)
 
             if arm_process is not None and arm_process.poll() is not None:
+                completed_arm_label = arm_label
+                completed_arm_returncode = int(arm_process.returncode)
                 arm_stdout, _ = arm_process.communicate()
-                arm_results[arm_label] = (arm_process.returncode, arm_stdout)
-                arm_action_completed[arm_label] = time.monotonic()
+                arm_results[completed_arm_label] = (
+                    completed_arm_returncode,
+                    arm_stdout,
+                )
+                arm_action_completed[completed_arm_label] = time.monotonic()
                 print(arm_stdout, end="", flush=True)
                 if arm_label in {"cartesian_sequence_twice", "cartesian_sequence_once"}:
                     starts = {
@@ -622,8 +836,87 @@ def main() -> int:
                 ):
                     first_cartesian_completed_time = time.monotonic()
                     print("ARM_FLIGHT_FIRST_CYCLE_COMPLETE", flush=True)
+                if (
+                    profile == "directional_workspace_4kg"
+                    and completed_arm_label == "directional_workspace_sequence"
+                    and completed_arm_returncode != 0
+                ):
+                    safety_abort = True
+                    safety_abort_reason = (
+                        f"directional-sequence-exit={completed_arm_returncode}"
+                    )
+                    if "DIRECTIONAL_EMERGENCY_RETRACT_COMPLETE" in arm_stdout:
+                        directional_recovery_reached = True
+                        directional_recovery_pending = False
+                        directional_recovery_started = True
+                        print(
+                            "ARM_FLIGHT_DIRECTIONAL_RECOVERY_RETRACTED_REACHED",
+                            flush=True,
+                        )
+                    elif "DIRECTIONAL_EMERGENCY_RETRACT_BLOCKED" in arm_stdout:
+                        directional_recovery_blocked = True
+                        directional_recovery_pending = False
+                        directional_recovery_started = True
+                        print(
+                            "ARM_FLIGHT_DIRECTIONAL_RECOVERY_BLOCKED "
+                            "reason=internal_preflighted_return_blocked",
+                            flush=True,
+                        )
+                    elif not directional_recovery_pending:
+                        directional_recovery_pending = True
+                        print(
+                            "ARM_FLIGHT_DIRECTIONAL_RECOVERY_PENDING "
+                            f"reason={safety_abort_reason}",
+                            flush=True,
+                        )
+                if completed_arm_label == DIRECTIONAL_RECOVERY_LABEL:
+                    directional_recovery_reached = (
+                        directional_abort_recovery_reached(
+                            completed_arm_returncode,
+                            arm_stdout,
+                        )
+                    )
+                    if directional_recovery_reached:
+                        print(
+                            "ARM_FLIGHT_DIRECTIONAL_RECOVERY_RETRACTED_REACHED",
+                            flush=True,
+                        )
+                    else:
+                        directional_recovery_blocked = True
+                        print(
+                            "ARM_FLIGHT_DIRECTIONAL_RECOVERY_BLOCKED "
+                            f"reason=retracted_exit_{completed_arm_returncode}",
+                            flush=True,
+                        )
                 arm_process = None
                 arm_label = None
+
+            if (
+                profile == "directional_workspace_4kg"
+                and directional_recovery_pending
+                and not directional_recovery_started
+                and not directional_recovery_blocked
+                and not directional_recovery_reached
+                and arm_process is None
+            ):
+                arm_label = DIRECTIONAL_RECOVERY_LABEL
+                arm_process = subprocess.Popen(
+                    directional_abort_recovery_command(),
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    text=True,
+                    env=arm_environment,
+                )
+                arm_action_started[arm_label] = time.monotonic()
+                directional_recovery_started = True
+                print("ARM_FLIGHT_DIRECTIONAL_RECOVERY_STARTED", flush=True)
+
+            if directional_recovery_blocked:
+                # Keep the joints frozen and the controller alive.  v7 proved
+                # that automatic LAND with the arm extended can destabilize
+                # this airframe catastrophically.  Only a completed retract
+                # followed by the existing measured stable hold may land.
+                pass
 
             if offboard_time is not None:
                 elapsed = time.monotonic() - offboard_time
@@ -673,6 +966,7 @@ def main() -> int:
                         if profile in {
                             "cartesian_demo_4kg", "cartesian_demo_twice_4kg",
                             "cartesian_velocity_4kg", "cartesian_formal_7p735",
+                            "directional_workspace_4kg",
                         }:
                             ready_now = (
                                 ready_now
@@ -686,6 +980,7 @@ def main() -> int:
                             5.0 if profile in {
                                 "cartesian_demo_4kg", "cartesian_demo_twice_4kg",
                                 "cartesian_velocity_4kg", "cartesian_formal_7p735",
+                                "directional_workspace_4kg",
                             } else 3.0
                         ):
                             flight_ready_time = time.monotonic()
@@ -730,15 +1025,15 @@ def main() -> int:
                             if "retracted" not in sent:
                                 arm_label = "retracted"
                                 arm_process = subprocess.Popen(
-                                    [
+                                    cpu_role_command("arm", [
                                         "ros2", "run", "drone_arm_sim", "arm_preset_control",
                                         "--preset", "retracted", "--duration", "10", "--wait",
                                         "--tolerance", "0.08",
-                                    ],
+                                    ]),
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.STDOUT,
                                     text=True,
-                                    env=ros2_child_environment(),
+                                    env=arm_environment,
                                 )
                                 sent.add("retracted")
                             os.write(master, b"l")
@@ -748,6 +1043,31 @@ def main() -> int:
                     None if flight_ready_time is None
                     else time.monotonic() - flight_ready_time
                 )
+                if (
+                    profile == "directional_workspace_4kg"
+                    and directional_recovery_reached
+                    and "LAND" not in sent
+                ):
+                    recovery_now = time.monotonic()
+                    recovery_stable_now = directional_abort_recovery_stable(
+                        states[-1] if states else None,
+                        recovery_now,
+                    )
+                    if recovery_stable_now:
+                        if directional_recovery_stable_since is None:
+                            directional_recovery_stable_since = recovery_now
+                        elif (
+                            recovery_now - directional_recovery_stable_since
+                            >= DIRECTIONAL_RECOVERY_STABLE_HOLD_S
+                        ):
+                            os.write(master, b"l")
+                            sent.add("LAND")
+                            print(
+                                "ARM_FLIGHT_DIRECTIONAL_RECOVERY_STABLE_LAND",
+                                flush=True,
+                            )
+                    else:
+                        directional_recovery_stable_since = None
                 for at, key, label in flight_key_schedule:
                     sent_label = f"KEY_{label}"
                     if (
@@ -793,11 +1113,23 @@ def main() -> int:
                         and arm_process is None
                     ):
                         arm_label = schedule_id
+                        command_duration = (
+                            arm_return_duration
+                            if profile == "nose_forward_straight_4kg"
+                            and preset == "retracted"
+                            else arm_duration
+                        )
                         arm_command = [
                             "ros2", "run", "drone_arm_sim", "arm_preset_control",
-                            "--preset", preset, "--duration", arm_duration, "--wait",
+                            "--preset", preset, "--duration", command_duration, "--wait",
                             "--tolerance", "0.06",
                         ]
+                        if profile == "nose_forward_straight_4kg":
+                            # This strict profile validates the same airborne
+                            # preflight path used by the operator keyboard.
+                            # Both extension and safety-critical full return
+                            # must be accepted before any trajectory is sent.
+                            arm_command.append("--flight-preflight")
                         if preset == "cartesian_demo":
                             cartesian_action_started[schedule_id] = time.monotonic()
                             arm_command = [
@@ -833,12 +1165,29 @@ def main() -> int:
                                     "--waypoint-stable-hold", "0.5",
                                     "--waypoint-stable-timeout", "20",
                                 ])
+                        elif preset == "directional_workspace_sequence":
+                            directional_event_file.unlink(missing_ok=True)
+                            arm_command = [
+                                sys.executable,
+                                str(
+                                    Path(__file__).resolve().parent
+                                    / "directional_workspace_flight_sequence.py"
+                                ),
+                                "--plan", str(directional_plan_path),
+                                "--event-file", str(directional_event_file),
+                                "--tolerance", "0.06",
+                                "--stability-timeout", "35",
+                            ]
+                            if directional_order != DIRECTIONAL_ORDER:
+                                arm_command.extend(
+                                    ["--directions", ",".join(directional_order)]
+                                )
                         arm_process = subprocess.Popen(
-                            arm_command,
+                            cpu_role_command("arm", arm_command),
                             stdout=subprocess.PIPE,
                             stderr=subprocess.STDOUT,
                             text=True,
-                            env=ros2_child_environment(),
+                            env=arm_environment,
                         )
                         arm_action_started[schedule_id] = time.monotonic()
                         sent.add(schedule_id)
@@ -915,6 +1264,29 @@ def main() -> int:
                         final_cartesian_stable_since is not None
                         and time.monotonic() - final_cartesian_stable_since >= 5.0
                     )
+                elif profile == "directional_workspace_4kg":
+                    latest = states[-1] if states else None
+                    sequence_complete = (
+                        f"DIRECTIONAL_SEQUENCE_COMPLETE directions={len(directional_order)}"
+                        in directional_events_seen
+                    )
+                    final_stable_now = (
+                        sequence_complete
+                        and arm_process is None
+                        and latest is not None
+                        and time.monotonic() - latest[0] < 1.5
+                        and math.hypot(latest[6], latest[7]) < 0.10
+                        and abs(latest[8]) < 0.08
+                    )
+                    if final_stable_now:
+                        if final_cartesian_stable_since is None:
+                            final_cartesian_stable_since = time.monotonic()
+                    else:
+                        final_cartesian_stable_since = None
+                    cartesian_land_ready = (
+                        final_cartesian_stable_since is not None
+                        and time.monotonic() - final_cartesian_stable_since >= 5.0
+                    )
                 elif profile == "cartesian_velocity_4kg":
                     cartesian_land_ready = (
                         post_velocity_stable_since is not None
@@ -949,8 +1321,15 @@ def main() -> int:
                 print("ARM_FLIGHT_CONTROLLER_EXIT_GRACE_EXPIRED", flush=True)
                 break
         if controller.poll() is None:
-            controller_timed_out = True
-            print("ARM_FLIGHT_CONTROLLER_TIMEOUT", flush=True)
+            if landing_disarmed_time is None:
+                controller_timed_out = True
+                print("ARM_FLIGHT_CONTROLLER_TIMEOUT", flush=True)
+            else:
+                # PX4 has acknowledged LAND and the controller has observed
+                # the disarmed state.  A lingering `ros2 run` wrapper is a
+                # teardown artifact, not a flight-controller timeout; the
+                # finally block below still terminates it deterministically.
+                print("ARM_FLIGHT_WRAPPER_STALE_AFTER_DISARM", flush=True)
     finally:
         if arm_process is not None and arm_process.poll() is None:
             arm_process.terminate()
@@ -992,6 +1371,10 @@ def main() -> int:
         required_presets = ("flight_work_a", "retracted")
     elif profile == "full_extend_slow_4kg":
         required_presets = ("demo_extended", "retracted")
+    elif profile == "nose_forward_straight_4kg":
+        required_presets = ("flight_straight_forward", "retracted")
+    elif profile == "directional_workspace_4kg":
+        required_presets = ("directional_workspace_sequence",)
     elif profile in {"demo_extended_4kg", "demo_extended_twice_4kg"}:
         required_presets = ("demo_extended", "retracted")
     elif profile == "cartesian_demo_4kg":
@@ -1008,7 +1391,12 @@ def main() -> int:
         result = arm_results.get(preset)
         required_marker = (
             "CARTESIAN_DEMO_COMPLETE"
-            if preset.startswith("cartesian_demo") else "ARM_PRESET_REACHED"
+            if preset.startswith("cartesian_demo")
+            else (
+                "DIRECTIONAL_SEQUENCE_COMPLETE"
+                if preset == "directional_workspace_sequence"
+                else "ARM_PRESET_REACHED"
+            )
         )
         if result is None or result[0] != 0 or required_marker not in result[1]:
             missing.append(f"arm:{preset}")
@@ -1046,7 +1434,25 @@ def main() -> int:
 
     action_intervals = []
     arm_window = []
-    if cartesian_labels:
+    if profile == "directional_workspace_4kg":
+        for direction in directional_order:
+            for phase in ("extend", "hold", "retract"):
+                interval = directional_stage_intervals.get((direction, phase))
+                if interval is None:
+                    missing.append(f"directional-stage:{direction}:{phase}")
+                    continue
+                action_start, action_end = interval
+                label = f"{direction}:{phase}"
+                action_intervals.append((label, action_start, action_end))
+                arm_window.extend(
+                    state for state in states
+                    if action_start <= state[0] <= action_end
+                )
+        for direction in directional_order:
+            marker = f"DIRECTIONAL_DIRECTION_COMPLETE direction={direction}"
+            if marker not in directional_events_seen:
+                missing.append(f"directional-return:{direction}")
+    elif cartesian_labels:
         for label in cartesian_labels:
             action_start = cartesian_action_started.get(label)
             action_end = cartesian_action_completed.get(label)
@@ -1060,6 +1466,7 @@ def main() -> int:
     elif profile in {
         "gripper_4kg", "wrist_roll_4kg", "shoulder_pan_4kg",
         "multi_joint_slow_4kg", "full_extend_slow_4kg",
+        "nose_forward_straight_4kg",
     }:
         for label in required_presets:
             action_start = arm_action_started.get(label)
@@ -1227,12 +1634,98 @@ def main() -> int:
         truth_y_peak_to_peak_m = float("inf")
         truth_xy_peak_to_peak_m = float("inf")
         truth_altitude_peak_to_peak_m = float("inf")
+    directional_stages_stable = True
+    directional_stage_results = {}
+    if profile == "directional_workspace_4kg":
+        stage_horizontal_limit = float(
+            os.environ.get("ARM_FLIGHT_ACCEPT_HORIZONTAL_M", "0.05")
+        )
+        stage_altitude_limit = float(
+            os.environ.get("ARM_FLIGHT_ACCEPT_ALTITUDE_M", "0.05")
+        )
+        stage_tilt_limit = float(
+            os.environ.get("ARM_FLIGHT_ACCEPT_TILT_DEG", "1.0")
+        )
+        for direction in directional_order:
+            direction_pass = True
+            for phase in ("extend", "hold", "retract"):
+                interval = directional_stage_intervals.get((direction, phase))
+                if interval is None:
+                    direction_pass = False
+                    continue
+                interval_start, interval_end = interval
+                positions = [
+                    sample for sample in truth_positions
+                    if interval_start <= sample[0] <= interval_end
+                ]
+                attitudes = [
+                    sample for sample in truth_attitudes
+                    if interval_start <= sample[0] <= interval_end
+                ]
+                stage_diagnostics = [
+                    sample for sample in diagnostics
+                    if interval_start <= sample["timestamp"] <= interval_end
+                ]
+                if positions:
+                    x_span = max(item[1] for item in positions) - min(item[1] for item in positions)
+                    y_span = max(item[2] for item in positions) - min(item[2] for item in positions)
+                    xy_span = max(x_span, y_span)
+                    altitude_stage_span = (
+                        max(item[3] for item in positions)
+                        - min(item[3] for item in positions)
+                    )
+                else:
+                    xy_span = altitude_stage_span = float("inf")
+                stage_tilt = max(
+                    (math.hypot(item[1], item[2]) for item in attitudes),
+                    default=float("inf"),
+                )
+                stage_motor_samples = [
+                    item["motors"] for item in stage_diagnostics
+                    if len(item["motors"]) >= 8
+                ]
+                stage_saturation = sum(
+                    1 for motors in stage_motor_samples
+                    if any(value >= rated_motor_output for value in motors[:8])
+                )
+                stage_pass = (
+                    xy_span <= stage_horizontal_limit
+                    and altitude_stage_span <= stage_altitude_limit
+                    and stage_tilt <= stage_tilt_limit
+                    and stage_saturation == 0
+                    and bool(stage_motor_samples)
+                    and bool(attitudes)
+                    and bool(positions)
+                    and no_failsafe
+                )
+                direction_pass = direction_pass and stage_pass
+                directional_stage_results[(direction, phase)] = stage_pass
+                print(
+                    "DIRECTIONAL_FLIGHT_STAGE_METRICS "
+                    f"direction={direction} phase={phase} "
+                    f"xy_peak_to_peak_m={xy_span:.3f} "
+                    f"altitude_peak_to_peak_m={altitude_stage_span:.3f} "
+                    f"max_truth_tilt_deg={stage_tilt:.3f} "
+                    f"motor_saturation_samples={stage_saturation}/{len(stage_motor_samples)} "
+                    f"no_failsafe={no_failsafe} pass={stage_pass}"
+                )
+            returned = (
+                f"DIRECTIONAL_DIRECTION_COMPLETE direction={direction}"
+                in directional_events_seen
+            )
+            direction_pass = direction_pass and returned
+            print(
+                "DIRECTIONAL_FLIGHT_DIRECTION_RESULT "
+                f"direction={direction} returned={returned} pass={direction_pass}"
+            )
+            directional_stages_stable = directional_stages_stable and direction_pass
     stable = max_horizontal_drift < 1.5 and altitude_span < 1.5
     if profile in {
         "cartesian_demo_4kg", "cartesian_demo_twice_4kg",
         "cartesian_velocity_4kg", "cartesian_formal_7p735", "gripper_4kg",
         "wrist_roll_4kg", "shoulder_pan_4kg", "multi_joint_slow_4kg",
-        "full_extend_slow_4kg",
+        "full_extend_slow_4kg", "nose_forward_straight_4kg",
+        "directional_workspace_4kg",
     }:
         acceptance_horizontal_m = float(
             os.environ.get("ARM_FLIGHT_ACCEPT_HORIZONTAL_M", "0.15")
@@ -1254,6 +1747,8 @@ def main() -> int:
             and math.isfinite(max_inertia_diag_change)
             and len(diagnostic_window) > 0
         )
+        if profile == "directional_workspace_4kg":
+            stable = stable and directional_stages_stable
     print(
         "ARM_FLIGHT_METRICS "
         f"horizontal_drift_m={max_horizontal_drift:.3f} "

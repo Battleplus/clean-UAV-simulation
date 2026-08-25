@@ -211,7 +211,7 @@
     <dynamics damping="0.25" friction="0.05" />
   </joint>
   <joint name="shoulder_lift" type="revolute">
-    <origin xyz="0.0313169276 0.0135548602 -0.0573278478" rpy="0 0 0" />
+    <origin xyz="0.0313169276 0.0135548602 -0.0573278478" rpy="-0.0686118073601 -1.4451543931 0.0603617392507" />
     <parent link="shoulder_link" />
     <child link="upper_arm_link" />
     <axis xyz="0.00872620322 0.999961923 7.61524218e-05" />
@@ -219,7 +219,7 @@
     <dynamics damping="0.25" friction="0.05" />
   </joint>
   <joint name="elbow_flex" type="revolute">
-    <origin xyz="-0.112441148 -0.0015112976 -0.0287159872" rpy="0 0 0" />
+    <origin xyz="-0.112441148 -0.0015112976 -0.0287159872" rpy="0.0970462031121 1.40596913594 0.0971862997081" />
     <parent link="upper_arm_link" />
     <child link="lower_arm_link" />
     <axis xyz="0.00864971853 0.999923848 0.00880235274" />
@@ -227,7 +227,7 @@
     <dynamics damping="0.25" friction="0.05" />
   </joint>
   <joint name="wrist_flex" type="revolute">
-    <origin xyz="0.13415811 -0.00208216344 -0.0038220943" rpy="0 0 0" />
+    <origin xyz="0.13415811 -0.00208216344 -0.0038220943" rpy="-5.34681816356e-07 0.0127093291979 0.000221829007818" />
     <parent link="lower_arm_link" />
     <child link="wrist_link" />
     <axis xyz="-0.000152960666 0.999847701 0.0174514039" />
@@ -235,7 +235,7 @@
     <dynamics damping="0.2" friction="0.04" />
   </joint>
   <joint name="wrist_roll" type="revolute">
-    <origin xyz="0.0581983646 -0.0171226371 0.000213439633" rpy="0 0 0" />
+    <origin xyz="0.0581983646 -0.0171226371 0.000213439633" rpy="-0.785362744186 -0.00257767896788 -0.00622469170698" />
     <parent link="wrist_link" />
     <child link="gripper_link" />
     <axis xyz="0.999961256 -6.64521574e-07 0.0088026821" />
@@ -705,7 +705,7 @@
         <param name="max">1.91986</param>
       </command_interface>
       <state_interface name="position">
-        <param name="initial_value">0.0</param>
+        <param name="initial_value">0</param>
       </state_interface>
       <state_interface name="velocity" />
     </joint>
@@ -715,7 +715,7 @@
         <param name="max">1.74533</param>
       </command_interface>
       <state_interface name="position">
-        <param name="initial_value">0.0</param>
+        <param name="initial_value">1.44545157679</param>
       </state_interface>
       <state_interface name="velocity" />
     </joint>
@@ -725,7 +725,7 @@
         <param name="max">1.69</param>
       </command_interface>
       <state_interface name="position">
-        <param name="initial_value">0.0</param>
+        <param name="initial_value">-1.40681746</param>
       </state_interface>
       <state_interface name="velocity" />
     </joint>
@@ -735,7 +735,7 @@
         <param name="max">1.65806</param>
       </command_interface>
       <state_interface name="position">
-        <param name="initial_value">0.0</param>
+        <param name="initial_value">-0.012711265</param>
       </state_interface>
       <state_interface name="velocity" />
     </joint>
@@ -745,7 +745,7 @@
         <param name="max">2.84121</param>
       </command_interface>
       <state_interface name="position">
-        <param name="initial_value">-1.57079632679</param>
+        <param name="initial_value">-0.785398163397</param>
       </state_interface>
       <state_interface name="velocity" />
     </joint>
@@ -755,7 +755,7 @@
         <param name="max">1.74533</param>
       </command_interface>
       <state_interface name="position">
-        <param name="initial_value">0.0</param>
+        <param name="initial_value">0</param>
       </state_interface>
       <state_interface name="velocity" />
     </joint>

@@ -1,0 +1,70 @@
+{
+  "status": "OFFLINE_READY_DYNAMIC_NOT_ACCEPTED",
+  "offline_ready": true,
+  "dynamic_accepted": false,
+  "checks": {
+    "all_required_files_present": true,
+    "total_mass_1p3kg": true,
+    "arm_mass_0p6kg": true,
+    "airframe_mass_0p7kg": true,
+    "config_mass_matches": true,
+    "envelope_status_static": true,
+    "envelope_full_direction_coverage": true,
+    "envelope_strict_gravity_limit": true,
+    "envelope_strict_motor_delta": true,
+    "envelope_has_delta_headroom": true,
+    "plan_is_preflight_only": true,
+    "plan_has_ten_directions": true,
+    "plan_all_legs_return_home": true,
+    "envelope_input_hashes_current": true,
+    "plan_envelope_hash_current": true,
+    "plan_model_hashes_current": true,
+    "plan_implementation_hashes_current": true
+  },
+  "details": {
+    "missing_files": [],
+    "mass_kg": {
+      "total": 1.29999999999954,
+      "arm": 0.5999999999997,
+      "remaining_aircraft": 0.69999999999984
+    },
+    "static_envelope": {
+      "sample_count": 25725,
+      "flight_allowed_count": 9127,
+      "flight_allowed_fraction": 0.3547910592808552,
+      "rejection_counts": {
+        "collision_proxy": 16087,
+        "overlay_delta_headroom": 1213
+      },
+      "maximum_allowed_com_shift_m": 0.05891348322922968,
+      "maximum_allowed_gravity_torque_nm": 0.7285810804410104,
+      "minimum_allowed_physical_motor_headroom_n": 0.8902206662325851,
+      "minimum_allowed_overlay_delta_headroom_n": 0.3001122605943356,
+      "minimum_allowed_joint_effort_margin_nm": 0.8853803585839392,
+      "allowed_endpoint_z_min_m": -0.5329180096811645,
+      "allowed_endpoint_z_max_m": -0.13459591761946232,
+      "allowed_endpoint_vertical_span_m": 0.3983220920617022,
+      "vertical_classification_reference": "retracted_endpoint_body_flu_z",
+      "vertical_classification_reference_m": -0.25701933866606574,
+      "vertical_classification_deadband_m": 0.025,
+      "coverage_checks": {
+        "eight_horizontal_directions": true,
+        "four_horizontal_diagonals": true,
+        "up_level_down": true,
+        "near_middle_far": true,
+        "closed_middle_open_gripper": true,
+        "at_least_two_distances_in_each_horizontal_direction": true,
+        "all_gripper_states_in_each_horizontal_direction": true
+      },
+      "required_direction_coverage_complete": true
+    },
+    "dynamic_checks": {
+      "wasd_exit_zero": true,
+      "wasd_pass_marker": true,
+      "directional_exit_zero": false,
+      "directional_pass_marker": false,
+      "all_30_directional_stages_pass": false,
+      "all_10_directions_return_and_pass": false
+    }
+  }
+}

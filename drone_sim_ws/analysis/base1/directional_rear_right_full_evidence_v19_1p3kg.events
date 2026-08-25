@@ -1,0 +1,5 @@
+DIRECTIONAL_STAGE_INTERVAL direction=rear_right phase=extend start=16261.288228 end=16284.448139
+DIRECTIONAL_STAGE_INTERVAL direction=rear_right phase=hold start=16284.448375 end=16287.453089
+DIRECTIONAL_RUNTIME_ABORT direction=rear_right error=ARM_DIRECT_XY_MOTION_ABORTED reason=direct_xy_motion_inhibited
+DIRECTIONAL_EMERGENCY_RETRACT_COMPLETE
+DIRECTIONAL_SEQUENCE_ERROR error=directional leg rear_right aborted: ARM_DIRECT_XY_MOTION_ABORTED reason=direct_xy_motion_inhibited

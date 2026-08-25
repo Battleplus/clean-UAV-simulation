@@ -4,6 +4,7 @@ set -eo pipefail
 workspace_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 px4_dir="${PX4_DIR:-/home/asus/PX4-Autopilot}"
 runtime_dir="/tmp/my_drone_ros2_dds"
+cpu_role_runner="${workspace_dir}/scripts/run_with_cpu_role.sh"
 mkdir -p "${runtime_dir}"
 model_settle_s="${MODEL_SETTLE_S:-8}"
 px4_ready_settle_s="${PX4_READY_SETTLE_S:-5}"
@@ -26,7 +27,8 @@ if [[ "${CLEAN_STALE_RUNTIME:-1}" == "1" ]]; then
   # their installed entry points explicitly so a clean restart cannot retain
   # a second motor-command publisher or a stale compensation state.
   pkill -f '/[b]ase1_wrench_reallocator' 2>/dev/null || true
-  pkill -f '/[b]ase1_arm_coupling_estimator_100hz' 2>/dev/null || true
+  pkill -f '/[a]rm_coupling_monitor .*__node:=base1_arm_coupling_estimator_100hz' 2>/dev/null || true
+  pkill -f '/[c]artesian_arm_velocity_control' 2>/dev/null || true
   pkill -x gazebo_sensor_d 2>/dev/null || true
   pkill -x parameter_bridg 2>/dev/null || true
   pkill -x robot_state_pub 2>/dev/null || true
@@ -45,6 +47,7 @@ if [[ "${CLEAN_STALE_RUNTIME:-1}" == "1" ]]; then
   # A PTY test may leave the installed Python entry point behind if the
   # parent shell is interrupted; never allow two DDS Offboard publishers.
   pkill -f '/px4_ros2_control/dds_wasd_control' 2>/dev/null || true
+  pkill -f '/px4_ros2_control/direct_xy_guardian' 2>/dev/null || true
   # The arm keyboard is a plain bash loop (not a ros2 process), so a prior
   # visible terminal can otherwise survive a clean backend restart and leave
   # two operator consoles on screen.
@@ -54,6 +57,18 @@ if [[ "${CLEAN_STALE_RUNTIME:-1}" == "1" ]]; then
   # /stats into the new run.  This is intentionally scoped to headless
   # `gz sim -s -r` servers rather than all Gazebo processes/GUI windows.
   pkill -KILL -f '[g]z sim -s -r' 2>/dev/null || true
+  # PID files refer to `setsid` wrapper processes and must never survive a
+  # clean restart.  A recycled numeric PID could otherwise make a later
+  # overlay stop an unrelated process.
+  rm -f \
+    "${runtime_dir}/agent.pid" \
+    "${runtime_dir}/gazebo.pid" \
+    "${runtime_dir}/px4.pid" \
+    "${runtime_dir}/base1_estimator.pid" \
+    "${runtime_dir}/base1_reallocator.pid" \
+    "${runtime_dir}/direct_xy_guardian.pid" \
+    "${runtime_dir}/base1_overlay_motor.pid" \
+    "${runtime_dir}/cartesian_velocity.pid"
 fi
 
 source /opt/ros/jazzy/setup.bash
@@ -80,14 +95,16 @@ px4_stability_log="${runtime_dir}/px4_stability.log"
 : >"${settle_log}"
 : >"${px4_stability_log}"
 
-setsid /home/asus/.local/bin/MicroXRCEAgent udp4 -p 8888 -v 4 \
+setsid "${cpu_role_runner}" bulk \
+  /home/asus/.local/bin/MicroXRCEAgent udp4 -p 8888 -v 4 \
   >"${agent_log}" 2>&1 &
 echo $! >"${runtime_dir}/agent.pid"
 
 default_robot_file="${workspace_dir}/install/drone_arm_sim/share/drone_arm_sim/urdf/my_drone_v3/my_drone_cad_formal_dynamic.urdf"
 default_config_file="${workspace_dir}/src/drone_arm_sim/config/my_drone_v3_cad_7p735_flight.json"
 export MY_DRONE_URDF="${ROBOT_FILE:-${default_robot_file}}"
-setsid ros2 launch drone_arm_sim cad_direct_thrust.launch.py \
+setsid "${cpu_role_runner}" bulk \
+  ros2 launch drone_arm_sim cad_direct_thrust.launch.py \
   headless:="${HEADLESS:-false}" enable_controller:=false \
   enable_arm_control:="${ENABLE_ARM_CONTROL:-false}" \
   gz_seed:="${GZ_RANDOM_SEED:-4027}" \
@@ -159,7 +176,8 @@ if [[ "${PX4_FRESH_WORKDIR:-0}" == "1" ]]; then
     "${px4_dir}/build/px4_sitl_default/etc"
   )
 fi
-setsid env PX4_GZ_STANDALONE=1 PX4_GZ_WORLD=flight_world \
+setsid "${cpu_role_runner}" bulk \
+  env PX4_GZ_STANDALONE=1 PX4_GZ_WORLD=flight_world \
   PX4_GZ_MODEL_NAME=my_drone PX4_SYS_AUTOSTART="${AIRFRAME_ID:-4026}" \
   "${px4_command[@]}" >"${px4_log}" 2>&1 &
 echo $! >"${runtime_dir}/px4.pid"
@@ -178,8 +196,21 @@ for _ in $(seq 1 90); do
       # require one real /joint_states sample before sending any trajectory.
       arm_joint_state_topic="${ARM_JOINT_STATE_TOPIC:-/joint_states}"
       arm_joint_sample_timeout_s="${ARM_INIT_SAMPLE_TIMEOUT_S:-8}"
-      if ! timeout "${arm_joint_sample_timeout_s}" ros2 topic echo --once "${arm_joint_state_topic}" \
-        >/dev/null 2>&1; then
+      arm_joint_sample_args=(--joint-samples 3 --timeout "${arm_joint_sample_timeout_s}")
+      if [[ "${arm_joint_state_topic}" != "/joint_states" ]]; then
+        # The persistent sample gate intentionally uses the authoritative
+        # /joint_states stream.  Keep the generic fallback for an explicitly
+        # overridden diagnostic topic.
+        arm_joint_sample_args=()
+      fi
+      if { [[ "${#arm_joint_sample_args[@]}" -gt 0 ]] && \
+          python3 "${workspace_dir}/scripts/wait_base1_ros_samples.py" \
+            "${arm_joint_sample_args[@]}" >/dev/null 2>&1; } || \
+          { [[ "${#arm_joint_sample_args[@]}" -eq 0 ]] && \
+          timeout "${arm_joint_sample_timeout_s}" ros2 topic echo --once "${arm_joint_state_topic}" \
+            >/dev/null 2>&1; }; then
+        arm_joint_state_ready=true
+      else
         echo "ARM_INIT_RETRY activating joint_state_broadcaster" \
           >>"${arm_init_log}"
         timeout 20 ros2 service call \
@@ -187,22 +218,29 @@ for _ in $(seq 1 90); do
           controller_manager_msgs/srv/SwitchController \
           "{activate_controllers: [joint_state_broadcaster], deactivate_controllers: [], strictness: 2, activate_asap: true, timeout: {sec: 15, nanosec: 0}}" \
           >>"${arm_init_log}" 2>&1 || true
-      fi
-      arm_joint_state_ready=false
-      for _ in $(seq 1 20); do
-        if timeout "${arm_joint_sample_timeout_s}" ros2 topic echo --once "${arm_joint_state_topic}" \
-          >/dev/null 2>&1; then
+        arm_joint_state_ready=false
+        if [[ "${#arm_joint_sample_args[@]}" -gt 0 ]]; then
+          if python3 "${workspace_dir}/scripts/wait_base1_ros_samples.py" \
+              --joint-samples 3 --timeout "${ARM_INIT_RETRY_TIMEOUT_S:-30}" \
+              >/dev/null 2>&1; then
+            arm_joint_state_ready=true
+          fi
+        elif timeout "${ARM_INIT_RETRY_TIMEOUT_S:-30}" ros2 topic echo --once "${arm_joint_state_topic}" \
+            >/dev/null 2>&1; then
           arm_joint_state_ready=true
-          break
         fi
-        sleep 1
-      done
+      fi
       if [[ "${arm_joint_state_ready}" != "true" ]]; then
         echo "ARM_INIT_FAIL joint state unavailable: ${arm_joint_state_topic}" \
           >"${arm_init_log}"
         cat "${arm_init_log}" >&2
         exit 1
       fi
+      # This is a disarmed ground-initialisation command executed before the
+      # DDS flight controller and direct-XY reallocator exist.  It must not
+      # wait for the airborne ownership handshake inherited from a candidate
+      # launcher environment.
+      ARM_DIRECT_XY_OWNERSHIP=false \
       ros2 run drone_arm_sim arm_preset_control \
         --preset retracted --duration 8 --wait --tolerance 0.08 \
         >>"${arm_init_log}" 2>&1
@@ -211,7 +249,7 @@ for _ in $(seq 1 90); do
       # body-rate and attitude response.  Require every SO101 joint to remain
       # near the retracted target and below the velocity limit continuously.
       python3 "${workspace_dir}/scripts/wait_arm_static.py" \
-        --reference "${workspace_dir}/src/drone_arm_sim/config/so101_motion_reference.json" \
+        --reference "${SO101_MOTION_REFERENCE:-${workspace_dir}/src/drone_arm_sim/config/so101_motion_reference.json}" \
         --preset retracted \
         --topic "${arm_joint_state_topic}" \
         --position-tolerance "${ARM_STATIC_POSITION_TOLERANCE_RAD:-0.08}" \

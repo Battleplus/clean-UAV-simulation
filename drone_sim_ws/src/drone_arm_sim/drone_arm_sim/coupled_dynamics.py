@@ -171,7 +171,23 @@ class CoupledArmDynamics:
         )
         if self.mass_scale <= 0.0:
             raise ValueError("target mass must be positive")
-        _, self.home_com, self.home_inertia = self.mass_properties({})
+        documented_home = self.motion.get("presets", {}).get("retracted", {})
+        if isinstance(documented_home, (list, tuple)):
+            if len(documented_home) != len(self.active_joint_names):
+                raise ValueError("retracted preset length does not match active joints")
+            self.home_positions = {
+                name: float(value)
+                for name, value in zip(
+                    self.active_joint_names, documented_home, strict=True
+                )
+            }
+        elif isinstance(documented_home, Mapping):
+            self.home_positions = self._normalized_positions(documented_home)
+        else:
+            self.home_positions = self._normalized_positions({})
+        _, self.home_com, self.home_inertia = self.mass_properties(
+            self.home_positions
+        )
 
     @property
     def active_joint_names(self) -> tuple[str, ...]:
@@ -404,7 +420,7 @@ class CoupledArmDynamics:
         home_center = (
             self.home_com
             if payload is None
-            else self.mass_properties({}, payload)[1]
+            else self.mass_properties(self.home_positions, payload)[1]
         )
         return CoupledState(
             mass_kg=mass,
@@ -481,7 +497,7 @@ class CoupledArmDynamics:
             d_torque -= axis * resisting[index]
         # Match state(): damping/friction remains diagnostic-only and must not
         # be added a second time to the base reaction wrench.
-        _, home_center, _ = self.mass_properties({}, payload)
+        _, home_center, _ = self.mass_properties(self.home_positions, payload)
         return CoupledState(
             mass_kg=mass,
             center_of_mass_m=center,

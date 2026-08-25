@@ -878,29 +878,29 @@
     ]
   },
   "bounded_hover_thrust_n": [
-    5.5228732683413355,
-    5.800870766355533,
-    5.5228732683413355,
-    5.860182282620515,
-    5.463561752076383,
-    5.800870766355528,
-    5.463561752076386,
-    5.860182282620516
+    5.522873268341331,
+    5.800870766355546,
+    5.522873268341345,
+    5.860182282620517,
+    5.4635617520763855,
+    5.800870766355535,
+    5.4635617520763855,
+    5.860182282620515
   ],
   "bounded_hover_residual": [
-    7.617061803893523e-15,
-    2.8410838681514974e-15,
-    7.105427357601002e-15,
-    -3.7816971776294395e-16,
-    2.220446049250313e-15,
-    -2.7755575615628914e-17
+    4.440892098500626e-16,
+    -4.884981308350689e-15,
+    -1.4210854715202004e-14,
+    -8.881784197001252e-16,
+    1.3322676295501878e-15,
+    8.326672684688674e-16
   ],
-  "bounded_hover_residual_norm": 1.1029625985018306e-14,
+  "bounded_hover_residual_norm": 1.5141525090550408e-14,
   "actuator_input_model": "ideal_linear_thrust",
   "actuator_normalization": {
-    "px4_hover_command": 0.48112522432468796,
-    "physical_hover_thrust_n": 5.661872017348442,
-    "physical_hover_fraction": 0.48112522432468796,
+    "px4_hover_command": 0.4811252243246883,
+    "physical_hover_thrust_n": 5.661872017348445,
+    "physical_hover_fraction": 0.4811252243246883,
     "linear_thrust_per_command_n": 11.76798,
     "rated_thrust_command": 1.0,
     "maximum_command": 1.0,
@@ -919,5 +919,43 @@
     "restore_clearance_m": 0.05,
     "restore_sdf_filename": "../worlds/landing_support.sdf",
     "status": "ground-level contact pads are removed after 102 percent of weight and a balanced wrench are held; the retracted CAD gripper is the aircraft's initial table contact"
+  },
+  "arm_installation": {
+    "profile": "base1_cad_connected_folded_ground_nose_forward_straight_flight",
+    "ground_spawn_z_m": 0.289,
+    "mount_xyz_m": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "mount_rpy_rad": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "joint_zero_offsets_rad": {
+      "shoulder_pan": 0.0,
+      "shoulder_lift": -1.4454515767948966,
+      "elbow_flex": 1.40681746,
+      "wrist_flex": 0.012711265,
+      "wrist_roll": -0.7853981633974483
+    },
+    "folded_command_rad": {
+      "shoulder_pan": 0.0,
+      "shoulder_lift": 1.4454515767948966,
+      "elbow_flex": -1.40681746,
+      "wrist_flex": -0.012711265,
+      "wrist_roll": -0.7853981633974483,
+      "gripper": 0.0
+    },
+    "nose_forward_straight_command_rad": {
+      "shoulder_pan": 0.0,
+      "shoulder_lift": -1.4454515767948966,
+      "elbow_flex": 1.40681746,
+      "wrist_flex": 0.012711265,
+      "wrist_roll": 0.7853981633974483,
+      "gripper": 0.0
+    },
+    "status": "4 kg Base 1 CAD-connected installation; movable links are re-indexed between the original folded ground pose and the nose-forward / body +X straight flight pose with zero base yaw; formal 7.735 kg CAD assembly and motion reference are unchanged"
   }
 }

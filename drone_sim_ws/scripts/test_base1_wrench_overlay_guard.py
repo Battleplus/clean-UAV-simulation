@@ -36,8 +36,10 @@ class Base1WrenchOverlayGuardTest(unittest.TestCase):
         script = (
             WORKSPACE / "scripts/run_base1_readonly_estimator_overlay.sh"
         ).read_text(encoding="utf-8")
-        self.assertIn("joint_state_samples >= 3", script)
-        self.assertIn("/my_drone/base1_estimator/coupling_state >/dev/null", script)
+        self.assertIn("wait_base1_ros_samples.py", script)
+        self.assertIn("--joint-samples 3", script)
+        self.assertNotIn("ros2 topic echo --once", script)
+        self.assertIn("--coupling-samples 3", script)
 
 
 if __name__ == "__main__":

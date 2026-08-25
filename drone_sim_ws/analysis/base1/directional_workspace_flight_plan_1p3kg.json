@@ -1,0 +1,750 @@
+{
+  "schema": "my_drone.directional-workspace-flight-plan.v1",
+  "status": "PREFLIGHTED_NOT_FLIGHT_ACCEPTED",
+  "frame": "base_link ROS FLU (+X front, +Y left, +Z up)",
+  "direction_order": [
+    "front",
+    "rear",
+    "left",
+    "right",
+    "up",
+    "down",
+    "front_left",
+    "front_right",
+    "rear_left",
+    "rear_right"
+  ],
+  "home_positions_rad": {
+    "shoulder_pan": 0.0,
+    "shoulder_lift": 1.4454515767948966,
+    "elbow_flex": -1.40681746,
+    "wrist_flex": -0.012711265,
+    "wrist_roll": -0.7853981633925518,
+    "gripper": 0.0
+  },
+  "requested_duration_s": 20.0,
+  "shoulder_pan_speed_cap_rad_s": 0.05,
+  "total_motion_s": 756.5172299999999,
+  "acceptance_limits": {
+    "xy_peak_to_peak_m": 0.05,
+    "altitude_peak_to_peak_m": 0.05,
+    "maximum_tilt_deg": 1.0,
+    "motor_saturation_samples": 0,
+    "failsafe": false,
+    "return_required_after_every_direction": true
+  },
+  "legs": [
+    {
+      "direction": "front",
+      "source": "maximum_radius_by_direction.front",
+      "endpoint_body_flu_m": [
+        0.332160642346616,
+        -0.008020142724900418,
+        -0.254695685187291
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 2.220446049250313e-16,
+        "shoulder_lift": -1.0937401333333332,
+        "elbow_flex": 1.0590666666666664,
+        "wrist_flex": 0.0,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "outward": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.6140789550771037,
+        "maximum_reaction_force_n": 0.001863834576020197,
+        "maximum_reaction_torque_nm": 0.0005277902002504351,
+        "minimum_physical_motor_headroom_n": 1.1775117248511338,
+        "minimum_overlay_delta_headroom_n": 0.5874033192128894,
+        "maximum_allocation_residual_norm": 5.927590926367358e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.6140789550771037,
+        "maximum_reaction_force_n": 0.001863834576020197,
+        "maximum_reaction_torque_nm": 0.0005277902001957152,
+        "minimum_physical_motor_headroom_n": 1.1775117248511338,
+        "minimum_overlay_delta_headroom_n": 0.5874033192128894,
+        "maximum_allocation_residual_norm": 5.891966561016028e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "rear",
+      "source": "maximum_radius_by_direction.rear",
+      "endpoint_body_flu_m": [
+        -0.2404629992829021,
+        -0.004002964488610632,
+        -0.3348089417172758
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 2.220446049250313e-16,
+        "shoulder_lift": 1.0937401333333334,
+        "elbow_flex": 1.5886,
+        "wrist_flex": 0.7792882000000003,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "outward": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.6225653743460791,
+        "maximum_reaction_force_n": 0.002633856392437191,
+        "maximum_reaction_torque_nm": 0.0007700961549174895,
+        "minimum_physical_motor_headroom_n": 1.1659715171486047,
+        "minimum_overlay_delta_headroom_n": 0.5758631114504797,
+        "maximum_allocation_residual_norm": 6.007176128981118e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.6225653743460791,
+        "maximum_reaction_force_n": 0.0026338563924649637,
+        "maximum_reaction_torque_nm": 0.0007700961548865103,
+        "minimum_physical_motor_headroom_n": 1.1659715171486047,
+        "minimum_overlay_delta_headroom_n": 0.5758631114504797,
+        "maximum_allocation_residual_norm": 6.006313308522015e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "left",
+      "source": "maximum_radius_by_direction.left",
+      "endpoint_body_flu_m": [
+        -0.0047827409464489355,
+        0.25914403121603874,
+        -0.3737840159606211
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": -1.62420156,
+        "shoulder_lift": -0.3476379023205103,
+        "elbow_flex": 0.8124782539999997,
+        "wrist_flex": -0.7026305065000001,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "outward": {
+        "decision": "shortened",
+        "effective_duration_s": 67.67506499999999,
+        "distance_scale": 0.9,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.6101833012906366,
+        "maximum_reaction_force_n": 0.0001555665035195186,
+        "maximum_reaction_torque_nm": 5.089066950691013e-05,
+        "minimum_physical_motor_headroom_n": 1.0192341924718251,
+        "minimum_overlay_delta_headroom_n": 0.4291257868335854,
+        "maximum_allocation_residual_norm": 6.571304678704659e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 67.67506499999999,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.6101833012906366,
+        "maximum_reaction_force_n": 0.0001555665035263322,
+        "maximum_reaction_torque_nm": 5.089066950195516e-05,
+        "minimum_physical_motor_headroom_n": 1.0192341924718251,
+        "minimum_overlay_delta_headroom_n": 0.4291257868335854,
+        "maximum_allocation_residual_norm": 6.568413541757926e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "right",
+      "source": "maximum_radius_by_direction.right",
+      "endpoint_body_flu_m": [
+        0.11214867577899887,
+        -0.31231237727385014,
+        -0.2566157005323926
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 1.2031122666666667,
+        "shoulder_lift": -1.0937401333333332,
+        "elbow_flex": 1.0590666666666664,
+        "wrist_flex": 0.0,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "outward": {
+        "decision": "accepted",
+        "effective_duration_s": 45.11671,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.7095043874501121,
+        "maximum_reaction_force_n": 0.0005120221789231024,
+        "maximum_reaction_torque_nm": 0.00013933041672242795,
+        "minimum_physical_motor_headroom_n": 0.9460996975211315,
+        "minimum_overlay_delta_headroom_n": 0.35599129188289,
+        "maximum_allocation_residual_norm": 7.367320107663894e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 45.11671,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.7095043874501121,
+        "maximum_reaction_force_n": 0.0005120221788918199,
+        "maximum_reaction_torque_nm": 0.00013933041671754264,
+        "minimum_physical_motor_headroom_n": 0.9460996975211293,
+        "minimum_overlay_delta_headroom_n": 0.3559912918828878,
+        "maximum_allocation_residual_norm": 7.396444767150565e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "up",
+      "source": "highest_candidates[43]",
+      "endpoint_body_flu_m": [
+        0.2707867722460827,
+        -0.008406464139012606,
+        -0.20061854284653052
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 2.220446049250313e-16,
+        "shoulder_lift": -1.0937401333333332,
+        "elbow_flex": 1.0590666666666664,
+        "wrist_flex": -1.5585764000000002,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "outward": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.4941332101256378,
+        "maximum_reaction_force_n": 0.001665273800588388,
+        "maximum_reaction_torque_nm": 0.00043431657912081713,
+        "minimum_physical_motor_headroom_n": 1.305381834527756,
+        "minimum_overlay_delta_headroom_n": 0.7152734288895115,
+        "maximum_allocation_residual_norm": 4.743020623595417e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 20.0,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.4941332101256378,
+        "maximum_reaction_force_n": 0.0016652738005893673,
+        "maximum_reaction_torque_nm": 0.0004343165791073463,
+        "minimum_physical_motor_headroom_n": 1.305381834527756,
+        "minimum_overlay_delta_headroom_n": 0.7152734288895115,
+        "maximum_allocation_residual_norm": 4.752481301052415e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": [
+        {
+          "source": "highest_candidates[0]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[1]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[2]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[3]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[4]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[5]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[6]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[7]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[8]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[9]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[10]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[11]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[12]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[13]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[14]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[15]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[16]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[17]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[18]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[19]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[20]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[21]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[22]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[23]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[24]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[25]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[26]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[27]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[28]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[29]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[30]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[31]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[32]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[33]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[34]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[35]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[36]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[37]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[38]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[39]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[40]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[41]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        },
+        {
+          "source": "highest_candidates[42]",
+          "failure_counts": {
+            "continuous_collision_proxy": 1
+          }
+        }
+      ]
+    },
+    {
+      "direction": "down",
+      "source": "lowest_candidates[0]",
+      "endpoint_body_flu_m": [
+        -0.013138905570306525,
+        -0.03962147094647794,
+        -0.5329180096811645
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 1.8046684,
+        "shoulder_lift": 2.220446049250313e-16,
+        "elbow_flex": 1.5886,
+        "wrist_flex": 0.0,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "outward": {
+        "decision": "accepted",
+        "effective_duration_s": 67.67506499999999,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.23497023203479017,
+        "maximum_reaction_force_n": 0.00013140107488980116,
+        "maximum_reaction_torque_nm": 2.5820366119061114e-05,
+        "minimum_physical_motor_headroom_n": 1.4862534970648422,
+        "minimum_overlay_delta_headroom_n": 0.8961442918043938,
+        "maximum_allocation_residual_norm": 2.5827675197717085e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 67.67506499999999,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.23497023203479017,
+        "maximum_reaction_force_n": 0.00013140107488980097,
+        "maximum_reaction_torque_nm": 2.5820366120873568e-05,
+        "minimum_physical_motor_headroom_n": 1.4862534970648422,
+        "minimum_overlay_delta_headroom_n": 0.8961442918094822,
+        "maximum_allocation_residual_norm": 2.8055236503860558e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "front_left",
+      "source": "maximum_radius_by_direction.front_left",
+      "endpoint_body_flu_m": [
+        0.15662887160678918,
+        0.2773380870675691,
+        -0.28354511646191144
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": -1.0828010399999999,
+        "shoulder_lift": -0.8398209623205104,
+        "elbow_flex": 0.8124782539999997,
+        "wrist_flex": -0.001271126499999999,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "outward": {
+        "decision": "shortened",
+        "effective_duration_s": 45.11671,
+        "distance_scale": 0.9,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.6800965213886584,
+        "maximum_reaction_force_n": 0.00040343421283466557,
+        "maximum_reaction_torque_nm": 0.00011781873547225543,
+        "minimum_physical_motor_headroom_n": 0.8996375904632703,
+        "minimum_overlay_delta_headroom_n": 0.30952918482502323,
+        "maximum_allocation_residual_norm": 7.131844543890665e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 45.11671,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.6800965213886584,
+        "maximum_reaction_force_n": 0.00040343421279733936,
+        "maximum_reaction_torque_nm": 0.00011781873548071938,
+        "minimum_physical_motor_headroom_n": 0.8996375904957952,
+        "minimum_overlay_delta_headroom_n": 0.3095291848575481,
+        "maximum_allocation_residual_norm": 7.102832780398774e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "front_right",
+      "source": "maximum_radius_by_direction.front_right",
+      "endpoint_body_flu_m": [
+        0.26926315266755896,
+        -0.17036104631954352,
+        -0.28256217198214095
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 0.5414005200000002,
+        "shoulder_lift": -0.8398209623205104,
+        "elbow_flex": 0.8124782539999997,
+        "wrist_flex": -0.001271126499999999,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "outward": {
+        "decision": "shortened",
+        "effective_duration_s": 22.558355000000002,
+        "distance_scale": 0.9,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.5937608429151804,
+        "maximum_reaction_force_n": 0.0012995785926697187,
+        "maximum_reaction_torque_nm": 0.00037234157081495595,
+        "minimum_physical_motor_headroom_n": 0.9319023995943203,
+        "minimum_overlay_delta_headroom_n": 0.3417939939560759,
+        "maximum_allocation_residual_norm": 5.855417136395647e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 22.558355000000002,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.5937608429151804,
+        "maximum_reaction_force_n": 0.0012995785926697187,
+        "maximum_reaction_torque_nm": 0.00037234157084016674,
+        "minimum_physical_motor_headroom_n": 0.9319023995943203,
+        "minimum_overlay_delta_headroom_n": 0.3417939939560759,
+        "maximum_allocation_residual_norm": 6.024888148289905e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "rear_left",
+      "source": "maximum_radius_by_direction.rear_left",
+      "endpoint_body_flu_m": [
+        -0.2003676576067134,
+        0.1334677666396591,
+        -0.33445903497135476
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": 0.6015561333333335,
+        "shoulder_lift": 1.0937401333333334,
+        "elbow_flex": 1.5886,
+        "wrist_flex": 0.7792882000000003,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "outward": {
+        "decision": "accepted",
+        "effective_duration_s": 22.558355000000002,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.6118990485439731,
+        "maximum_reaction_force_n": 0.002211669167687438,
+        "maximum_reaction_torque_nm": 0.0006337231031171403,
+        "minimum_physical_motor_headroom_n": 0.9482835454158155,
+        "minimum_overlay_delta_headroom_n": 0.3581751397491151,
+        "maximum_allocation_residual_norm": 6.17025182064723e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 22.558355000000002,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.6118990485439731,
+        "maximum_reaction_force_n": 0.002211669167684365,
+        "maximum_reaction_torque_nm": 0.0006337231030921237,
+        "minimum_physical_motor_headroom_n": 0.9482835454158155,
+        "minimum_overlay_delta_headroom_n": 0.3581751397491151,
+        "maximum_allocation_residual_norm": 6.17025182064723e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    },
+    {
+      "direction": "rear_right",
+      "source": "maximum_radius_by_direction.rear_right",
+      "endpoint_body_flu_m": [
+        -0.1957245272107087,
+        -0.14003339292069145,
+        -0.33441851498624353
+      ],
+      "target_positions_rad": {
+        "shoulder_pan": -0.6015561333333332,
+        "shoulder_lift": 1.0937401333333334,
+        "elbow_flex": 1.5886,
+        "wrist_flex": 0.7792882000000003,
+        "wrist_roll": -0.7853981633925518,
+        "gripper": 0.0
+      },
+      "outward": {
+        "decision": "accepted",
+        "effective_duration_s": 22.558355,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.5932116465912012,
+        "maximum_reaction_force_n": 0.0022255779782675103,
+        "maximum_reaction_torque_nm": 0.0006374472078153385,
+        "minimum_physical_motor_headroom_n": 0.9794908992244702,
+        "minimum_overlay_delta_headroom_n": 0.3893824935862229,
+        "maximum_allocation_residual_norm": 5.821867297065193e-14
+      },
+      "return": {
+        "decision": "accepted",
+        "effective_duration_s": 22.558355,
+        "distance_scale": 1.0,
+        "time_scale": 1.0,
+        "maximum_gravity_torque_nm": 0.5932116465912012,
+        "maximum_reaction_force_n": 0.0022255779783124274,
+        "maximum_reaction_torque_nm": 0.0006374472078142621,
+        "minimum_physical_motor_headroom_n": 0.9794908992244702,
+        "minimum_overlay_delta_headroom_n": 0.3893824935862229,
+        "maximum_allocation_residual_norm": 5.804838250445354e-14
+      },
+      "hold_s": 3.0,
+      "settle_s": 2.0,
+      "candidate_failures_before_selection": []
+    }
+  ],
+  "source_evidence": {
+    "envelope_sha256": "b4c440c0f4f734b81750da631010e99fb3288ec6b8e74046b0768c1f6651788c",
+    "model_sha256": {
+      "urdf": "2f648ad51e9d08d8e0b8d1beaa5167f9dc17b4bb60dc657c6e9684887f33872f",
+      "motion_reference": "5c106fbe09a37ca2c7d84053af9c771b7a679b18bac77ec9d5c460883f6cfa0d",
+      "flight_config": "c8da8d81765cb95098dc88fec72138466a67abfb76560761d9e499e45d545e85"
+    },
+    "implementation_sha256": {
+      "planner": "e8ad4f73e55645090140e111e210182f563f5558e0232eff6c93fd6b8fb476a8",
+      "trajectory_preflight": "c42c3622ea07c0d643e1d30bc0707cf586a2cdbd5946814e8ef3197e43e1f5c1",
+      "workspace_envelope": "dfc53a4125546c4dbed3556445d6cc17019c28bd2babfe47a1a60e10927c0d69"
+    }
+  }
+}

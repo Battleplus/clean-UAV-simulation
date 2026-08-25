@@ -1,0 +1,34 @@
+{
+  "schema": "my_drone.slow-adaptive-ab-result.v1",
+  "status": "NOT_RUN",
+  "accepted": false,
+  "expected_case_count": 12,
+  "completed_flight_log_count": 0,
+  "campaign_design": {
+    "groups": [
+      "nominal",
+      "physical 10 g gripper payload deliberately absent from estimator"
+    ],
+    "pairs_per_group": 3,
+    "within_pair_order": [
+      "OFF",
+      "ON"
+    ],
+    "trajectory_seconds": {
+      "extend": 90,
+      "hold": 8,
+      "return": 120
+    },
+    "gazebo_seed": 4027,
+    "fresh_px4_each_case": true,
+    "truth_hold_xy_d": 0.0,
+    "other_experimental_feedback": "disabled"
+  },
+  "acceptance": {
+    "nominal_group": "no greater than 5% relative degradation, with small quantization epsilons",
+    "payload_group": "at least 20% improvement in normalized horizontal/altitude/tilt composite and no component degradation",
+    "trim": "ON must be eligible, warmed up and nonzero; OFF must remain zero; limits, anti-windup and continuity must pass",
+    "flight": "horizontal and altitude <= 0.05 m, tilt <= 1 deg, zero motor saturation, no failsafe, complete extend and return"
+  },
+  "reason": "The strict campaign entry and scorer exist, but no new physical Gazebo/PX4 flights were run while creating them."
+}

@@ -1,0 +1,55 @@
+{
+  "ulog": "/home/asus/PX4-Autopilot/build/px4_sitl_default/rootfs/log/2026-08-20/06_49_36.ulg",
+  "streams": {
+    "sensor_combined": {
+      "present": true,
+      "samples": 60561,
+      "max_gap_s": 0.044,
+      "gap_start_s": 243.552,
+      "gap_end_s": 243.59599999999998
+    },
+    "vehicle_status": {
+      "present": true,
+      "samples": 503,
+      "max_gap_s": 0.508,
+      "gap_start_s": 111.788,
+      "gap_end_s": 112.29599999999999
+    },
+    "vehicle_local_position": {
+      "present": true,
+      "samples": 31208,
+      "max_gap_s": 0.055999999999999994,
+      "gap_start_s": 242.87599999999998,
+      "gap_end_s": 242.932
+    },
+    "vehicle_attitude": {
+      "present": true,
+      "samples": 53780,
+      "max_gap_s": 0.052,
+      "gap_start_s": 242.88,
+      "gap_end_s": 242.932
+    },
+    "actuator_motors": {
+      "present": true,
+      "samples": 2500,
+      "max_gap_s": 0.11599999999999999,
+      "gap_start_s": 264.64799999999997,
+      "gap_end_s": 264.764
+    },
+    "vehicle_visual_odometry": {
+      "present": true,
+      "samples": 8329,
+      "max_gap_s": 0.044,
+      "gap_start_s": 269.844,
+      "gap_end_s": 269.888
+    },
+    "vehicle_local_position_groundtruth": {
+      "present": true,
+      "samples": 12493,
+      "max_gap_s": 0.04,
+      "gap_start_s": 262.364,
+      "gap_end_s": 262.404
+    }
+  },
+  "sensor_timeout_messages": []
+}

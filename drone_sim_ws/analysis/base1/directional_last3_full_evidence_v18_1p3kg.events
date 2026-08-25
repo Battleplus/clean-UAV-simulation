@@ -1,0 +1,13 @@
+DIRECTIONAL_STAGE_INTERVAL direction=front_right phase=extend start=9422.171315 end=9445.331009
+DIRECTIONAL_STAGE_INTERVAL direction=front_right phase=hold start=9445.331248 end=9448.337270
+DIRECTIONAL_STAGE_INTERVAL direction=front_right phase=retract start=9448.337429 end=9471.400591
+DIRECTIONAL_DIRECTION_COMPLETE direction=front_right
+DIRECTIONAL_STAGE_INTERVAL direction=rear_left phase=extend start=9474.227199 end=9497.432650
+DIRECTIONAL_STAGE_INTERVAL direction=rear_left phase=hold start=9497.432870 end=9500.434572
+DIRECTIONAL_STAGE_INTERVAL direction=rear_left phase=retract start=9500.434774 end=9523.504549
+DIRECTIONAL_DIRECTION_COMPLETE direction=rear_left
+DIRECTIONAL_STAGE_INTERVAL direction=rear_right phase=extend start=9528.632596 end=9551.756950
+DIRECTIONAL_STAGE_INTERVAL direction=rear_right phase=hold start=9551.757172 end=9554.761358
+DIRECTIONAL_RUNTIME_ABORT direction=rear_right error=ARM_DIRECT_XY_MOTION_ABORTED reason=direct_xy_owner_state_stale
+DIRECTIONAL_EMERGENCY_RETRACT_BLOCKED error=ARM_DIRECT_XY_HANDSHAKE_TIMEOUT reason=motion_inhibited
+DIRECTIONAL_SEQUENCE_ERROR error=directional leg rear_right aborted: ARM_DIRECT_XY_MOTION_ABORTED reason=direct_xy_owner_state_stale

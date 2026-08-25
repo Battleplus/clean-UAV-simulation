@@ -12,6 +12,7 @@
   <exec_depend>actuator_msgs</exec_depend>
   <exec_depend>builtin_interfaces</exec_depend>
   <exec_depend>controller_manager</exec_depend>
+  <exec_depend>control_msgs</exec_depend>
   <exec_depend>drone_motor_system</exec_depend>
   <exec_depend>geometry_msgs</exec_depend>
   <exec_depend>gz_ros2_control</exec_depend>

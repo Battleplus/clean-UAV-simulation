@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 from collections.abc import Callable
 import math
+import os
 from pathlib import Path
 import sys
 import time
@@ -28,9 +29,14 @@ JOINT_NAMES = ARM_JOINTS + ["gripper"]
 # preserves the real 0.504-degree assembly inclination.
 TOOL_FORWARD_AXIS_LOCAL = np.array([0.999961256, -0.000000665, 0.008802682])
 TOOL_FORWARD_AXIS_LOCAL /= np.linalg.norm(TOOL_FORWARD_AXIS_LOCAL)
+IK_POSITION_TOLERANCE_M = 1.0e-4
+STRAIGHT_POSE_RETRACTION_TOLERANCE_M = 5.0e-4
 
 
 def _formal_urdf() -> Path:
+    override = os.environ.get("SO101_KINEMATICS_URDF", "").strip()
+    if override:
+        return Path(override).expanduser().resolve()
     return (
         Path(get_package_share_directory("drone_arm_sim"))
         / "urdf" / "my_drone_v3" / "my_drone_cad_formal_dynamic.urdf"
@@ -57,6 +63,7 @@ def _solve_tool_axis_ik(
     seed: dict[str, float],
     max_iterations: int = 1200,
     damping: float = 0.02,
+    position_tolerance_m: float = IK_POSITION_TOLERANCE_M,
 ) -> tuple[dict[str, float], dict[str, object]]:
     """Solve XYZ exactly and keep tool-axis change softly minimized.
 
@@ -78,7 +85,7 @@ def _solve_tool_axis_ik(
         delta_direction = np.cross(current_forward, target_forward)
         position_error = float(np.linalg.norm(delta_position))
         direction_error = float(np.linalg.norm(delta_direction))
-        if position_error < 1.0e-4:
+        if position_error < position_tolerance_m:
             break
         # Rotation about the tool axis does not alter its direction.  Remove
         # that unobservable component so the 5-DoF SO101 is not asked to solve
@@ -105,7 +112,7 @@ def _solve_tool_axis_ik(
             lower, upper = model.joint_limits(name)
             positions[name] = float(np.clip(positions[name] + delta, lower, upper))
     return positions, {
-        "converged": position_error < 1.0e-4,
+        "converged": position_error < position_tolerance_m,
         "iterations": iteration + 1,
         "position_error_m": position_error,
         "tool_axis_error_rad": math.asin(min(1.0, direction_error)),
@@ -119,27 +126,43 @@ def plan_tool_forward_path(
     step_m: float = 0.005,
     joint_margin_rad: float = math.radians(5.0),
 ) -> tuple[list[dict[str, float]], dict[str, object]]:
-    """Sample a fixed-orientation straight line along gripper-link local +X."""
-    if distance_m <= 0.0 or step_m <= 0.0:
-        raise ValueError("distance and step must be positive")
+    """Sample a fixed-orientation straight line along the signed tool axis.
+
+    A positive distance moves along the gripper's local +X.  A negative
+    distance moves in the opposite direction.  The latter lets the Base 1
+    horizontal installation start fully straight, retract inward, and then
+    return along the exact same Cartesian line.
+    """
+    if distance_m == 0.0 or step_m <= 0.0:
+        raise ValueError("distance must be non-zero and step must be positive")
     start = {name: float(start_positions.get(name, 0.0)) for name in ARM_JOINTS}
     start_transform, _ = model.forward_kinematics("gripper_link", start)
     forward = start_transform[:3, :3] @ TOOL_FORWARD_AXIS_LOCAL
     forward /= np.linalg.norm(forward)
-    distances = list(np.arange(step_m, distance_m + 0.5 * step_m, step_m))
-    if not distances or distances[-1] < distance_m - 1.0e-9:
-        distances.append(distance_m)
+    travel_axis = math.copysign(1.0, distance_m) * forward
+    travel_distance_m = abs(distance_m)
+    position_tolerance_m = (
+        STRAIGHT_POSE_RETRACTION_TOLERANCE_M
+        if distance_m < 0.0
+        else IK_POSITION_TOLERANCE_M
+    )
+    distances = list(
+        np.arange(step_m, travel_distance_m + 0.5 * step_m, step_m)
+    )
+    if not distances or distances[-1] < travel_distance_m - 1.0e-9:
+        distances.append(travel_distance_m)
 
     path = [dict(start)]
     statuses: list[dict[str, object]] = []
     previous = dict(start)
     for distance in distances:
         target = start_transform.copy()
-        target[:3, 3] = start_transform[:3, 3] + float(distance) * forward
+        target[:3, 3] = start_transform[:3, 3] + float(distance) * travel_axis
         candidates = []
         for seed in _candidate_seeds(previous):
             solution, status = _solve_tool_axis_ik(
                 model, target[:3, 3], forward, seed,
+                position_tolerance_m=position_tolerance_m,
             )
             if not bool(status["converged"]):
                 continue
@@ -154,12 +177,15 @@ def plan_tool_forward_path(
                 candidates.append((change, solution, status))
         if not candidates:
             raise RuntimeError(
-                f"Cartesian extension is unreachable at {distance:.3f} m "
+                f"Cartesian travel is unreachable at "
+                f"{math.copysign(distance, distance_m):.3f} m "
                 f"with a {math.degrees(joint_margin_rad):.1f} deg joint margin"
             )
         _, previous, status = min(candidates, key=lambda item: item[0])
         path.append(dict(previous))
-        statuses.append({"distance_m": float(distance), **status})
+        statuses.append(
+            {"distance_m": math.copysign(float(distance), distance_m), **status}
+        )
 
     joint_steps = [
         {
@@ -176,14 +202,18 @@ def plan_tool_forward_path(
         "end_link": "gripper_link",
         "tool_forward_axis_local": TOOL_FORWARD_AXIS_LOCAL.tolist(),
         "tool_forward_axis_base_at_start": forward.tolist(),
+        "travel_axis_base": travel_axis.tolist(),
         "start_position_m": start_transform[:3, 3].tolist(),
         "requested_distance_m": float(distance_m),
         "step_m": float(step_m),
+        "position_tolerance_m": position_tolerance_m,
         "sample_count_outward": len(path),
         "maximum_joint_step_rad": max(
             abs(value) for value in joint_steps[max_step_index].values()
         ),
-        "maximum_joint_step_ending_distance_m": float(distances[max_step_index]),
+        "maximum_joint_step_ending_distance_m": math.copysign(
+            float(distances[max_step_index]), distance_m
+        ),
         "maximum_joint_step_by_joint_rad": joint_steps[max_step_index],
         "ik_status": statuses,
     }
@@ -299,7 +329,7 @@ def execute_cartesian_cycle(
     finished = start_monotonic + total_duration
     last_heartbeat = 0.0
     start_position = np.asarray(evidence["start_position_m"], dtype=float)
-    forward_axis = np.asarray(evidence["tool_forward_axis_base_at_start"], dtype=float)
+    travel_axis = np.asarray(evidence["travel_axis_base"], dtype=float)
     max_progress = -math.inf
     max_cross_track = 0.0
     while time.monotonic() < finished:
@@ -309,8 +339,8 @@ def execute_cartesian_cycle(
                 "gripper_link", node.positions
             )
             displacement = current_transform[:3, 3] - start_position
-            progress = float(displacement @ forward_axis)
-            cross_track = float(np.linalg.norm(np.cross(displacement, forward_axis)))
+            progress = float(displacement @ travel_axis)
+            cross_track = float(np.linalg.norm(np.cross(displacement, travel_axis)))
             max_progress = max(max_progress, progress)
             max_cross_track = max(max_cross_track, cross_track)
         if time.monotonic() - last_heartbeat >= 0.25:
@@ -346,9 +376,9 @@ def execute_cartesian_cycle(
         f"return_error={max_return_error:.6f}rad "
         f"max_progress={max_progress:.6f}m max_cross_track={max_cross_track:.6f}m"
     )
-    if max_progress < distance - max(step, 0.01):
+    if max_progress < abs(distance) - max(step, 0.01):
         raise RuntimeError(
-            f"Cartesian demo did not extend far enough: {max_progress:.3f} m"
+            f"Cartesian demo did not travel far enough: {max_progress:.3f} m"
         )
     if return_stable_since is None or max_return_error > 0.08:
         raise RuntimeError(
@@ -397,7 +427,7 @@ def execute_cartesian_cycle_gated(
     segment_duration_s = duration / outward_segments
     start_monotonic = time.monotonic()
     start_position = np.asarray(evidence["start_position_m"], dtype=float)
-    forward_axis = np.asarray(evidence["tool_forward_axis_base_at_start"], dtype=float)
+    travel_axis = np.asarray(evidence["travel_axis_base"], dtype=float)
     max_progress = -math.inf
     max_cross_track = 0.0
     node.get_logger().info(
@@ -433,10 +463,10 @@ def execute_cartesian_cycle_gated(
                     "gripper_link", node.positions
                 )
                 displacement = current_transform[:3, 3] - start_position
-                max_progress = max(max_progress, float(displacement @ forward_axis))
+                max_progress = max(max_progress, float(displacement @ travel_axis))
                 max_cross_track = max(
                     max_cross_track,
-                    float(np.linalg.norm(np.cross(displacement, forward_axis))),
+                    float(np.linalg.norm(np.cross(displacement, travel_axis))),
                 )
             if time.monotonic() - last_heartbeat >= 0.25:
                 node.publish_motion(True)
@@ -461,9 +491,9 @@ def execute_cartesian_cycle_gated(
         f"max_progress={max_progress:.6f}m max_cross_track={max_cross_track:.6f}m "
         "mode=flight_gated"
     )
-    if max_progress < distance - max(step, 0.01):
+    if max_progress < abs(distance) - max(step, 0.01):
         raise RuntimeError(
-            f"Cartesian demo did not extend far enough: {max_progress:.3f} m"
+            f"Cartesian demo did not travel far enough: {max_progress:.3f} m"
         )
     if max_return_error > 0.08:
         raise RuntimeError(
@@ -533,7 +563,7 @@ def main(args=None) -> None:
         finished = time.monotonic() + total_duration
         last_heartbeat = 0.0
         start_position = np.asarray(evidence["start_position_m"], dtype=float)
-        forward_axis = np.asarray(evidence["tool_forward_axis_base_at_start"], dtype=float)
+        travel_axis = np.asarray(evidence["travel_axis_base"], dtype=float)
         max_progress = -math.inf
         max_cross_track = 0.0
         while time.monotonic() < finished:
@@ -543,8 +573,8 @@ def main(args=None) -> None:
                     "gripper_link", node.positions
                 )
                 displacement = current_transform[:3, 3] - start_position
-                progress = float(displacement @ forward_axis)
-                cross_track = float(np.linalg.norm(np.cross(displacement, forward_axis)))
+                progress = float(displacement @ travel_axis)
+                cross_track = float(np.linalg.norm(np.cross(displacement, travel_axis)))
                 max_progress = max(max_progress, progress)
                 max_cross_track = max(max_cross_track, cross_track)
             if time.monotonic() - last_heartbeat >= 0.25:
@@ -579,9 +609,9 @@ def main(args=None) -> None:
             f"CARTESIAN_DEMO_COMPLETE return_error={max_return_error:.6f}rad "
             f"max_progress={max_progress:.6f}m max_cross_track={max_cross_track:.6f}m"
         )
-        if max_progress < parsed.distance - max(parsed.step, 0.01):
+        if max_progress < abs(parsed.distance) - max(parsed.step, 0.01):
             raise RuntimeError(
-                f"Cartesian demo did not extend far enough: {max_progress:.3f} m"
+                f"Cartesian demo did not travel far enough: {max_progress:.3f} m"
             )
         if return_stable_since is None or max_return_error > 0.08:
             raise RuntimeError(f"Cartesian demo did not return to start: {max_return_error:.3f} rad")
