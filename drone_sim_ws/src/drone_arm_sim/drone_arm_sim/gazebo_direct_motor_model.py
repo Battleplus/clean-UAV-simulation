@@ -27,6 +27,12 @@ try:
     import rclpy
     from rclpy.executors import ExternalShutdownException
     from rclpy.node import Node
+    from rclpy.qos import (
+        DurabilityPolicy,
+        HistoryPolicy,
+        QoSProfile,
+        ReliabilityPolicy,
+    )
     from ros_gz_interfaces.msg import Entity, EntityWrench
     from std_msgs.msg import Bool
 except ModuleNotFoundError:
@@ -686,11 +692,20 @@ class DirectMotorModel(Node):
             self.on_odometry,
             20,
         )
+        # Actuator commands are continuous latest-state levels.  Reliable
+        # KEEP_LAST(1) preserves delivery without replaying a historical queue
+        # after a transient scheduling delay.
+        actuator_qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
         self.create_subscription(
             Actuators,
             command_topic,
             self.on_command,
-            20,
+            actuator_qos,
         )
         self.create_subscription(
             WrenchStamped,

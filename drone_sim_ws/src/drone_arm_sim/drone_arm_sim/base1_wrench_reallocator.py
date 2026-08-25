@@ -831,7 +831,15 @@ class Base1WrenchReallocator(Node):
         self.diagnostic_period_s = 1.0 / max(
             1.0, min(200.0, float(arguments.diagnostic_rate_hz))
         )
-        self.publisher = self.create_publisher(Actuators, arguments.output_topic, 20)
+        physical_output_qos = QoSProfile(
+            reliability=ReliabilityPolicy.RELIABLE,
+            durability=DurabilityPolicy.VOLATILE,
+            history=HistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
+        self.publisher = self.create_publisher(
+            Actuators, arguments.output_topic, physical_output_qos
+        )
         self.diagnostic_publisher = self.create_publisher(
             String, arguments.diagnostic_state_topic, 20
         )
@@ -1280,21 +1288,17 @@ class Base1WrenchReallocator(Node):
     def _on_command_refresh_timer(self) -> None:
         """Maintain the physical producer cadence from the latest PX4 level.
 
-        The subscription callback still publishes with minimum latency.  This
-        timer only fills a missed upstream interval, so it neither queues old
-        actuator samples nor changes the command value.  Running in the same
-        single-threaded executor also means a genuinely blocked allocator
-        cannot fake a healthy heartbeat: both output and report stop together
-        and the existing 40 ms guardian gate still trips.
+        The subscription callback only replaces the cached latest level; this
+        timer is the sole physical producer.  A single fixed-rate writer avoids
+        reliable DDS replay of immediate-plus-timer duplicates after the PX4
+        level has already changed.  Running in the same single-threaded
+        executor also means a genuinely blocked allocator cannot fake a
+        healthy heartbeat: output and report stop together and the existing
+        40 ms guardian gate still trips.
         """
         if not self.enabled or self.latest_command_message is None:
             return
         now_s = time.monotonic()
-        if (
-            self.last_command_s is not None
-            and now_s - self.last_command_s < self.diagnostic_period_s
-        ):
-            return
         self._process_command(self.latest_command_message, now_s=now_s)
 
     def on_command(self, message) -> None:
@@ -1307,11 +1311,9 @@ class Base1WrenchReallocator(Node):
         if commands is None:
             self.publisher.publish(message)
             return
-        # ROS message callbacks receive independent message instances.  Keep a
-        # deep copy so the fixed-rate refresh never observes later mutation by
-        # middleware or test fixtures.
+        # Replace the cache only; the 100 Hz timer above is the sole ordered
+        # producer.  A deep copy prevents later middleware/test mutation.
         self.latest_command_message = deepcopy(message)
-        self._process_command(message, now_s=time.monotonic(), extracted=(commands, field))
 
     def _process_command(self, message, *, now_s: float, extracted=None) -> None:
         if extracted is None:

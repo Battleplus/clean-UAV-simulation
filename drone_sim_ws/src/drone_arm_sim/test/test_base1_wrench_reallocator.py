@@ -223,7 +223,7 @@ class Base1WrenchReallocatorTest(unittest.TestCase):
         report = json.loads(node.diagnostic_publisher.messages[0].data)
         self.assertEqual(report["direct_xy_protocol_phase"], "active")
 
-    def test_fixed_rate_refresh_fills_only_a_missed_upstream_interval(self):
+    def test_fixed_rate_refresh_is_the_single_periodic_producer(self):
         node = object.__new__(Base1WrenchReallocator)
         node.enabled = True
         node.latest_command_message = object()
@@ -233,13 +233,6 @@ class Base1WrenchReallocatorTest(unittest.TestCase):
         node._process_command = lambda message, *, now_s: calls.append(
             (message, now_s)
         )
-
-        with patch(
-            "drone_arm_sim.base1_wrench_reallocator.time.monotonic",
-            return_value=10.009,
-        ):
-            node._on_command_refresh_timer()
-        self.assertEqual(calls, [])
 
         with patch(
             "drone_arm_sim.base1_wrench_reallocator.time.monotonic",
@@ -257,6 +250,23 @@ class Base1WrenchReallocatorTest(unittest.TestCase):
         node._process_command = unittest.mock.Mock()
         node._on_command_refresh_timer()
         node._process_command.assert_not_called()
+
+    def test_enabled_input_callback_only_replaces_latest_valid_level(self):
+        node = object.__new__(Base1WrenchReallocator)
+        node.enabled = True
+        node.velocity_scale = 1000.0
+        node.latest_command_message = None
+        node.publisher = unittest.mock.Mock()
+        node._process_command = unittest.mock.Mock()
+        message = SimpleNamespace(
+            normalized=[0.25] * 8,
+            velocity=[],
+        )
+        node.on_command(message)
+        self.assertIsNot(node.latest_command_message, message)
+        self.assertEqual(node.latest_command_message.normalized, [0.25] * 8)
+        node._process_command.assert_not_called()
+        node.publisher.publish.assert_not_called()
 
     def test_direct_xy_protocol_is_prepare_then_independent_enable(self):
         node = object.__new__(Base1WrenchReallocator)
