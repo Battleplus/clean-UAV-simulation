@@ -816,6 +816,15 @@ class Base1WrenchReallocator(Node):
         self.last_allocation_limited = False
         self.last_allocation_residual_norm = 0.0
         self.last_command_s: float | None = None
+        # Cache the newest valid PX4 actuator level.  Gazebo already applies
+        # zero-order hold to actuator commands; the reallocator must do the
+        # same at its own fixed 100 Hz producer boundary instead of making its
+        # physical output/report cadence depend on an upstream DDS callback.
+        # A short upstream scheduling jitter can therefore no longer be
+        # misclassified as a dead reallocator by the unchanged 40 ms guardian
+        # watchdog.  All force/source leases below remain independently
+        # fail-closed.
+        self.latest_command_message = None
         self.last_log_s = 0.0
         self.last_diagnostic_s = 0.0
         self.last_diagnostic_protocol_signature = None
@@ -825,6 +834,10 @@ class Base1WrenchReallocator(Node):
         self.publisher = self.create_publisher(Actuators, arguments.output_topic, 20)
         self.diagnostic_publisher = self.create_publisher(
             String, arguments.diagnostic_state_topic, 20
+        )
+        self.command_refresh_timer = self.create_timer(
+            self.diagnostic_period_s,
+            self._on_command_refresh_timer,
         )
         # Motor commands are a latest-state stream, not an event journal.  A
         # deep reliable reader queue replays stale actuator levels after any
@@ -1264,6 +1277,26 @@ class Base1WrenchReallocator(Node):
             return np.clip(velocity[:8] / self.velocity_scale, 0.0, 1.0), "velocity"
         return None, None
 
+    def _on_command_refresh_timer(self) -> None:
+        """Maintain the physical producer cadence from the latest PX4 level.
+
+        The subscription callback still publishes with minimum latency.  This
+        timer only fills a missed upstream interval, so it neither queues old
+        actuator samples nor changes the command value.  Running in the same
+        single-threaded executor also means a genuinely blocked allocator
+        cannot fake a healthy heartbeat: both output and report stop together
+        and the existing 40 ms guardian gate still trips.
+        """
+        if not self.enabled or self.latest_command_message is None:
+            return
+        now_s = time.monotonic()
+        if (
+            self.last_command_s is not None
+            and now_s - self.last_command_s < self.diagnostic_period_s
+        ):
+            return
+        self._process_command(self.latest_command_message, now_s=now_s)
+
     def on_command(self, message) -> None:
         # This exact branch is the non-regression contract: with the overlay
         # disabled, Base 1 sees a byte-for-byte-equivalent ROS message.
@@ -1274,7 +1307,19 @@ class Base1WrenchReallocator(Node):
         if commands is None:
             self.publisher.publish(message)
             return
-        now_s = time.monotonic()
+        # ROS message callbacks receive independent message instances.  Keep a
+        # deep copy so the fixed-rate refresh never observes later mutation by
+        # middleware or test fixtures.
+        self.latest_command_message = deepcopy(message)
+        self._process_command(message, now_s=time.monotonic(), extracted=(commands, field))
+
+    def _process_command(self, message, *, now_s: float, extracted=None) -> None:
+        if extracted is None:
+            commands, field = self._extract_commands(message)
+            if commands is None:
+                return
+        else:
+            commands, field = extracted
         dt_s = 0.0 if self.last_command_s is None else min(now_s - self.last_command_s, 0.1)
         self.last_command_s = now_s
         source_stamps = [self.valid_state_stamp_s]
