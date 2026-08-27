@@ -418,7 +418,11 @@ class ArmPresetCommander(Node):
     def on_motion_inhibit(self, message: Bool) -> None:
         inhibited = bool(message.data)
         self.direct_xy_gate.update_inhibit(inhibited)
-        if inhibited and self.motion_command_active:
+        if (
+            self.direct_xy_gate.enabled
+            and inhibited
+            and self.motion_command_active
+        ):
             self.emergency_hold("direct_xy_motion_inhibited")
 
     def on_direct_xy_state(self, message: String) -> None:

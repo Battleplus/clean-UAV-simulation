@@ -42,6 +42,11 @@ Windows 下需要同时打开 Gazebo、WASD 和机械臂键盘窗口时运行：
 powershell -ExecutionPolicy Bypass -File .\drone_sim_ws\scripts\start_candidate_1p3kg_joint_debug.ps1
 ```
 
+启动器会等到 Gazebo `/joint_states` 与 PX4 `vehicle_status` 都有新鲜样本后才打开
+键盘窗口。机械臂窗口标题应显示 `1.3kg candidate`。按 `6` 执行
+`收拢 → 机头方向伸直 → 保持 → 完整收回`；解锁状态读取失败时会明确拒绝，
+不会误走地面分支，具体原因同时写入 `/tmp/my_drone_ros2_dds/arm_keyboard.log`。
+
 WSL 动态验收入口会先测试无机械臂动作的起飞、悬停、WASD 和降落，再以独立新后端测试十方向机械臂伸出、保持及完整回收：
 
 ```bash

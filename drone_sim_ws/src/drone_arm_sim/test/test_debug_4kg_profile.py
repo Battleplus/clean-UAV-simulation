@@ -281,7 +281,62 @@ class Debug4kgProfileTest(unittest.TestCase):
         )
         self.assertIn("MY_DRONE_FLIGHT_CONFIG", keyboard)
         self.assertIn("--flight-preflight", keyboard)
+        self.assertIn('local direct_xy_ownership=false', keyboard)
+        self.assertIn('local arming_state="${4:-}"', keyboard)
+        self.assertIn("get_vehicle_arming_state", keyboard)
+        self.assertIn("--vehicle-status-samples 1 --print-arming-state", keyboard)
+        self.assertIn("ARM_VEHICLE_STATUS_TIMEOUT_S:-12", keyboard)
+        self.assertIn('VEHICLE_ARMING_STATE state=1', keyboard)
+        self.assertNotIn(
+            "grep -Eq 'VEHICLE_ARMING_STATE state=[0-9]+'", keyboard
+        )
+        self.assertIn('profile_label="1.3kg candidate"', keyboard)
+        self.assertIn('echo "Active profile: ${profile_label}"', keyboard)
+        self.assertIn(
+            "VISIBLE_DEMO_REFUSED: PX4 arming state is unavailable", keyboard
+        )
+        self.assertIn(
+            'run_preset flight_straight_forward "${duration}" 0.02 "${arming_state}"',
+            keyboard,
+        )
+        self.assertIn(
+            'run_preset retracted "${return_duration}" 0.02 "${arming_state}"',
+            keyboard,
+        )
+        self.assertNotIn(
+            "timeout 3 ros2 topic echo --once /fmu/out/vehicle_status_v4",
+            keyboard,
+        )
+        self.assertNotIn("vehicle_is_armed()", keyboard)
+        self.assertIn(
+            'ARM_DIRECT_XY_OWNERSHIP="${direct_xy_ownership}"', keyboard
+        )
+        self.assertIn("require_fresh_arm_runtime", keyboard)
+        self.assertIn(
+            "ARM_RUNTIME_UNAVAILABLE reason=joint_states_stale_or_gazebo_stopped",
+            keyboard,
+        )
+        self.assertIn("ARM_RUNTIME_UNAVAILABLE reason=arm_controller_missing", keyboard)
+        self.assertIn("KEY6_DEMO_FAILED: controller remains open", keyboard)
+        self.assertIn("arm_keyboard.log", keyboard)
         self.assertNotIn("--distance \"${distance}\"", keyboard)
+
+        sample_gate = (
+            WORKSPACE / "scripts/wait_base1_ros_samples.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("self.latest_arming_state", sample_gate)
+        self.assertIn('"--print-arming-state"', sample_gate)
+        self.assertIn("VEHICLE_ARMING_STATE state=", sample_gate)
+
+        candidate_launcher = (
+            WORKSPACE / "scripts/start_candidate_1p3kg_joint_debug.ps1"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("Start-Sleep -Seconds 8", candidate_launcher)
+        self.assertIn("wait_base1_ros_samples.py", candidate_launcher)
+        self.assertIn(
+            "--joint-samples 3 --vehicle-status-samples 1 --timeout 240",
+            candidate_launcher,
+        )
 
         flight_driver = (
             WORKSPACE / "scripts/test_ros2_dds_arm_flight_pty.py"

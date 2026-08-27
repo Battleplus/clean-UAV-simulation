@@ -141,6 +141,18 @@ def test_inhibit_during_motion_publishes_measured_hold_and_cancels_session():
     np.testing.assert_allclose(hold.points[0].accelerations, np.zeros(6))
 
 
+def test_ground_motion_ignores_airborne_direct_xy_inhibit():
+    controller = object.__new__(ArmPresetCommander)
+    controller.direct_xy_gate = DirectXyMotionGate(False, ready_hold_s=0.0)
+    controller.motion_command_active = True
+    controller.motion_abort_reason = None
+
+    controller.on_motion_inhibit(SimpleNamespace(data=True))
+
+    assert controller.motion_command_active is True
+    assert controller.motion_abort_reason is None
+
+
 def test_runtime_owner_state_replaces_ready_freshness_assertion():
     gate = DirectXyMotionGate(
         True, ready_hold_s=0.0, ready_timeout_s=0.15, owner_timeout_s=0.15

@@ -19,6 +19,8 @@ $workspace = Split-Path -Parent $PSScriptRoot
 $candidateUrdf = Convert-ToWslPath (Join-Path $workspace "src\drone_arm_sim\urdf\my_drone_v3\my_drone_cad_candidate_1p3kg.urdf")
 $candidateConfig = Convert-ToWslPath (Join-Path $workspace "src\drone_arm_sim\config\my_drone_v3_cad_candidate_1p3kg.json")
 $motionReference = Convert-ToWslPath (Join-Path $workspace "src\drone_arm_sim\config\so101_motion_reference_4kg.json")
+$workspaceWsl = Convert-ToWslPath $workspace
+$sampleGate = Convert-ToWslPath (Join-Path $PSScriptRoot "wait_base1_ros_samples.py")
 
 Write-Host "Starting 1.3 kg / 0.6 kg-arm Gazebo + PX4 candidate..."
 Start-Process -FilePath $wslExe -WindowStyle Hidden -ArgumentList @(
@@ -27,7 +29,18 @@ Start-Process -FilePath $wslExe -WindowStyle Hidden -ArgumentList @(
     "bash", $backend
 )
 
-Start-Sleep -Seconds 8
+Write-Host "Waiting for live Gazebo joint states and PX4 DDS status..."
+$readinessCommand = @"
+source /opt/ros/jazzy/setup.bash &&
+source /home/asus/ros2_px4_build_ws/install/setup.bash &&
+source '$workspaceWsl/install/setup.bash' &&
+python3 '$sampleGate' --joint-samples 3 --vehicle-status-samples 1 --timeout 240
+"@
+& $wslExe -d Ubuntu-24.04 -- bash -lc $readinessCommand
+if ($LASTEXITCODE -ne 0) {
+    throw "The 1.3 kg backend did not publish fresh Gazebo joint states and PX4 status within 240 seconds; keyboard windows were not opened."
+}
+Write-Host "Gazebo and PX4 are live. Opening keyboard controllers..."
 
 # These two terminals are intentionally visible because they own keyboard input.
 Start-Process -FilePath $wslExe -ArgumentList @(

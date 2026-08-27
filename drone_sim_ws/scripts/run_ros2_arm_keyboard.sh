@@ -9,36 +9,92 @@ export SO101_KINEMATICS_URDF="${SO101_KINEMATICS_URDF:-${workspace_dir}/src/dron
 export SO101_MOTION_REFERENCE="${SO101_MOTION_REFERENCE:-${workspace_dir}/src/drone_arm_sim/config/so101_motion_reference_4kg.json}"
 export MY_DRONE_FLIGHT_CONFIG="${MY_DRONE_FLIGHT_CONFIG:-${CONFIG_FILE:-${workspace_dir}/src/drone_arm_sim/config/my_drone_v3_cad_debug_4kg.json}}"
 
-# Keep flight and arm input windows visually distinct.
-printf '\033]0;my_drone 4kg 联合调试 - SO101 机械臂\007'
+# Preserve the reason for an interactive command failure even when the
+# Windows terminal is closed later.  This does not redirect stdin, so the
+# single-key controller remains interactive.
+runtime_dir="${ARM_KEYBOARD_RUNTIME_DIR:-/tmp/my_drone_ros2_dds}"
+mkdir -p "${runtime_dir}"
+exec > >(tee -a "${runtime_dir}/arm_keyboard.log") 2>&1
+
+# Keep flight and arm input windows visually distinct, and show the model that
+# this terminal will actually command.  A hard-coded "4kg" title made the
+# 1.3 kg candidate window look like the obsolete controller.
+profile_label="4kg Base1"
+if [[ "$(basename "${MY_DRONE_FLIGHT_CONFIG}")" == *"1p3kg"* ]]; then
+  profile_label="1.3kg candidate"
+fi
+printf '\033]0;my_drone %s 联合调试 - SO101 机械臂\007' "${profile_label}"
 
 run_preset() {
   local preset="$1"
   local duration="$2"
   local tolerance="${3:-0.08}"
+  local arming_state="${4:-}"
+  local direct_xy_ownership=false
+  local direct_xy_external_guardian=false
   echo "Sending ${preset} (${duration}s)..."
-  local preflight_args=()
-  if vehicle_is_armed; then
-    preflight_args+=(--flight-preflight)
+  if [[ -z "${arming_state}" ]]; then
+    if ! arming_state="$(get_vehicle_arming_state)"; then
+      echo "ARM_COMMAND_REFUSED reason=vehicle_arming_state_unknown"
+      return 2
+    fi
   fi
-  ros2 run drone_arm_sim arm_preset_control \
+  local preflight_args=()
+  if [[ "${arming_state}" == "armed" ]]; then
+    preflight_args+=(--flight-preflight)
+    direct_xy_ownership="${ARM_DIRECT_XY_OWNERSHIP:-false}"
+    direct_xy_external_guardian="${ARM_DIRECT_XY_EXTERNAL_GUARDIAN:-false}"
+  fi
+  # Ground motion must not request airborne XY ownership.  With the candidate
+  # launcher exporting ARM_DIRECT_XY_OWNERSHIP=true globally, the old path
+  # waited for a flight intent that cannot exist while disarmed and timed out.
+  ARM_DIRECT_XY_OWNERSHIP="${direct_xy_ownership}" \
+  ARM_DIRECT_XY_EXTERNAL_GUARDIAN="${direct_xy_external_guardian}" \
+    ros2 run drone_arm_sim arm_preset_control \
     --preset "${preset}" --duration "${duration}" --wait --tolerance "${tolerance}" \
     "${preflight_args[@]}"
 }
 
 run_ground_preset() {
-  if vehicle_is_armed; then
+  local arming_state=""
+  if ! arming_state="$(get_vehicle_arming_state)"; then
+    echo "GROUND_ONLY_REFUSED: PX4 arming state is unavailable"
+    discard_buffered_keys
+    return 1
+  fi
+  if [[ "${arming_state}" == "armed" ]]; then
     echo "GROUND_ONLY_REFUSED: full diagnostic poses 4/5 are disabled in flight"
     discard_buffered_keys
     return 1
   fi
-  run_preset "$1" "$2"
+  run_preset "$1" "$2" 0.08 "${arming_state}"
   discard_buffered_keys
 }
 
-vehicle_is_armed() {
-  timeout 3 ros2 topic echo --once /fmu/out/vehicle_status_v4 2>/dev/null \
-    | grep -q '^arming_state: 2'
+get_vehicle_arming_state() {
+  # One rclpy participant waits for a real PX4 sample.  A DDS discovery
+  # timeout is an unknown state, never evidence that the aircraft is
+  # disarmed.  This prevents one keypress from taking the ground branch and a
+  # later check of the same command from taking the airborne branch.
+  local output=""
+  if ! output="$(python3 "${workspace_dir}/scripts/wait_base1_ros_samples.py" \
+      --vehicle-status-samples 1 --print-arming-state \
+      --timeout "${ARM_VEHICLE_STATUS_TIMEOUT_S:-12}")"; then
+    echo "unknown"
+    return 2
+  fi
+  if grep -q 'VEHICLE_ARMING_STATE state=2' <<<"${output}"; then
+    echo "armed"
+    return 0
+  fi
+  if grep -q 'VEHICLE_ARMING_STATE state=1' <<<"${output}"; then
+    echo "disarmed"
+    return 0
+  fi
+  # Boot/standby or any future enum value is not proof of a safely disarmed
+  # flight state.  Fail closed instead of silently choosing the ground path.
+  echo "unknown"
+  return 2
 }
 
 request_hover_and_wait_stable() {
@@ -49,7 +105,14 @@ request_hover_and_wait_stable() {
 }
 
 prepare_keyboard_motion() {
-  if ! vehicle_is_armed; then
+  local arming_state="${1:-}"
+  if [[ -z "${arming_state}" ]]; then
+    if ! arming_state="$(get_vehicle_arming_state)"; then
+      echo "AIRBORNE_JOG_REFUSED: PX4 arming state is unavailable"
+      return 1
+    fi
+  fi
+  if [[ "${arming_state}" != "armed" ]]; then
     return 0
   fi
   echo "AIRBORNE_JOG_GATE: requesting zero velocity and checking stability"
@@ -61,7 +124,13 @@ prepare_keyboard_motion() {
 run_flight_preset() {
   local preset="$1"
   local duration="$2"
-  if vehicle_is_armed; then
+  local arming_state=""
+  if ! arming_state="$(get_vehicle_arming_state)"; then
+    echo "PRESET_REFUSED: PX4 arming state is unavailable"
+    discard_buffered_keys
+    return 1
+  fi
+  if [[ "${arming_state}" == "armed" ]]; then
     echo "AIRBORNE_PRESET_GATE: requesting zero velocity before ${preset}"
     if ! request_hover_and_wait_stable; then
       echo "AIRBORNE_PRESET_REFUSED: aircraft is not in a stable hover"
@@ -69,7 +138,7 @@ run_flight_preset() {
       return 1
     fi
   fi
-  run_preset "${preset}" "${duration}"
+  run_preset "${preset}" "${duration}" 0.08 "${arming_state}"
   discard_buffered_keys
 }
 
@@ -77,9 +146,15 @@ run_jog() {
   local joint="$1"
   local delta="$2"
   local duration=1.5
-  if vehicle_is_armed; then
+  local arming_state=""
+  if ! arming_state="$(get_vehicle_arming_state)"; then
+    echo "JOG_REFUSED: PX4 arming state is unavailable"
+    discard_buffered_keys
+    return 1
+  fi
+  if [[ "${arming_state}" == "armed" ]]; then
     duration=2.5
-    if ! prepare_keyboard_motion; then
+    if ! prepare_keyboard_motion "${arming_state}"; then
       echo "AIRBORNE_JOG_REFUSED: aircraft is not in a stable hover"
       discard_buffered_keys
       return 1
@@ -94,15 +169,21 @@ run_jog() {
 run_gripper_preset() {
   local preset="$1"
   local duration=3
-  if vehicle_is_armed; then
+  local arming_state=""
+  if ! arming_state="$(get_vehicle_arming_state)"; then
+    echo "GRIPPER_REFUSED: PX4 arming state is unavailable"
+    discard_buffered_keys
+    return 1
+  fi
+  if [[ "${arming_state}" == "armed" ]]; then
     duration=6
-    if ! prepare_keyboard_motion; then
+    if ! prepare_keyboard_motion "${arming_state}"; then
       echo "AIRBORNE_GRIPPER_REFUSED: aircraft is not in a stable hover"
       discard_buffered_keys
       return 1
     fi
   fi
-  run_preset "${preset}" "${duration}"
+  run_preset "${preset}" "${duration}" 0.08 "${arming_state}"
   discard_buffered_keys
 }
 
@@ -114,11 +195,40 @@ discard_buffered_keys() {
   while IFS= read -rsn1 -t 0.01 ignored; do :; done
 }
 
+require_fresh_arm_runtime() {
+  # A surviving PX4/DDS process is not sufficient: Gazebo can already have
+  # stopped, leaving cached vehicle state while /clock and /joint_states are
+  # frozen.  Refuse motion before entering a long hover gate in that state.
+  if ! python3 "${workspace_dir}/scripts/wait_base1_ros_samples.py" \
+      --joint-samples 3 --timeout 5; then
+    echo "ARM_RUNTIME_UNAVAILABLE reason=joint_states_stale_or_gazebo_stopped"
+    return 1
+  fi
+  local controller_info=""
+  if ! controller_info="$(timeout 5 ros2 topic info /arm_controller/joint_trajectory 2>/dev/null)" \
+      || ! grep -Eq 'Subscription count: [1-9][0-9]*' <<<"${controller_info}"; then
+    echo "ARM_RUNTIME_UNAVAILABLE reason=arm_controller_missing"
+    return 1
+  fi
+  return 0
+}
+
 run_visible_demo() {
   local duration=20
   local return_duration=24
   local hold=3
-  if vehicle_is_armed; then
+  local arming_state=""
+  if ! require_fresh_arm_runtime; then
+    echo "VISIBLE_DEMO_REFUSED: Gazebo or the arm controller is not ready; restart the complete candidate runtime"
+    discard_buffered_keys
+    return 1
+  fi
+  if ! arming_state="$(get_vehicle_arming_state)"; then
+    echo "VISIBLE_DEMO_REFUSED: PX4 arming state is unavailable; no trajectory was sent"
+    discard_buffered_keys
+    return 1
+  fi
+  if [[ "${arming_state}" == "armed" ]]; then
     duration="${ARM_KEY6_AIRBORNE_DURATION_S:-90}"
     # Retraction reduces the articulated inertia while the gravity moment is
     # changing in the opposite direction.  The measured Base1 run showed the
@@ -137,10 +247,18 @@ run_visible_demo() {
     echo "GROUND_DEMO_PREVIEW: folded -> nose-forward straight -> folded"
   fi
   echo "VISIBLE_DEMO_BEGIN: unfold toward ROS FLU +X / nose; shoulder_pan stays fixed"
-  run_preset flight_straight_forward "${duration}" 0.02
+  if ! run_preset flight_straight_forward "${duration}" 0.02 "${arming_state}"; then
+    echo "VISIBLE_DEMO_ABORTED phase=extend reason=trajectory_command_failed"
+    discard_buffered_keys
+    return 1
+  fi
   sleep "${hold}"
-  run_preset retracted "${return_duration}" 0.02
-  if vehicle_is_armed; then
+  if ! run_preset retracted "${return_duration}" 0.02 "${arming_state}"; then
+    echo "VISIBLE_DEMO_ABORTED phase=retract reason=trajectory_command_failed"
+    discard_buffered_keys
+    return 1
+  fi
+  if [[ "${arming_state}" == "armed" ]]; then
     echo "AIRBORNE_DEMO_SETTLING: waiting for measured velocity stability"
     if ! request_hover_and_wait_stable; then
       echo "AIRBORNE_DEMO_UNSTABLE_AFTER_RETURN"
@@ -154,7 +272,13 @@ run_visible_demo() {
 
 run_gripper_demo() {
   local duration=5
-  if vehicle_is_armed; then
+  local arming_state=""
+  if ! arming_state="$(get_vehicle_arming_state)"; then
+    echo "GRIPPER_DEMO_REFUSED: PX4 arming state is unavailable"
+    discard_buffered_keys
+    return 1
+  fi
+  if [[ "${arming_state}" == "armed" ]]; then
     duration=10
     echo "AIRBORNE_GRIPPER: zero-velocity gate, then slow 10s open/close"
     if ! request_hover_and_wait_stable; then
@@ -172,7 +296,13 @@ run_cartesian_velocity_mode() {
     echo "CARTESIAN_VELOCITY_REFUSED: persistent server is unavailable"
     return 1
   fi
-  if vehicle_is_armed; then
+  local arming_state=""
+  if ! arming_state="$(get_vehicle_arming_state)"; then
+    echo "CARTESIAN_VELOCITY_REFUSED: PX4 arming state is unavailable"
+    discard_buffered_keys
+    return 1
+  fi
+  if [[ "${arming_state}" == "armed" ]]; then
     echo "CARTESIAN_VELOCITY_GATE: requesting hover before endpoint control"
     if ! request_hover_and_wait_stable; then
       echo "CARTESIAN_VELOCITY_REFUSED: aircraft is not in a stable hover"
@@ -189,6 +319,7 @@ run_cartesian_velocity_mode() {
 }
 
 echo "SO101 keyboard controller"
+echo "Active profile: ${profile_label}"
 echo "1 flight_work_a | 2 flight_work_b | 3/0 retracted"
 echo "4 work_a (diagnostic) | 5 work_b (diagnostic)"
 echo "6 FLIGHT DEMO: folded -> nose-forward straight -> folded | X exit"
@@ -210,7 +341,9 @@ while true; do
     0) run_flight_preset retracted 12 ;;
     4) run_ground_preset work_a 30 ;;
     5) run_ground_preset work_b 30 ;;
-    6) run_visible_demo ;;
+    6) if ! run_visible_demo; then
+         echo "KEY6_DEMO_FAILED: controller remains open; inspect ${runtime_dir}/arm_keyboard.log"
+       fi ;;
     7) run_gripper_demo ;;
     8) run_gripper_preset gripper_open ;;
     9) run_gripper_preset gripper_closed ;;
